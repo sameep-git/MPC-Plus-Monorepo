@@ -64,6 +64,16 @@ class DatabaseAdapter(ABC):
         pass
 
     @abstractmethod
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants from the database.
+        
+        Returns:
+            list: List of beam variant strings (e.g., ['6e', '10x'])
+        """
+        pass
+
+    @abstractmethod
     def close(self):
         """Close the database connection."""
         pass
@@ -209,6 +219,33 @@ class SupabaseAdapter(DatabaseAdapter):
         except Exception as e:
             logger.error(f"Error uploading data to Supabase: {e}", exc_info=True)
             return False
+            
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants from the beam_variants table.
+        
+        Returns:
+            list: List of beam variant strings (e.g., ['6e', '10x'])
+        """
+        if not self.connected or not self.client:
+            logger.error("Not connected to Supabase")
+            return []
+            
+        try:
+            response = self.client.table('beam_variants').select('variant').execute()
+            
+            if response.data:
+                # Extract just the variant strings
+                variants = [item['variant'] for item in response.data]
+                logger.info(f"Fetched {len(variants)} beam variants from database")
+                return variants
+            else:
+                logger.warning("No beam variants found in database")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error fetching beam variants: {e}", exc_info=True)
+            return []
 
     def upload_geocheck_data(self, data: Dict[str, Any], path: str = None) -> Optional[str]:
         """
@@ -435,6 +472,16 @@ class Uploader:
 
         model_type = type(model).__name__.lower()
         
+
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants using the adapter.
+        """
+        if not self.connected:
+            logger.error("Not connected to database. Call connect() first.")
+            return []
+            
+        return self.db_adapter.get_beam_variants()
 
         if "ebeam" in model_type:
             return self.eModelUpload(model)

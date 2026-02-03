@@ -1,6 +1,7 @@
 import os
 from pylinac.core.image import XIM
 import logging
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 from src.data_manipulation.ETL.data_extractor import data_extractor
@@ -96,6 +97,57 @@ class DataProcessor:
 
         return image
 
+    def _get_dynamic_beam_map(self):
+        """
+        Connects to Supabase and determines the beam map dynamically 
+        based on available variants.
+        """
+        # Connect to database using environment variables to fetch variants
+        connection_params = {
+            "url": os.getenv("SUPABASE_URL"),
+            "key": os.getenv("SUPABASE_KEY"),
+        }
+        
+        # We need to connect to get dynamic variants
+        if not self.up.connect(connection_params):
+            logger.error("Could not connect to Supabase to fetch beam variants.")
+            return None
+
+        variants = self.up.get_beam_variants()
+        if not variants:
+            logger.error("No beam variants returned from database. Cannot proceed.")
+            self.up.close()
+            return None
+
+        beam_map = {}
+        for variant in variants:
+            # Map database variant string to Model Class
+            # Heuristic based on ending char
+            if variant == "6xMVkVEnhancedCouch":
+                # Special case for 6x geometry check
+                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch")
+            elif variant == "6xFFF":
+                # Special case for 6xFFF check
+                beam_map[variant] = (XBeamModel, "6xFFF")
+            elif variant.endswith("x"):
+                beam_map[variant] = (XBeamModel, variant)
+            elif variant.endswith("e"):
+                beam_map[variant] = (EBeamModel, variant)
+            else:
+                logger.warning(f"Unknown variant format from DB: {variant}. Skipping.")
+        
+        return beam_map
+
+    def extract_beam_type(self, path: str) -> str | None:
+        """
+        Extract the beam type from the path.
+        """
+        # Matches 6x, 6xFFF, 6xMVkVEnhancedCouch, 9x, 10x, etc.
+        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9]+)', path)
+        if m:
+            return m.group(1)
+        return None
+    
     
     # -------------------------------------------------------------------------
     # Internal beam dispatcher
@@ -112,25 +164,21 @@ class DataProcessor:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
-        beam_map = {
-            "6e": (EBeamModel, "6e"),
-            "9e": (EBeamModel, "9e"),
-            "12e": (EBeamModel, "12e"),
-            "16e": (EBeamModel, "16e"),
-            "2.5x": (XBeamModel, "2.5x"),
-            "10x": (XBeamModel, "10x"),
-            "15x": (XBeamModel, "15x"),
-            "6x": (GeoModel, "6x"),  # Geometry checks use 6x as the beam type
-        }
+        beam_map = self._get_dynamic_beam_map()
+        if not beam_map:
+            return
 
+        # for key, (model_class, beam_type) in beam_map.items():
+        #     if key in self.data_path:
+        #         # Special handling for 6x: use "6xFFF" only for BeamCheckTemplate6xFFF
+        #         if key == "6x":
+        #             if "BeamCheckTemplate6xFFF" in self.data_path:
+        #                 beam_type = "6xFFF"
+        #             # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
+        beam_token = self.extract_beam_type(self.data_path)
         for key, (model_class, beam_type) in beam_map.items():
-            if key in self.data_path:
-                # Special handling for 6x: use "6xFFF" only for BeamCheckTemplate6xFFF
-                if key == "6x":
-                    if "BeamCheckTemplate6xFFF" in self.data_path:
-                        beam_type = "6xFFF"
-                    # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
-                
+            if beam_token == key:
+                #return model_class(beam_type=beam_type)
                 logger.info(f"{beam_type.upper()} Beam detected")
 
                 # Initialize the correct beam model (EBeam, XBeam, etc.)
@@ -155,16 +203,8 @@ class DataProcessor:
                     logger.info("Running normal extraction...")
                     self.data_ex.extract(beam)
                     logger.info("Uploading to Supabase...")
-                    #Set Up DataBase
-                    # Connect to database using environment variables
-                    # Connect to database using credentials from .env file
-                    connection_params = {
-                        "url": os.getenv("SUPABASE_URL"),
-                        "key": os.getenv("SUPABASE_KEY"),
-                    }
-                    if(not self.up.connect(connection_params)):
-                        logger.error("Unable at connect to the database")
-                        return
+                    # Connection is already established at start of function
+                    
                     if(not self.up.upload(beam)):
                         logger.error("Cannot upload to the database")
                         return
@@ -176,6 +216,7 @@ class DataProcessor:
         logger.error(f"Unknown or unsupported beam type for path: {self.data_path}")
         logger.error("Ensure the folder name includes one of the supported identifiers:")
         logger.error("→ 6e, 9e, 12e, 16e, 10x, 15x, or 6x (6xfff)")
+
 
     # -------------------------------------------------------------------------
     # Public entrypoints
