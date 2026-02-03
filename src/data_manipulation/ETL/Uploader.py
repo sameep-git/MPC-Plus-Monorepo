@@ -13,7 +13,7 @@ The module includes:
 Supported beam models:
     - Electron beams: `EBeamModel`
     - X-ray beams: `XBeamModel`
-    - Geometric beams: `Geo6xfffModel`
+    - Geometric beams: `GeoModel`
 """
 
 from abc import ABC, abstractmethod
@@ -427,7 +427,7 @@ class Uploader:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
         """
         if not self.connected:
             logger.error("Not connected to database. Call connect() first.")
@@ -576,7 +576,7 @@ class Uploader:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
     
         For Testing Print logger.info to console
         """
@@ -676,7 +676,7 @@ class Uploader:
     # --- GEO MODEL ---
     def geoModelUpload(self, geoModel):
         """
-        Upload data for Geo6xfffModel to the single beam table or baseline table.
+        Upload data for GeoModel to the single beam table or baseline table.
         Maps to schema: type, date, path, rel_uniformity, rel_output, center_shift, machine_id, note
         
         For baselines: Uploads individual metric records to baseline table.

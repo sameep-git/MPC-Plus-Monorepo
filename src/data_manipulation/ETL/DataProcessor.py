@@ -9,7 +9,7 @@ from src.data_manipulation.ETL.Uploader import Uploader
 
 from src.data_manipulation.models.EBeamModel import EBeamModel
 from src.data_manipulation.models.XBeamModel import XBeamModel
-from src.data_manipulation.models.Geo6xfffModel import Geo6xfffModel
+from src.data_manipulation.models.GeoModel import GeoModel
 from src.data_manipulation.models.ImageModel import ImageModel
 
 # Set up logger for this module
@@ -120,7 +120,7 @@ class DataProcessor:
             "2.5x": (XBeamModel, "2.5x"),
             "10x": (XBeamModel, "10x"),
             "15x": (XBeamModel, "15x"),
-            "6x": (Geo6xfffModel, "6x"),  # Geometry checks use 6x as the beam type
+            "6x": (GeoModel, "6x"),  # Geometry checks use 6x as the beam type
         }
 
         for key, (model_class, beam_type) in beam_map.items():

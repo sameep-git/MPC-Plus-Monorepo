@@ -1,7 +1,7 @@
 from src.data_manipulation.models.AbstractBeamModel import AbstractBeamModel
 from decimal import Decimal
 
-class Geo6xfffModel(AbstractBeamModel):
+class GeoModel(AbstractBeamModel):
     def __init__(self):
         super().__init__()
         
