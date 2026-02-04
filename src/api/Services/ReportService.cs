@@ -120,7 +120,7 @@ public class ReportService : IReportService
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text("MPC+").FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
+                column.Item().Text("MPC+").FontSize(24).SemiBold().FontColor(Colors.Purple.Medium);
                 column.Item().Text("Machine Performance Check").FontSize(10).FontColor(Colors.Grey.Medium);
             });
 
@@ -301,14 +301,64 @@ public class ReportService : IReportService
     private static IContainer DataCellStyle(IContainer c) =>
         c.BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(4).DefaultTextStyle(x => x.FontSize(9));
 
+    // Helper to determine if a geo metric passes based on value vs threshold
+    private bool IsGeoMetricPassing(string metricName, double? value)
+    {
+        if (!value.HasValue) return true;
+        
+        return metricName switch
+        {
+            "IsoCenter Size" => Math.Abs(value.Value) <= 0.5,
+            "IsoCenter MV Offset" => Math.Abs(value.Value) <= 1.0,
+            "IsoCenter kV Offset" => Math.Abs(value.Value) <= 1.0,
+            "Gantry Absolute" => Math.Abs(value.Value) <= 0.5,
+            "Gantry Relative" => Math.Abs(value.Value) <= 0.5,
+            "Couch Max Position Error" => Math.Abs(value.Value) <= 1.0,
+            "Collimation Rotation" => Math.Abs(value.Value) <= 0.5,
+            _ => true
+        };
+    }
+
+    // Helper to add a geo metric row with PASS/FAIL status
+    private void AddGeoMetricRow(TableDescriptor table, string name, double? value, string unit, double threshold)
+    {
+        var isPass = !value.HasValue || Math.Abs(value.Value) <= threshold;
+        var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
+        var statusText = isPass ? "PASS" : "FAIL";
+        var valueStr = value.HasValue ? $"{value.Value:F2} {unit}" : "-";
+        var thresholdStr = $"± {threshold:F2} {unit}";
+
+        table.Cell().Element(DataCellStyle).Text(name);
+        table.Cell().Element(DataCellStyle).Text(valueStr);
+        table.Cell().Element(DataCellStyle).Text(thresholdStr);
+        table.Cell().Element(DataCellStyle).Text(statusText).FontColor(statusColor);
+    }
+
     private void ComposeGeoSection(IContainer container, GeoCheck geo, HashSet<string> selectedGeoTypes)
     {
+        // Determine overall geo check pass/fail
+        bool isOverallPass = true;
+        if (geo.IsoCenterSize.HasValue) isOverallPass &= Math.Abs(geo.IsoCenterSize.Value) <= 0.5;
+        if (geo.IsoCenterMVOffset.HasValue) isOverallPass &= Math.Abs(geo.IsoCenterMVOffset.Value) <= 1.0;
+        if (geo.IsoCenterKVOffset.HasValue) isOverallPass &= Math.Abs(geo.IsoCenterKVOffset.Value) <= 1.0;
+        if (geo.GantryAbsolute.HasValue) isOverallPass &= Math.Abs(geo.GantryAbsolute.Value) <= 0.5;
+        if (geo.GantryRelative.HasValue) isOverallPass &= Math.Abs(geo.GantryRelative.Value) <= 0.5;
+        if (geo.CouchMaxPositionError.HasValue) isOverallPass &= Math.Abs(geo.CouchMaxPositionError.Value) <= 1.0;
+        
+        var overallStatusColor = isOverallPass ? Colors.Green.Medium : Colors.Red.Medium;
+        var overallStatusText = isOverallPass ? "PASS" : "FAIL";
+
         container.PaddingTop(0.4f, Unit.Centimetre).Column(column =>
         {
-            // Convert date to local time
-            var geoDisplayTime = geo.Date.ToLocalTime();
+            // Use Timestamp if available, otherwise fall back to Date, convert to local time
+            var geoDisplayTime = (geo.Timestamp ?? geo.Date).ToLocalTime();
             
-            column.Item().Text($"Geometry Check ({geo.Type ?? "N/A"})").FontSize(12).SemiBold();
+            // Header with overall status (no N/A for type)
+            column.Item().Row(row =>
+            {
+                row.RelativeItem().Text("Geometry Check").FontSize(12).SemiBold();
+                row.ConstantItem(60).AlignRight().Text(overallStatusText).FontSize(11).SemiBold().FontColor(overallStatusColor);
+            });
             column.Item().Text($"Date: {geoDisplayTime:MM/dd/yyyy h:mm tt}").FontSize(9).FontColor(Colors.Grey.Medium);
 
             // IsoCenter
@@ -319,28 +369,17 @@ public class ReportService : IReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn(3);
-                        columns.RelativeColumn(2);
-                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(3); // Metric
+                        columns.RelativeColumn(2); // Value
+                        columns.RelativeColumn(2); // Threshold
+                        columns.RelativeColumn(1); // Status
                     });
 
-                    table.Cell().Element(DataCellStyle).Text("Size");
-                    table.Cell().Element(DataCellStyle).Text(geo.IsoCenterSize.HasValue ? $"{geo.IsoCenterSize.Value:F2} mm" : "-");
-                    table.Cell().Element(DataCellStyle).Text("± 0.50 mm");
-
+                    AddGeoMetricRow(table, "Size", geo.IsoCenterSize, "mm", 0.50);
                     if (geo.IsoCenterMVOffset.HasValue)
-                    {
-                        table.Cell().Element(DataCellStyle).Text("MV Offset");
-                        table.Cell().Element(DataCellStyle).Text($"{geo.IsoCenterMVOffset.Value:F2} mm");
-                        table.Cell().Element(DataCellStyle).Text("± 1.00 mm");
-                    }
-
+                        AddGeoMetricRow(table, "MV Offset", geo.IsoCenterMVOffset, "mm", 1.00);
                     if (geo.IsoCenterKVOffset.HasValue)
-                    {
-                        table.Cell().Element(DataCellStyle).Text("kV Offset");
-                        table.Cell().Element(DataCellStyle).Text($"{geo.IsoCenterKVOffset.Value:F2} mm");
-                        table.Cell().Element(DataCellStyle).Text("± 1.00 mm");
-                    }
+                        AddGeoMetricRow(table, "kV Offset", geo.IsoCenterKVOffset, "mm", 1.00);
                 });
             }
 
@@ -357,21 +396,13 @@ public class ReportService : IReportService
                             columns.RelativeColumn(3);
                             columns.RelativeColumn(2);
                             columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
                         });
 
                         if (geo.GantryAbsolute.HasValue)
-                        {
-                            table.Cell().Element(DataCellStyle).Text("Absolute");
-                            table.Cell().Element(DataCellStyle).Text($"{geo.GantryAbsolute.Value:F2}°");
-                            table.Cell().Element(DataCellStyle).Text("± 0.50°");
-                        }
-
+                            AddGeoMetricRow(table, "Absolute", geo.GantryAbsolute, "°", 0.50);
                         if (geo.GantryRelative.HasValue)
-                        {
-                            table.Cell().Element(DataCellStyle).Text("Relative");
-                            table.Cell().Element(DataCellStyle).Text($"{geo.GantryRelative.Value:F2}°");
-                            table.Cell().Element(DataCellStyle).Text("± 0.50°");
-                        }
+                            AddGeoMetricRow(table, "Relative", geo.GantryRelative, "°", 0.50);
                     });
                 }
             }
@@ -389,11 +420,31 @@ public class ReportService : IReportService
                             columns.RelativeColumn(3);
                             columns.RelativeColumn(2);
                             columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
                         });
 
-                        table.Cell().Element(DataCellStyle).Text("Max Position Error");
-                        table.Cell().Element(DataCellStyle).Text($"{geo.CouchMaxPositionError.Value:F2} mm");
-                        table.Cell().Element(DataCellStyle).Text("± 1.00 mm");
+                        AddGeoMetricRow(table, "Max Position Error", geo.CouchMaxPositionError, "mm", 1.00);
+                    });
+                }
+            }
+
+            // Collimation
+            if (selectedGeoTypes.Contains("collimation") || selectedGeoTypes.Count == 0)
+            {
+                if (geo.CollimationRotationOffset.HasValue)
+                {
+                    column.Item().PaddingTop(0.2f, Unit.Centimetre).Text("Collimation").FontSize(10).SemiBold();
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
+                        });
+
+                        AddGeoMetricRow(table, "Rotation Offset", geo.CollimationRotationOffset, "°", 0.50);
                     });
                 }
             }
