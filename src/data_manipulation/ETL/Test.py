@@ -46,11 +46,12 @@ from src.data_manipulation.ETL.DataProcessor import DataProcessor
 # Update these paths to point to your specific data folders.
 # =============================================================================
 # --- CSV DATA PATHS ---
-CSV_PATH_6E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckTemplate6e"
+#CSV_PATH_6E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckTemplate6e"
+CSV_PATH_6E = r"data/csv_data/NDS-WKS-SN6543-2025-09-18-08-06-01-0004-BeamCheckTemplate6e"
 CSV_PATH_9E = r"data/csv_data/Placeholder_9e"
 CSV_PATH_12E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0006-BeamCheckTemplate12e"
 CSV_PATH_16E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
-CSV_PATH_2_5X = r"data/csv_data/NDS-WKS-SN6543-2015-09-18-08-06-01-0000-BeamCheckTemplate2_5x"
+CSV_PATH_2_5X = r"data/csv_data/NDS-WKS-SN6543-2015-09-18-08-06-01-0000-BeamCheckTemplate2.5x"
 CSV_PATH_10X = r"data/csv_data/Placeholder_10x"
 CSV_PATH_15X = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0003-BeamCheckTemplate15x"
 CSV_PATH_6xFFF = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0001-BeamCheckTemplate6xFFF"
