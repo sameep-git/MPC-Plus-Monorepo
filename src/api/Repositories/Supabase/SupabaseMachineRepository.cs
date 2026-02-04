@@ -34,7 +34,7 @@ public class SupabaseMachineRepository : IMachineRepository
 
         var response = await _client
             .From<MachineEntity>()
-            .Filter(nameof(MachineEntity.Id), Supabase.Postgrest.Constants.Operator.Equals, id)
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
             .Get();
 
         return response.Models.FirstOrDefault()?.ToModel();
