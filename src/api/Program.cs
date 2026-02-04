@@ -32,6 +32,7 @@ builder.Services.AddBeamDataAccess(builder.Configuration);
 builder.Services.AddUpdateDataAccess(builder.Configuration);
 builder.Services.AddGeoCheckDataAccess(builder.Configuration);
 builder.Services.AddThresholdDataAccess(builder.Configuration);
+builder.Services.AddDocFactorDataAccess(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllers()

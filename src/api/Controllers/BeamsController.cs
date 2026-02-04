@@ -153,6 +153,48 @@ public class BeamsController : ControllerBase
         return Ok(types);
     }
 
+    /// <summary>
+    /// Get beam checks for a specific date/machine/type for DOC factor selection.
+    /// Returns beam id, timestamp, and relOutput for user selection.
+    /// </summary>
+    [HttpGet("by-date")]
+    public async Task<ActionResult<IEnumerable<BeamCheckOption>>> GetByDate(
+        [FromQuery] string machineId,
+        [FromQuery] string beamType,
+        [FromQuery] string date,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(machineId))
+        {
+            return BadRequest("machineId is required.");
+        }
+
+        if (string.IsNullOrEmpty(beamType))
+        {
+            return BadRequest("beamType is required.");
+        }
+
+        if (!DateTime.TryParse(date, out var parsedDate))
+        {
+            return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+        }
+
+        var beams = await _repository.GetAllAsync(
+            machineId: machineId,
+            type: beamType,
+            date: parsedDate,
+            cancellationToken: cancellationToken);
+
+        var options = beams.Select(b => new BeamCheckOption(
+            b.Id,
+            b.Timestamp ?? b.Date,
+            b.RelOutput ?? 0,
+            b.Type ?? beamType
+        )).OrderBy(o => o.Timestamp);
+
+        return Ok(options);
+    }
+
     [HttpPost("accept")]
     public async Task<ActionResult> Accept([FromBody] AcceptBeamRequest request, CancellationToken cancellationToken)
     {
@@ -258,3 +300,9 @@ public class BeamsController : ControllerBase
 }
 
 public record AcceptBeamRequest(IEnumerable<string> BeamIds, string ApprovedBy);
+
+/// <summary>
+/// Represents a beam check option for DOC factor selection.
+/// </summary>
+public record BeamCheckOption(string Id, DateTime Timestamp, double RelOutput, string Type);
+
