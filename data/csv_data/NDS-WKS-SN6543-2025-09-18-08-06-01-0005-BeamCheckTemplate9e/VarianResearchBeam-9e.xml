@@ -11,13 +11,13 @@
       <Acc4>0</Acc4>
     </Accs>
     <ControlPoints>
-      <!-- START Procedure ToHomeProcedure 6e -->
+      <!-- START Procedure ToHomeProcedure 9e -->
       <Cp>
         <WorkObjectID>Linac</WorkObjectID>
         <SubBeam>
           <Seq>0</Seq>
         </SubBeam>
-        <Energy>6e</Energy>
+        <Energy>9e</Energy>
         <Mu>0</Mu>
         <DRate>1000</DRate>
         <GantryRtn>180</GantryRtn>
@@ -36,8 +36,8 @@
           <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
         </Mlc>
       </Cp>
-      <!-- END Procedure ToHomeProcedure 6e -->
-      <!-- START Procedure Beam Check Procedure 6e -->
+      <!-- END Procedure ToHomeProcedure 9e -->
+      <!-- START Procedure Beam Check Procedure 9e -->
       <Cp>
         <Mu>0</Mu>
         <Y1>14</Y1>
@@ -67,8 +67,8 @@
       <Cp>
         <Mu>39</Mu>
       </Cp>
-      <!-- END Procedure Beam Check Procedure 6e -->
-      <!-- START Procedure ToHomeProcedure 6e -->
+      <!-- END Procedure Beam Check Procedure 9e -->
+      <!-- START Procedure ToHomeProcedure 9e -->
       <Cp>
         <SubBeam>
           <Seq>1</Seq>
@@ -77,7 +77,7 @@
       </Cp>
       <Cp>
         <WorkObjectID>Linac</WorkObjectID>
-        <Energy>6e</Energy>
+        <Energy>9e</Energy>
         <Mu>39</Mu>
         <DRate>1000</DRate>
         <GantryRtn>180</GantryRtn>
@@ -96,7 +96,7 @@
           <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
         </Mlc>
       </Cp>
-      <!-- END Procedure ToHomeProcedure 6e -->
+      <!-- END Procedure ToHomeProcedure 9e -->
       <Cp>
         <Mu>39</Mu>
       </Cp>
@@ -264,6 +264,6 @@
       <ImagingTolerances />
     </ImagingParameters>
     <!--<PhantomType>NoneOrIsoCal</PhantomType>-->
-    <!--<TemplateId>BeamCheckTemplate6e</TemplateId>-->
+    <!--<TemplateId>BeamCheckTemplate9e</TemplateId>-->
   </SetBeam>
 </VarianResearchBeam>

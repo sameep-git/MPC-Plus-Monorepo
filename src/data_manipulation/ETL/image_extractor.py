@@ -29,6 +29,11 @@ class image_extractor:
         clinical = np.array(XIM(clinicalPath))
         dark = np.array(XIM(darkPath))
         flood = np.array(XIM(floodPath))
+        if is_test:
+            logger.info("Clinical Path: %s", clinicalPath)
+            logger.info("Dark Path: %s", darkPath)
+            logger.info("Flood Path: %s", floodPath)
+            self.show_all_images(clinical, dark, flood)
         
         # Apply corrections
         corrected_flood = flood - dark
@@ -46,9 +51,12 @@ class image_extractor:
         out=np.zeros_like(corrected_clinical, dtype=np.float32),
         where=corrected_flood > threshold
         )
-
+        print("IM HERE 1")
         img = ArrayImage(normalized, dpi = 280)
+        print("IM HERE 2")
         analysis = FieldAnalysis(img)
+        print("IM HERE 3")
+        #ERROR HERE FOR 6e BEAMS
         analysis.analyze()
         r = analysis.results_data()
         
@@ -94,4 +102,24 @@ class image_extractor:
         ax_v.grid(True)
         imageModel.set_vertical_profile_graph(fig_v)
         plt.close(fig_v)
+    
+    def show_all_images(self, clinical, dark, flood):
+        plt.figure(figsize=(9, 3))
 
+        plt.subplot(1, 3, 1)
+        plt.imshow(clinical, cmap='gray')
+        plt.title("Clinical")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(dark, cmap='gray')
+        plt.title("Dark")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(flood, cmap='gray')
+        plt.title("Flood")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.show()

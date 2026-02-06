@@ -43,7 +43,6 @@ class DataProcessor:
         
         # Database Uploader
         self.up = Uploader()
-        # If ran as test, coded so that no database connection is made
 
     # -------------------------------------------------------------------------
     # Generic helper method for beams
