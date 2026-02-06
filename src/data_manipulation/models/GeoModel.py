@@ -5,6 +5,9 @@ class GeoModel(AbstractBeamModel):
     def __init__(self):
         super().__init__()
         
+        #uuid of the beam type
+        self._typeID = None 
+        
         # ---- IsoCenterGroup ----
         self._IsoCenterSize = Decimal('0.0')
         self._IsoCenterMVOffset = Decimal('0.0')
@@ -191,6 +194,10 @@ class GeoModel(AbstractBeamModel):
     def get_center_shift(self):
         return self._center_shift
     
+    #uuid of the beam type
+    def get_typeID(self):
+        return self._typeID
+    
     # Setters
     def set_relative_uniformity(self, relative_uniformity):
         self._relative_uniformity = relative_uniformity
@@ -200,3 +207,6 @@ class GeoModel(AbstractBeamModel):
 
     def set_center_shift(self, center_shift):
         self._center_shift = center_shift
+    
+    def set_typeID(self, typeID):
+        self._typeID = typeID

@@ -10,6 +10,7 @@ class AbstractBeamModel(ABC):
         self._path = ""
         self._date = None
         self._machine_SN = None
+        self._typeID = None
         self._baseline = False
         self._imageModel = None
         self._symmetry_horizontal = None
@@ -22,6 +23,9 @@ class AbstractBeamModel(ABC):
     # --- Getters ---
     def get_type(self):
         return self._type
+
+    def get_typeID(self):
+        return self._typeID
 
     def get_date(self):
         return self._date
@@ -59,6 +63,9 @@ class AbstractBeamModel(ABC):
     # --- Setters ---
     def set_type(self, type_value):
         self._type = type_value
+
+    def set_typeID(self, typeID):
+        self._typeID = typeID
 
     def set_path(self, path):
         self._path = path

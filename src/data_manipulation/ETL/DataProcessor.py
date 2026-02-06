@@ -97,7 +97,7 @@ class DataProcessor:
 
         return image
 
-    def _get_dynamic_beam_map(self):
+    def _get_dynamic_beam_map(self, is_test=False):
         """
         Connects to Supabase and determines the beam map dynamically 
         based on available variants.
@@ -120,19 +120,22 @@ class DataProcessor:
             return None
 
         beam_map = {}
-        for variant in variants:
+        for item in variants:
+            variant = item['variant']
+            typeID = item['id']
+            
             # Map database variant string to Model Class
             # Heuristic based on ending char
             if variant == "6xMVkVEnhancedCouch":
                 # Special case for 6x geometry check
-                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch")
+                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
             elif variant == "6xFFF":
                 # Special case for 6xFFF check
-                beam_map[variant] = (XBeamModel, "6xFFF")
+                beam_map[variant] = (XBeamModel, "6xFFF", typeID)
             elif variant.endswith("x"):
-                beam_map[variant] = (XBeamModel, variant)
+                beam_map[variant] = (XBeamModel, variant, typeID)
             elif variant.endswith("e"):
-                beam_map[variant] = (EBeamModel, variant)
+                beam_map[variant] = (EBeamModel, variant, typeID)
             else:
                 logger.warning(f"Unknown variant format from DB: {variant}. Skipping.")
         
@@ -164,7 +167,7 @@ class DataProcessor:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
-        beam_map = self._get_dynamic_beam_map()
+        beam_map = self._get_dynamic_beam_map(is_test)
         if not beam_map:
             return
 
@@ -176,13 +179,15 @@ class DataProcessor:
         #                 beam_type = "6xFFF"
         #             # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
         beam_token = self.extract_beam_type(self.data_path)
-        for key, (model_class, beam_type) in beam_map.items():
+        for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
                 #return model_class(beam_type=beam_type)
                 logger.info(f"{beam_type.upper()} Beam detected")
 
                 # Initialize the correct beam model (EBeam, XBeam, etc.)
                 beam = self._init_beam_model(model_class, beam_type)
+                beam.set_typeID(typeID)
+                logger.info(f"Setting Beam TypeID to: {typeID}")
 
                 # --- Image Extraction for all beam types ---
                 logger.info(f"Extracting image data for {beam_type} beam...")
@@ -204,7 +209,6 @@ class DataProcessor:
                     self.data_ex.extract(beam)
                     logger.info("Uploading to Supabase...")
                     # Connection is already established at start of function
-                    
                     if(not self.up.upload(beam)):
                         logger.error("Cannot upload to the database")
                         return

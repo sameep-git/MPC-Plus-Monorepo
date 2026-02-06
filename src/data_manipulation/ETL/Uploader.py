@@ -232,11 +232,11 @@ class SupabaseAdapter(DatabaseAdapter):
             return []
             
         try:
-            response = self.client.table('beam_variants').select('variant').execute()
+            response = self.client.table('beam_variants').select('id, variant').execute()
             
             if response.data:
-                # Extract just the variant strings
-                variants = [item['variant'] for item in response.data]
+                # Return the list of dictionaries directly (e.g., [{'id': '...', 'variant': '...'}])
+                variants = response.data
                 logger.info(f"Fetched {len(variants)} beam variants from database")
                 return variants
             else:
@@ -471,7 +471,15 @@ class Uploader:
             return False
 
         model_type = type(model).__name__.lower()
-        
+        logger.info(f"Uploading {model_type} data...")
+        if "ebeam" in model_type:
+            return self.eModelUpload(model)
+        elif "xbeam" in model_type:
+            return self.xModelUpload(model)
+        elif "geo" in model_type:
+            return self.geoModelUpload(model)
+        else:
+            raise TypeError(f"Unsupported model type: {type(model).__name__}")
 
     def get_beam_variants(self) -> list:
         """
@@ -507,6 +515,7 @@ class Uploader:
         try:
             machine_id = model.get_machine_SN()
             beam_variant = model.get_type()  # e.g., "6e", "15x", "6x"
+            typeID = model.get_typeID()
             date = model.get_date()
             
             # List of metrics to upload
@@ -519,6 +528,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'rel_uniformity',
                     'date': date,
                     'value': rel_uniformity
@@ -531,6 +541,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'rel_output',
                     'date': date,
                     'value': rel_output
@@ -544,6 +555,7 @@ class Uploader:
                         'machine_id': machine_id,
                         'check_type': check_type,
                         'beam_variant': beam_variant,
+                        'typeID': typeID,
                         'metric_type': 'center_shift',
                         'date': date,
                         'value': center_shift
@@ -559,6 +571,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'vert_flatness',
                     'date': date,
                     'value': flat_vert
@@ -571,6 +584,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'hori_flatness',
                     'date': date,
                     'value': flat_hori
@@ -583,6 +597,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'vert_symmetry',
                     'date': date,
                     'value': sym_vert
@@ -595,6 +610,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'hori_symmetry',
                     'date': date,
                     'value': sym_hori
@@ -663,6 +679,7 @@ class Uploader:
             else:
                 # Prepare data dictionary using model getters, matching the beam table schema
                 data = {
+                    'typeID': eBeam.get_typeID(),
                     'type': eBeam.get_type(),
                     'date': eBeam.get_date(),
                     'path': eBeam.get_path(),
@@ -693,6 +710,10 @@ class Uploader:
         For regular beams: Uploads single record to beam table.
         """
         try:
+            print("Here in xBeam Upload")
+            print(xBeam.get_typeID())
+            print(xBeam.get_type())
+            print(xBeam.get_date())
             # Check if this is a baseline
             if xBeam.get_baseline():
                 # Upload to baseline table as individual metric records
@@ -700,6 +721,7 @@ class Uploader:
             else:
                 # Prepare data dictionary using model getters, matching the beam table schema
                 data = {
+                    'typeID': xBeam.get_typeID(),
                     'type': xBeam.get_type(),
                     'date': xBeam.get_date(),
                     'path': xBeam.get_path(),
@@ -741,6 +763,7 @@ class Uploader:
             else:
                 # Prepare basic beam data matching the beam table schema
                 data = {
+                    'typeID': geoModel.get_typeID(),
                     'type': geoModel.get_type(),
                     'date': geoModel.get_date(),
                     'path': geoModel.get_path(),
