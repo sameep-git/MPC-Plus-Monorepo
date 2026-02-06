@@ -35,6 +35,7 @@ builder.Services.AddBeamDataAccess(builder.Configuration);
 builder.Services.AddUpdateDataAccess(builder.Configuration);
 builder.Services.AddGeoCheckDataAccess(builder.Configuration);
 builder.Services.AddThresholdDataAccess(builder.Configuration);
+builder.Services.AddDocFactorDataAccess(builder.Configuration);
 
 builder.Services.AddScoped<IReportService, ReportService>();
 

@@ -34,14 +34,21 @@ public class SupabaseBeamRepository : IBeamRepository
             if (!string.IsNullOrWhiteSpace(type))
                 query = query.Filter("type", Supabase.Postgrest.Constants.Operator.Equals, type);
             
+            // When filtering by a specific date, use timestamp range (start of day to end of day)
             if (date.HasValue)
-                query = query.Filter("date", Supabase.Postgrest.Constants.Operator.Equals, date.Value.ToString("yyyy-MM-dd"));
+            {
+                var dayStart = date.Value.Date.ToString("yyyy-MM-ddT00:00:00Z");
+                var dayEnd = date.Value.Date.ToString("yyyy-MM-ddT23:59:59Z");
+                query = query.Filter("timestamp", Supabase.Postgrest.Constants.Operator.GreaterThanOrEqual, dayStart);
+                query = query.Filter("timestamp", Supabase.Postgrest.Constants.Operator.LessThanOrEqual, dayEnd);
+            }
             
+            // For date range queries, also use timestamp
             if (startDate.HasValue)
-                query = query.Filter("date", Supabase.Postgrest.Constants.Operator.GreaterThanOrEqual, startDate.Value.ToString("yyyy-MM-dd"));
+                query = query.Filter("timestamp", Supabase.Postgrest.Constants.Operator.GreaterThanOrEqual, startDate.Value.Date.ToString("yyyy-MM-ddT00:00:00Z"));
             
             if (endDate.HasValue)
-                query = query.Filter("date", Supabase.Postgrest.Constants.Operator.LessThanOrEqual, endDate.Value.ToString("yyyy-MM-dd"));
+                query = query.Filter("timestamp", Supabase.Postgrest.Constants.Operator.LessThanOrEqual, endDate.Value.Date.ToString("yyyy-MM-ddT23:59:59Z"));
 
             var response = await query
                 .Order("timestamp", Supabase.Postgrest.Constants.Ordering.Descending)
