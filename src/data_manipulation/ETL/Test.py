@@ -176,15 +176,22 @@ def main():
             print(f"\nSkipping {key}: Path does not exist: {path}")
             continue
         print(f"\nProcessing {key}: {path}")
-        try:
-            dp = DataProcessor(path)
-            if args.upload:
-                print("Running in UPLOAD mode...")
-                dp.Run()
-            else:
-                print("Running in TEST mode...")
-                dp.RunTest()
-        except Exception as e:
-            print(f"ERROR processing {key}: {e}")
+        # try:
+        #     dp = DataProcessor(path)
+        #     if args.upload:
+        #         print("Running in UPLOAD mode...")
+        #         dp.Run()
+        #     else:
+        #         print("Running in TEST mode...")
+        #         dp.RunTest()
+        # except Exception as e:
+        #     print(f"ERROR processing {key}: {e}")
+        dp = DataProcessor(path)
+        if args.upload:
+            print("Running in UPLOAD mode...")
+            dp.Run()
+        else:
+            print("Running in TEST mode...")
+            dp.RunTest()
 if __name__ == "__main__":
     main()

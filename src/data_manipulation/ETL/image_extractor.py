@@ -51,6 +51,7 @@ class image_extractor:
         out=np.zeros_like(corrected_clinical, dtype=np.float32),
         where=corrected_flood > threshold
         )
+        normalized = np.clip(normalized, 0, None)
         print("IM HERE 1")
         img = ArrayImage(normalized, dpi = 280)
         print("IM HERE 2")
@@ -58,6 +59,14 @@ class image_extractor:
         print("IM HERE 3")
         #ERROR HERE FOR 6e BEAMS
         analysis.analyze()
+        # analysis.analyze(
+        #     invert=True,
+        #     field_edge_method="inflection",
+        #     edge_smoothing_ratio=0.1,
+        #     profile_smoothing_ratio=0.1
+        # )
+
+        print("IM HERE 4")
         r = analysis.results_data()
         
         #Extract and store horizontal and vertical flatness graphs
