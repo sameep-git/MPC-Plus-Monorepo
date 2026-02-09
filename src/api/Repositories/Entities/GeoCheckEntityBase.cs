@@ -19,6 +19,9 @@ public abstract class GeoCheckEntityBase : BaseModel
     [Column("date")]
     public DateTime Date { get; set; }
 
+    [Column("timestamp")]
+    public DateTime? Timestamp { get; set; }
+
     [Column("machine_id")]
     public string MachineId { get; set; } = default!;
 
@@ -161,6 +164,7 @@ public abstract class GeoCheckEntityBase : BaseModel
             Id = Id,
             Type = Type,
             Date = Date,
+            Timestamp = Timestamp,
             MachineId = MachineId,
             Path = Path,
             IsoCenterSize = IsoCenterSize,

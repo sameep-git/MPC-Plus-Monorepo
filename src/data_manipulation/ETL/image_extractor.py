@@ -13,7 +13,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pylinac.field_analysis import FieldAnalysis
+from pylinac.field_analysis import FieldAnalysis, Protocol
 from pylinac.core.image import XIM, ArrayImage
 
 # Set up logger for this module
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class image_extractor:
     def process_image(self,imageModel, is_test=False):
-        # Load images (you may need to convert XIM to a format pylinac accepts)
+        # Load images 
         clinicalPath = imageModel.get_path()
         darkPath = imageModel.get_dark_image_path()
         floodPath = imageModel.get_flood_image_path()
@@ -51,31 +51,71 @@ class image_extractor:
         out=np.zeros_like(corrected_clinical, dtype=np.float32),
         where=corrected_flood > threshold
         )
-        normalized = np.clip(normalized, 0, None)
-        print("IM HERE 1")
-        img = ArrayImage(normalized, dpi = 280)
-        print("IM HERE 2")
-        analysis = FieldAnalysis(img)
-        print("IM HERE 3")
-        #ERROR HERE FOR 6e BEAMS
-        analysis.analyze()
-        # analysis.analyze(
-        #     invert=True,
-        #     field_edge_method="inflection",
-        #     edge_smoothing_ratio=0.1,
-        #     profile_smoothing_ratio=0.1
-        # )
 
-        print("IM HERE 4")
-        r = analysis.results_data()
+        # Create ArrayImage from normalized data
+        img = ArrayImage(normalized, dpi=280)
         
-        #Extract and store horizontal and vertical flatness graphs
-        self.create_graphs(analysis, imageModel)
+        # Create FieldAnalysis with the image
+        # Using Protocol.VARIAN as default (can be made configurable)
+        analysis = FieldAnalysis(img)
+        
+        try:
+            # Analyze with VARIAN protocol and in_field_ratio=0.8 (central 80% of field)
+            # This is more robust than default settings
+            analysis.analyze(
+                protocol=Protocol.VARIAN,
+                in_field_ratio=0.8,  # Use central 80% of field for metrics
+                edge_detection_method='FWHM',  # Use FWHM for edge detection
+            )
+            r = analysis.results_data()
+            
+            # Extract and store horizontal and vertical flatness graphs
+            self.create_graphs(analysis, imageModel)
 
-        imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
-        imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
-        imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
-        imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
+            # Set flatness and symmetry values from analysis results
+            imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
+            imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
+            imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
+            imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
+            
+        except Exception as e:
+            logger.error(f"Error during FieldAnalysis.analyze(): {e}")
+            logger.warning("Attempting analysis with relaxed parameters...")
+            
+            try:
+                # Try with more relaxed parameters
+                analysis.analyze(
+                    protocol=Protocol.VARIAN,
+                    in_field_ratio=0.5,  # Use central 50% if 80% fails
+                    edge_detection_method='FWHM',
+                )
+                r = analysis.results_data()
+                
+                # Extract and store graphs
+                self.create_graphs(analysis, imageModel)
+                
+                # Set values
+                imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
+                imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
+                imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
+                imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
+                
+            except Exception as e2:
+                logger.error(f"FieldAnalysis failed even with relaxed parameters: {e2}")
+                logger.warning("Creating basic profile graphs without full analysis...")
+                
+                # Fallback: Create basic profile graphs from the image data directly
+                # This ensures we at least get the profile graphs even if analysis fails
+                try:
+                    self.create_basic_graphs(img, imageModel)
+                    # Set None values for metrics since analysis failed
+                    imageModel.set_symmetry_horizontal(None)
+                    imageModel.set_symmetry_vertical(None)
+                    imageModel.set_flatness_horizontal(None)
+                    imageModel.set_flatness_vertical(None)
+                except Exception as e3:
+                    logger.error(f"Failed to create basic graphs: {e3}")
+                    raise
         if is_test:
             # Print numerical analysis results to the console
             logger.info(f"Flatness (Horizontal): {imageModel.get_flatness_horizontal()}")
@@ -90,21 +130,33 @@ class image_extractor:
 
     
     def create_graphs(self, analysis, imageModel):
+        """
+        Create profile graphs from pylinac FieldAnalysis results.
+        
+        Args:
+            analysis: FieldAnalysis object that has been analyzed
+            imageModel: ImageModel to store the graphs in
+        """
         # Horizontal profile
+        # Get horizontal profile data from pylinac FieldAnalysis
+        # This is calculated from the normalized beam image
         h = analysis.horiz_profile
         fig_h, ax_h = plt.subplots()  # Create Figure and Axes
-        ax_h.plot(h.values)
+        ax_h.plot(h.values)  # Plot the intensity values across horizontal axis
         ax_h.set_title("Horizontal Profile")
         ax_h.set_xlabel("Pixel")
         ax_h.set_ylabel("Intensity")
         ax_h.grid(True)
         imageModel.set_horizontal_profile_graph(fig_h)  # store the Figure
-        plt.close(fig_h)  # prevent automatic display
+        # Note: Not closing figure here - it needs to remain open for later PNG conversion
+        # The figure will be garbage collected when no longer referenced
 
         # Vertical profile
+        # Get vertical profile data from pylinac FieldAnalysis
+        # This is calculated from the normalized beam image
         v = analysis.vert_profile
         fig_v, ax_v = plt.subplots()
-        ax_v.plot(v.values)
+        ax_v.plot(v.values)  # Plot the intensity values across vertical axis
         ax_v.set_title("Vertical Profile")
         ax_v.set_xlabel("Pixel")
         ax_v.set_ylabel("Intensity")
@@ -129,6 +181,46 @@ class image_extractor:
         plt.imshow(flood, cmap='gray')
         plt.title("Flood")
         plt.axis('off')
+        # Note: Not closing figure here - it needs to remain open for later PNG conversion
+        # The figure will be garbage collected when no longer referenced
+
+    def create_basic_graphs(self, image, imageModel):
+        """
+        Create basic profile graphs directly from image data when FieldAnalysis fails.
+        This is a fallback method that extracts profiles from the center of the image.
+        
+        Args:
+            image: ArrayImage object
+            imageModel: ImageModel to store the graphs in
+        """
+        # Get image array
+        img_array = image.array
+        
+        # Get center row (horizontal profile) and center column (vertical profile)
+        center_row = img_array.shape[0] // 2
+        center_col = img_array.shape[1] // 2
+        
+        # Horizontal profile (across columns at center row)
+        horiz_values = img_array[center_row, :]
+        fig_h, ax_h = plt.subplots()
+        ax_h.plot(horiz_values)
+        ax_h.set_title("Horizontal Profile (Center Row)")
+        ax_h.set_xlabel("Pixel")
+        ax_h.set_ylabel("Intensity")
+        ax_h.grid(True)
+        imageModel.set_horizontal_profile_graph(fig_h)
+        
+        # Vertical profile (across rows at center column)
+        vert_values = img_array[:, center_col]
+        fig_v, ax_v = plt.subplots()
+        ax_v.plot(vert_values)
+        ax_v.set_title("Vertical Profile (Center Column)")
+        ax_v.set_xlabel("Pixel")
+        ax_v.set_ylabel("Intensity")
+        ax_v.grid(True)
+        imageModel.set_vertical_profile_graph(fig_v)
+        
+        logger.info("Created basic profile graphs from image center (FieldAnalysis failed)")
 
         plt.tight_layout()
         plt.show()

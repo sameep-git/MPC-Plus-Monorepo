@@ -1,5 +1,7 @@
 using Api.Extensions;
+using Api.Services;
 using DotNetEnv;
+using QuestPDF.Infrastructure;
 
 // Load environment variables from .env file in project root
 // Navigate up from bin/Debug/net9.0/ to project root (typically 5 levels up)
@@ -11,9 +13,10 @@ if (File.Exists(envPath))
 }
 else
 {
-    // Fallback: try loading from current directory if root .env not found
     Env.Load();
 }
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +35,9 @@ builder.Services.AddBeamDataAccess(builder.Configuration);
 builder.Services.AddUpdateDataAccess(builder.Configuration);
 builder.Services.AddGeoCheckDataAccess(builder.Configuration);
 builder.Services.AddThresholdDataAccess(builder.Configuration);
+builder.Services.AddDocFactorDataAccess(builder.Configuration);
+
+builder.Services.AddScoped<IReportService, ReportService>();
 
 // Add services to the container.
 builder.Services.AddControllers()
