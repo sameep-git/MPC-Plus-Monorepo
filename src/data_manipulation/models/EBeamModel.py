@@ -6,6 +6,7 @@ class EBeamModel(AbstractBeamModel):
         super().__init__()
         self._relative_uniformity = Decimal('0.0')
         self._relative_output = Decimal('0.0')
+        self._typeID = None    
     
     # Getters
     def get_relative_uniformity(self):
@@ -13,6 +14,10 @@ class EBeamModel(AbstractBeamModel):
     
     def get_relative_output(self):
         return self._relative_output
+    
+    #uuid of the beam type
+    def get_typeID(self):
+        return self._typeID
 
     # Setters
     def set_relative_uniformity(self, relative_uniformity):
@@ -20,4 +25,7 @@ class EBeamModel(AbstractBeamModel):
     
     def set_relative_output(self, relative_output):
         self._relative_output = relative_output
+    
+    def set_typeID(self, typeID):
+        self._typeID = typeID
 

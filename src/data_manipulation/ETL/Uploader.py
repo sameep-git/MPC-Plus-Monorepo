@@ -13,7 +13,7 @@ The module includes:
 Supported beam models:
     - Electron beams: `EBeamModel`
     - X-ray beams: `XBeamModel`
-    - Geometric beams: `Geo6xfffModel`
+    - Geometric beams: `GeoModel`
 """
 
 from abc import ABC, abstractmethod
@@ -63,6 +63,16 @@ class DatabaseAdapter(ABC):
         
         Returns:
             bool: True if upload successful, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants from the database.
+        
+        Returns:
+            list: List of beam variant strings (e.g., ['6e', '10x'])
         """
         pass
 
@@ -213,6 +223,33 @@ class SupabaseAdapter(DatabaseAdapter):
         except Exception as e:
             logger.error(f"Error uploading data to Supabase: {e}", exc_info=True)
             return False
+            
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants from the beam_variants table.
+        
+        Returns:
+            list: List of beam variant strings (e.g., ['6e', '10x'])
+        """
+        if not self.connected or not self.client:
+            logger.error("Not connected to Supabase")
+            return []
+            
+        try:
+            response = self.client.table('beam_variants').select('id, variant').execute()
+            
+            if response.data:
+                # Return the list of dictionaries directly (e.g., [{'id': '...', 'variant': '...'}])
+                variants = response.data
+                logger.info(f"Fetched {len(variants)} beam variants from database")
+                return variants
+            else:
+                logger.warning("No beam variants found in database")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error fetching beam variants: {e}", exc_info=True)
+            return []
 
     def upload_geocheck_data(self, data: Dict[str, Any], path: str = None) -> Optional[str]:
         """
@@ -617,14 +654,32 @@ class Uploader:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
         """
         if not self.connected:
             logger.error("Not connected to database. Call connect() first.")
             return False
 
         model_type = type(model).__name__.lower()
-        
+        logger.info(f"Uploading {model_type} data...")
+        if "ebeam" in model_type:
+            return self.eModelUpload(model)
+        elif "xbeam" in model_type:
+            return self.xModelUpload(model)
+        elif "geo" in model_type:
+            return self.geoModelUpload(model)
+        else:
+            raise TypeError(f"Unsupported model type: {type(model).__name__}")
+
+    def get_beam_variants(self) -> list:
+        """
+        Fetch the list of valid beam variants using the adapter.
+        """
+        if not self.connected:
+            logger.error("Not connected to database. Call connect() first.")
+            return []
+            
+        return self.db_adapter.get_beam_variants()
 
         if "ebeam" in model_type:
             return self.eModelUpload(model)
@@ -650,6 +705,7 @@ class Uploader:
         try:
             machine_id = model.get_machine_SN()
             beam_variant = model.get_type()  # e.g., "6e", "15x", "6x"
+            typeID = model.get_typeID()
             date = model.get_date()
             
             # List of metrics to upload
@@ -662,6 +718,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'rel_uniformity',
                     'date': date,
                     'value': rel_uniformity
@@ -674,6 +731,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'rel_output',
                     'date': date,
                     'value': rel_output
@@ -687,6 +745,7 @@ class Uploader:
                         'machine_id': machine_id,
                         'check_type': check_type,
                         'beam_variant': beam_variant,
+                        'typeID': typeID,
                         'metric_type': 'center_shift',
                         'date': date,
                         'value': center_shift
@@ -702,6 +761,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'vert_flatness',
                     'date': date,
                     'value': flat_vert
@@ -714,6 +774,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'hori_flatness',
                     'date': date,
                     'value': flat_hori
@@ -726,6 +787,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'vert_symmetry',
                     'date': date,
                     'value': sym_vert
@@ -738,6 +800,7 @@ class Uploader:
                     'machine_id': machine_id,
                     'check_type': check_type,
                     'beam_variant': beam_variant,
+                    'typeID': typeID,
                     'metric_type': 'hori_symmetry',
                     'date': date,
                     'value': sym_hori
@@ -766,7 +829,7 @@ class Uploader:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
     
         For Testing Print logger.info to console
         """
@@ -848,6 +911,7 @@ class Uploader:
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
                 data = {
+                    'typeID': eBeam.get_typeID(),
                     'type': eBeam.get_type(),
                     'date': eBeam.get_date(),
                     'path': eBeam.get_path(),
@@ -880,6 +944,10 @@ class Uploader:
         Also uploads images to Supabase Storage and stores paths in image_paths column.
         """
         try:
+            print("Here in xBeam Upload")
+            print(xBeam.get_typeID())
+            print(xBeam.get_type())
+            print(xBeam.get_date())
             # Check if this is a baseline
             if xBeam.get_baseline():
                 # Upload to baseline table as individual metric records
@@ -908,6 +976,7 @@ class Uploader:
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
                 data = {
+                    'typeID': xBeam.get_typeID(),
                     'type': xBeam.get_type(),
                     'date': xBeam.get_date(),
                     'path': xBeam.get_path(),
@@ -932,7 +1001,7 @@ class Uploader:
     # --- GEO MODEL ---
     def geoModelUpload(self, geoModel):
         """
-        Upload data for Geo6xfffModel to the single beam table or baseline table.
+        Upload data for GeoModel to the single beam table or baseline table.
         Maps to schema: type, date, path, rel_uniformity, rel_output, center_shift, machine_id, note
         
         For baselines: Uploads individual metric records to baseline table.
@@ -972,6 +1041,7 @@ class Uploader:
                 
                 # Prepare basic beam data matching the beam table schema
                 data = {
+                    'typeID': geoModel.get_typeID(),
                     'type': geoModel.get_type(),
                     'date': geoModel.get_date(),
                     'path': geoModel.get_path(),

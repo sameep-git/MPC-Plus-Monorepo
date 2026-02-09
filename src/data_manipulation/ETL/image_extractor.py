@@ -29,6 +29,11 @@ class image_extractor:
         clinical = np.array(XIM(clinicalPath))
         dark = np.array(XIM(darkPath))
         flood = np.array(XIM(floodPath))
+        if is_test:
+            logger.info("Clinical Path: %s", clinicalPath)
+            logger.info("Dark Path: %s", darkPath)
+            logger.info("Flood Path: %s", floodPath)
+            self.show_all_images(clinical, dark, flood)
         
         # Apply corrections
         corrected_flood = flood - dark
@@ -157,6 +162,25 @@ class image_extractor:
         ax_v.set_ylabel("Intensity")
         ax_v.grid(True)
         imageModel.set_vertical_profile_graph(fig_v)
+        plt.close(fig_v)
+    
+    def show_all_images(self, clinical, dark, flood):
+        plt.figure(figsize=(9, 3))
+
+        plt.subplot(1, 3, 1)
+        plt.imshow(clinical, cmap='gray')
+        plt.title("Clinical")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(dark, cmap='gray')
+        plt.title("Dark")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(flood, cmap='gray')
+        plt.title("Flood")
+        plt.axis('off')
         # Note: Not closing figure here - it needs to remain open for later PNG conversion
         # The figure will be garbage collected when no longer referenced
 
@@ -198,3 +222,5 @@ class image_extractor:
         
         logger.info("Created basic profile graphs from image center (FieldAnalysis failed)")
 
+        plt.tight_layout()
+        plt.show()

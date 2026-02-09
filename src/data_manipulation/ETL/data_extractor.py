@@ -3,7 +3,7 @@ Data Extractor Module
 ----------------
 This module defines the `data_extractor` class, responsible for reading and parsing
 beam data from CSV files and populating model objects (EBeamModel, XBeamModel,
-Geo6xfffModel) with corresponding numerical values.
+GeoModel) with corresponding numerical values.
 
 Each extractor method is tailored to a specific beam type and calls the
 appropriate model's setter methods based on CSV field names.
@@ -11,7 +11,7 @@ appropriate model's setter methods based on CSV field names.
 Supported beam models:
     - Electron beams: `EBeamModel`
     - X-ray beams: `XBeamModel`
-    - Geometric beams: `Geo6xfffModel`
+    - Geometric beams: `GeoModel`
 """
 
 import csv
@@ -37,7 +37,7 @@ class data_extractor:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
         """
         model_type = type(model).__name__.lower()
 
@@ -58,7 +58,7 @@ class data_extractor:
         Supported models:
             - EBeamModel
             - XBeamModel
-            - Geo6xfffModel
+            - GeoModel
         """
         model_type = type(model).__name__.lower()
 
@@ -180,7 +180,7 @@ class data_extractor:
     
     def geoModelExtraction(self, geoModel):
         """
-        Extract data for Geo6xfffModel from CSV file.
+        Extract data for GeoModel from CSV file.
         Reads each row and calls the appropriate setter.
         """
         import csv
