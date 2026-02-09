@@ -223,4 +223,4 @@ class image_extractor:
         logger.info("Created basic profile graphs from image center (FieldAnalysis failed)")
 
         plt.tight_layout()
-        plt.show()
+        #plt.show()

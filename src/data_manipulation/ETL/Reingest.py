@@ -85,8 +85,20 @@ def main():
     failed = 0
     skipped = 0
     
-    for idx, subfolder in enumerate(sorted(subfolders), start=1):
+    
+    sorted_folders = sorted(subfolders)
+    start_processing = False
+    
+    RESUME_FROM_FOLDER = Path(r"E:\MPC Data\Weatherford\NDS-WKS-SN6543-2025-10-07-07-14-25-0008-GeometryCheckTemplate6xMVkVEnhancedCouch").resolve()
+    for idx, subfolder in enumerate(sorted_folders, start=121):
         subfolder_path = str(subfolder)
+        if subfolder.resolve() == RESUME_FROM_FOLDER:
+            start_processing = True
+            logger.info(f"Resuming from folder: {subfolder.name}")
+        if not start_processing:
+            continue
+    # for idx, subfolder in enumerate(sorted(subfolders), start=486):
+    #     subfolder_path = str(subfolder)
         logger.info(f"\n{'='*80}")
         logger.info(f"Processing folder {idx} out of {total_folders}: {subfolder.name}")
         print(f"Processing folder {idx} out of {total_folders}: {subfolder.name}")

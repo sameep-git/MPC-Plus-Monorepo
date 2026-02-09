@@ -101,17 +101,6 @@ class DataProcessor:
         Connects to Supabase and determines the beam map dynamically 
         based on available variants.
         """
-        # Connect to database using environment variables to fetch variants
-        connection_params = {
-            "url": os.getenv("SUPABASE_URL"),
-            "key": os.getenv("SUPABASE_KEY"),
-        }
-        
-        # We need to connect to get dynamic variants
-        if not self.up.connect(connection_params):
-            logger.error("Could not connect to Supabase to fetch beam variants.")
-            return None
-
         variants = self.up.get_beam_variants()
         if not variants:
             logger.error("No beam variants returned from database. Cannot proceed.")
@@ -176,6 +165,21 @@ class DataProcessor:
             return m.group(1)
         return None
     
+    def connect_to_db(self):
+        # Connect to database using environment variables to fetch variants
+        connection_params = {
+            "url": os.getenv("SUPABASE_URL"),
+            "key": os.getenv("SUPABASE_KEY"),
+        }
+        
+        # We need to connect to get static variants but connection is need for other parts of the program
+        if not self.up.connect(connection_params):
+            logger.error("Could not connect to Supabase to fetch beam variants.")
+            return None
+        else:
+            logger.info("Connected to Supabase.")
+            return self.up
+    
     
     # -------------------------------------------------------------------------
     # Internal beam dispatcher
@@ -192,6 +196,8 @@ class DataProcessor:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
+        if not is_test:
+            self.connect_to_db()
         #beam_map = self._get_dynamic_beam_map(is_test)
         beam_map = self._get_static_beam_map(is_test)
         if not beam_map:

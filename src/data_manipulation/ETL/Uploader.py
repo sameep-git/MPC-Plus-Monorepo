@@ -52,17 +52,17 @@ class DatabaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> bool:
+    def upload_beam_data(
+        self, 
+        table_name: str, 
+        data: Dict[str, Any], 
+        path: str = None
+    ) -> Dict[str, Any]:
         """
         Upload beam data to the specified table.
-        
-        Args:
-            table_name: Name of the database table
-            data: Dictionary containing the data to upload
-            path: Optional path to extract location from for machine creation
-        
+
         Returns:
-            bool: True if upload successful, False otherwise
+            Dict[str, Any]: The inserted row, including primary key (e.g., 'id')
         """
         pass
 
@@ -215,7 +215,7 @@ class SupabaseAdapter(DatabaseAdapter):
             
             if response.data:
                 logger.info(f"Successfully uploaded data to {table_name}")
-                return True
+                return response.data[0]
             else:
                 logger.warning("No data returned from Supabase insert")
                 return False
@@ -944,10 +944,6 @@ class Uploader:
         Also uploads images to Supabase Storage and stores paths in image_paths column.
         """
         try:
-            print("Here in xBeam Upload")
-            print(xBeam.get_typeID())
-            print(xBeam.get_type())
-            print(xBeam.get_date())
             # Check if this is a baseline
             if xBeam.get_baseline():
                 # Upload to baseline table as individual metric records
@@ -1057,6 +1053,9 @@ class Uploader:
                     'image_paths': json.dumps(image_urls) if image_urls else None  # Store public URLs as JSONB
                 }
                 result = self.db_adapter.upload_beam_data('beams', data)
+                result_id = result.get('id') if isinstance(result, dict) else None
+                if not result_id:
+                    raise RuntimeError("Failed to get beam result_id from upload_beam_data()")
             
             # ========================================================================
             # COMMENTED OUT: Full geometry data extraction
@@ -1110,8 +1109,10 @@ class Uploader:
                 'mlcMaxOffsetB': geoModel.get_MaxOffsetB(),
                 'mlcMeanOffsetA': geoModel.get_MeanOffsetA(),
                 'mlcMeanOffsetB': geoModel.get_MeanOffsetB(),
-                'mlcLeavesA': json.dumps(mlc_leaves_a),  # Store as JSONB
-                'mlcLeavesB': json.dumps(mlc_leaves_b),  # Store as JSONB
+                #'mlcLeavesA': json.dumps(mlc_leaves_a),  # Store as JSONB
+                #'mlcLeavesB': json.dumps(mlc_leaves_b),  # Store as JSONB
+                'mlcLeavesA': json.dumps(self.make_json_safe(mlc_leaves_a)),
+                'mlcLeavesB': json.dumps(self.make_json_safe(mlc_leaves_b)),
             }
             
             # ---- Extract MLC Backlash data (A and B banks, leaves 11-50) ----
@@ -1127,8 +1128,10 @@ class Uploader:
                 'mlcBacklashMaxB': geoModel.get_MLCBacklashMaxB(),
                 'mlcBacklashMeanA': geoModel.get_MLCBacklashMeanA(),
                 'mlcBacklashMeanB': geoModel.get_MLCBacklashMeanB(),
-                'mlcBacklashA': json.dumps(mlc_backlash_a),  # Store as JSONB
-                'mlcBacklashB': json.dumps(mlc_backlash_b),  # Store as JSONB
+                #'mlcBacklashA': json.dumps(mlc_backlash_a),  # Store as JSONB
+                #'mlcBacklashB': json.dumps(mlc_backlash_b),  # Store as JSONB
+                'mlcBacklashA': json.dumps(self.make_json_safe(mlc_backlash_a)),  # Store as JSONB
+                'mlcBacklashB': json.dumps(self.make_json_safe(mlc_backlash_b)),  # Store as JSONB
             }
             
             # ---- Extract Jaws data ----
@@ -1253,6 +1256,20 @@ class Uploader:
         except Exception as e:
             logger.error(f"Error uploading MLC backlash: {e}", exc_info=True)
             return False
+
+
+    def make_json_safe(self, obj):
+        """
+        Recursively convert Decimal objects to float for JSON serialization.
+        """
+        if isinstance(obj, Decimal):
+            return float(obj)
+        elif isinstance(obj, list):
+            return [self.make_json_safe(x) for x in obj]
+        elif isinstance(obj, dict):
+            return {k: self.make_json_safe(v) for k, v in obj.items()}
+        else:
+            return obj
 
     def close(self):
         """Close the database connection."""
