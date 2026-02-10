@@ -73,7 +73,7 @@ public class SupabaseMachineRepository : IMachineRepository
 
         var response = await _client
             .From<MachineEntity>()
-            .Filter(nameof(MachineEntity.Id), Supabase.Postgrest.Constants.Operator.Equals, machine.Id)
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, machine.Id)
             .Update(entity);
 
         return response.Models.Any();
@@ -91,7 +91,7 @@ public class SupabaseMachineRepository : IMachineRepository
 
         await _client
             .From<MachineEntity>()
-            .Filter(nameof(MachineEntity.Id), Supabase.Postgrest.Constants.Operator.Equals, id)
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id)
             .Delete();
 
         return true;
