@@ -29,19 +29,32 @@ class image_extractor:
         clinical = np.array(XIM(clinicalPath))
         dark = np.array(XIM(darkPath))
         flood = np.array(XIM(floodPath))
+        self.show_all_images( clinical, dark, flood)
         if is_test:
             logger.info("Clinical Path: %s", clinicalPath)
             logger.info("Dark Path: %s", darkPath)
             logger.info("Flood Path: %s", floodPath)
-            self.show_all_images(clinical, dark, flood)
+            #self.show_all_images(clinical, dark, flood)
         
         # Apply corrections
-        corrected_flood = flood - dark
+        #corrected_flood = flood - dark
+        corrected_flood = (flood - dark ) / dark
+        #Replce / dark with middle average of clinical 
+        #h, w = clinical.shape
+        #center_pixel = clinical[h//2, w//2]  # Simple center (what you probably want)
+        # h, w = clinical.shape
+        # if h % 2 == 0 and w % 2 == 0:
+        #     # Average of 4 center pixels
+        #     center_pixel = np.mean(clinical[h//2-1:h//2+1, w//2-1:w//2+1])
+        # else:
+        #     center_pixel = clinical[h//2, w//2]
+        # corrected_flood = (flood - dark ) / center_pixel
         corrected_clinical = clinical - dark
         
         # Avoid division by zero
         threshold = 1e-6
         corrected_flood[corrected_flood < threshold] = threshold
+        #corrected_clinical[corrected_flood < threshold] = threshold
         
         # Normalize
         #normalized = corrected_clinical / corrected_flood
@@ -166,6 +179,7 @@ class image_extractor:
         plt.imshow(flood, cmap='gray')
         plt.title("Flood")
         plt.axis('off')
+        #plt.show()
         # Note: Not closing figure here - it needs to remain open for later PNG conversion
         # The figure will be garbage collected when no longer referenced
 
