@@ -41,6 +41,9 @@ public class Beam
     /// <summary>Date when the beam check was accepted/signed off.</summary>
     public DateTime? ApprovedDate { get; set; }
 
+    /// <summary>Image storage paths — maps labels (e.g. "beamImage", "horzProfile") to storage URLs.</summary>
+    public Dictionary<string, string>? ImagePaths { get; set; }
+
     /// <summary>
     /// Convenience property representing a single numeric value to display in UIs.
     /// Priority: RelOutput, RelUniformity, CenterShift.
