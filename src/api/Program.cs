@@ -47,11 +47,15 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
+// CORS origins: configurable via CORS_ORIGINS env var (comma-separated), defaults to localhost:3000
+var corsOrigins = Environment.GetEnvironmentVariable("CORS_ORIGINS")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? new[] { "http://localhost:3000" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });   
