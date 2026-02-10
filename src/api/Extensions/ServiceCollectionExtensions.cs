@@ -53,7 +53,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
@@ -114,7 +115,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
@@ -149,7 +151,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
@@ -178,7 +181,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
@@ -207,7 +211,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
@@ -236,7 +241,8 @@ public static class ServiceCollectionExtensions
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = false,
+                RestUrlFormat = settings.RestUrlFormat
             };
 
             var client = new Client(settings.Url, settings.Key, options);
