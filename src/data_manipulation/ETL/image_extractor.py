@@ -34,11 +34,12 @@ class image_extractor:
             logger.info("Clinical Path: %s", clinicalPath)
             logger.info("Dark Path: %s", darkPath)
             logger.info("Flood Path: %s", floodPath)
-            #self.show_all_images(clinical, dark, flood)
+            self.show_all_images(clinical, dark, flood)
         
         # Apply corrections
         #corrected_flood = flood - dark
-        corrected_flood = (flood - dark ) / dark
+        corrected_flood = (flood - dark) 
+        #/ dark
         #Replce / dark with middle average of clinical 
         #h, w = clinical.shape
         #center_pixel = clinical[h//2, w//2]  # Simple center (what you probably want)
@@ -64,6 +65,7 @@ class image_extractor:
         out=np.zeros_like(corrected_clinical, dtype=np.float32),
         where=corrected_flood > threshold
         )
+        #normalized = corrected_clinical
 
         # Create ArrayImage from normalized data
         img = ArrayImage(normalized, dpi=280)
@@ -179,7 +181,7 @@ class image_extractor:
         plt.imshow(flood, cmap='gray')
         plt.title("Flood")
         plt.axis('off')
-        #plt.show()
+        plt.show()
         # Note: Not closing figure here - it needs to remain open for later PNG conversion
         # The figure will be garbage collected when no longer referenced
 

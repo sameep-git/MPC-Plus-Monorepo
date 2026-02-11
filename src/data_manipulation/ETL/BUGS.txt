@@ -1,7 +1,0 @@
-Current Bugs (2/9/2026):
-- Graphs pop up during processing for Geo and 16e and 6xFFF
-- Geo Checks not working
-- Machine location not working in Supabase
-- 6e Images not working
-- 16e beams not working
-- TODO: Make Geo Sub-Folder in tumb drive
