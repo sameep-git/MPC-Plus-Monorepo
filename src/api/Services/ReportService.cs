@@ -100,10 +100,11 @@ public class ReportService : IReportService
             .GroupBy(g => g.Date.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        // Collect all unique days that have data
+        // Collect all unique days that have data, filtered to the requested range
         IEnumerable<DateTime> geoDays = showGeoChecks ? geoByDay.Keys : Enumerable.Empty<DateTime>();
         var allDays = beamsByDay.Keys
             .Union(geoDays)
+            .Where(d => d.Date >= request.StartDate.Date && d.Date <= request.EndDate.Date)
             .OrderBy(d => d)
             .ToList();
 
@@ -328,6 +329,27 @@ public class ReportService : IReportService
         pass &= IsMetricPassing(geo.GantryRelative, FindThreshold(thresholds, geo.MachineId, "geo", null, "Gantry Relative"));
         pass &= IsMetricPassing(geo.CouchMaxPositionError, FindThreshold(thresholds, geo.MachineId, "geo", null, "Couch Max Position Error"));
         pass &= IsMetricPassing(geo.CollimationRotationOffset, FindThreshold(thresholds, geo.MachineId, "geo", null, "Collimation Rotation"));
+
+        // MLC leaf positions
+        var mlcThreshold = FindThreshold(thresholds, geo.MachineId, "geo", null, "mlc_leaf_position");
+        if (mlcThreshold.HasValue)
+        {
+            if (geo.MLCLeavesA != null)
+                pass &= geo.MLCLeavesA.Values.All(v => Math.Abs(v) <= mlcThreshold.Value);
+            if (geo.MLCLeavesB != null)
+                pass &= geo.MLCLeavesB.Values.All(v => Math.Abs(v) <= mlcThreshold.Value);
+        }
+
+        // MLC backlash
+        var backlashThreshold = FindThreshold(thresholds, geo.MachineId, "geo", null, "mlc_backlash");
+        if (backlashThreshold.HasValue)
+        {
+            if (geo.MLCBacklashA != null)
+                pass &= geo.MLCBacklashA.Values.All(v => Math.Abs(v) <= backlashThreshold.Value);
+            if (geo.MLCBacklashB != null)
+                pass &= geo.MLCBacklashB.Values.All(v => Math.Abs(v) <= backlashThreshold.Value);
+        }
+
         return pass;
     }
 
@@ -425,6 +447,20 @@ public class ReportService : IReportService
         table.Cell().Element(DataCellStyle).Text(thresholdStr);
         table.Cell().Element(DataCellStyle).Text(statusText).FontColor(statusColor);
     }
+
+    // Helper to add a summary pass/fail row for a group of leaves (no individual value shown)
+    private void AddGroupPassFailRow(TableDescriptor table, string name, bool isPass, double? thresholdValue, string unit)
+    {
+        var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
+        var statusText = isPass ? "PASS" : "FAIL";
+        var thresholdStr = thresholdValue.HasValue ? $"± {thresholdValue.Value:F2} {unit}" : "N/A";
+
+        table.Cell().Element(DataCellStyle).Text(name);
+        table.Cell().Element(DataCellStyle).Text(""); // No individual value for group summary
+        table.Cell().Element(DataCellStyle).Text(thresholdStr);
+        table.Cell().Element(DataCellStyle).Text(statusText).FontColor(statusColor);
+    }
+
 
     private void ComposeGeoSection(IContainer container, GeoCheck geo, HashSet<string> selectedGeoTypes,
         IReadOnlyList<Threshold> thresholds)
@@ -539,6 +575,164 @@ public class ReportService : IReportService
 
                         AddGeoMetricRow(table, "Rotation Offset", geo.CollimationRotationOffset, "°",
                             FindThreshold(thresholds, geo.MachineId, "geo", null, "Collimation Rotation"));
+                    });
+                }
+            }
+
+            // MLC
+            if (selectedGeoTypes.Contains("mlc-offsets") || selectedGeoTypes.Contains("mlc-a") || selectedGeoTypes.Contains("mlc-b") || selectedGeoTypes.Count == 0)
+            {
+                bool hasMlcData = geo.MaxOffsetA.HasValue || geo.MaxOffsetB.HasValue || geo.MeanOffsetA.HasValue || geo.MeanOffsetB.HasValue
+                    || (geo.MLCLeavesA != null && geo.MLCLeavesA.Count > 0) || (geo.MLCLeavesB != null && geo.MLCLeavesB.Count > 0);
+
+                if (hasMlcData)
+                {
+                    column.Item().PaddingTop(0.2f, Unit.Centimetre).Text("MLC").FontSize(10).SemiBold();
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
+                        });
+
+                        var mlcThreshold = FindThreshold(thresholds, geo.MachineId, "geo", null, "mlc_leaf_position");
+
+                        if (geo.MaxOffsetA.HasValue)
+                            AddGeoMetricRow(table, "Maximal Offset Leaves A", geo.MaxOffsetA, "mm", mlcThreshold);
+                        if (geo.MaxOffsetB.HasValue)
+                            AddGeoMetricRow(table, "Maximal Offset Leaves B", geo.MaxOffsetB, "mm", mlcThreshold);
+                        if (geo.MeanOffsetA.HasValue)
+                            AddGeoMetricRow(table, "Mean Offset Leaves A", geo.MeanOffsetA, "mm", mlcThreshold);
+                        if (geo.MeanOffsetB.HasValue)
+                            AddGeoMetricRow(table, "Mean Offset Leaves B", geo.MeanOffsetB, "mm", mlcThreshold);
+
+                        // Leaves A overall pass/fail (check if all individual leaves are within threshold)
+                        if (geo.MLCLeavesA != null && geo.MLCLeavesA.Count > 0)
+                        {
+                            bool leavesAPass = !mlcThreshold.HasValue || geo.MLCLeavesA.Values.All(v => Math.Abs(v) <= mlcThreshold.Value);
+                            AddGroupPassFailRow(table, "Leaves A", leavesAPass, mlcThreshold, "mm");
+                        }
+
+                        // Leaves B overall pass/fail
+                        if (geo.MLCLeavesB != null && geo.MLCLeavesB.Count > 0)
+                        {
+                            bool leavesBPass = !mlcThreshold.HasValue || geo.MLCLeavesB.Values.All(v => Math.Abs(v) <= mlcThreshold.Value);
+                            AddGroupPassFailRow(table, "Leaves B", leavesBPass, mlcThreshold, "mm");
+                        }
+                    });
+                }
+            }
+
+            // MLC Reproducibility (Backlash)
+            if (selectedGeoTypes.Contains("backlash-a") || selectedGeoTypes.Contains("backlash-b") || selectedGeoTypes.Count == 0)
+            {
+                bool hasBacklashData = geo.MLCBacklashMaxA.HasValue || geo.MLCBacklashMaxB.HasValue || geo.MLCBacklashMeanA.HasValue || geo.MLCBacklashMeanB.HasValue
+                    || (geo.MLCBacklashA != null && geo.MLCBacklashA.Count > 0) || (geo.MLCBacklashB != null && geo.MLCBacklashB.Count > 0);
+
+                if (hasBacklashData)
+                {
+                    column.Item().PaddingTop(0.2f, Unit.Centimetre).Text("MLC Reproducibility").FontSize(10).SemiBold();
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
+                        });
+
+                        var backlashThreshold = FindThreshold(thresholds, geo.MachineId, "geo", null, "mlc_backlash");
+
+                        if (geo.MLCBacklashMaxA.HasValue)
+                            AddGeoMetricRow(table, "Maximal Reproducibility Leaves A", geo.MLCBacklashMaxA, "mm", backlashThreshold);
+                        if (geo.MLCBacklashMaxB.HasValue)
+                            AddGeoMetricRow(table, "Maximal Reproducibility Leaves B", geo.MLCBacklashMaxB, "mm", backlashThreshold);
+                        if (geo.MLCBacklashMeanA.HasValue)
+                            AddGeoMetricRow(table, "Mean Reproducibility Leaves A", geo.MLCBacklashMeanA, "mm", backlashThreshold);
+                        if (geo.MLCBacklashMeanB.HasValue)
+                            AddGeoMetricRow(table, "Mean Reproducibility Leaves B", geo.MLCBacklashMeanB, "mm", backlashThreshold);
+
+                        // Leaves A overall pass/fail
+                        if (geo.MLCBacklashA != null && geo.MLCBacklashA.Count > 0)
+                        {
+                            bool backlashAPass = !backlashThreshold.HasValue || geo.MLCBacklashA.Values.All(v => Math.Abs(v) <= backlashThreshold.Value);
+                            AddGroupPassFailRow(table, "Leaves A", backlashAPass, backlashThreshold, "mm");
+                        }
+
+                        // Leaves B overall pass/fail
+                        if (geo.MLCBacklashB != null && geo.MLCBacklashB.Count > 0)
+                        {
+                            bool backlashBPass = !backlashThreshold.HasValue || geo.MLCBacklashB.Values.All(v => Math.Abs(v) <= backlashThreshold.Value);
+                            AddGroupPassFailRow(table, "Leaves B", backlashBPass, backlashThreshold, "mm");
+                        }
+                    });
+                }
+            }
+
+            // Jaws
+            if (selectedGeoTypes.Contains("jaws") || selectedGeoTypes.Count == 0)
+            {
+                if (geo.JawX1.HasValue || geo.JawX2.HasValue || geo.JawY1.HasValue || geo.JawY2.HasValue)
+                {
+                    column.Item().PaddingTop(0.2f, Unit.Centimetre).Text("Jaws").FontSize(10).SemiBold();
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
+                        });
+
+                        if (geo.JawX1.HasValue)
+                            AddGeoMetricRow(table, "Jaw X1", geo.JawX1, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "JawX1"));
+                        if (geo.JawX2.HasValue)
+                            AddGeoMetricRow(table, "Jaw X2", geo.JawX2, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "JawX2"));
+                        if (geo.JawY1.HasValue)
+                            AddGeoMetricRow(table, "Jaw Y1", geo.JawY1, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "JawY1"));
+                        if (geo.JawY2.HasValue)
+                            AddGeoMetricRow(table, "Jaw Y2", geo.JawY2, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "JawY2"));
+                    });
+                }
+            }
+
+            // Jaws Parallelism
+            if (selectedGeoTypes.Contains("jaws-parallelism") || selectedGeoTypes.Count == 0)
+            {
+                if (geo.JawParallelismX1.HasValue || geo.JawParallelismX2.HasValue || geo.JawParallelismY1.HasValue || geo.JawParallelismY2.HasValue)
+                {
+                    column.Item().PaddingTop(0.2f, Unit.Centimetre).Text("Jaws Parallelism").FontSize(10).SemiBold();
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn(1);
+                        });
+
+                        if (geo.JawParallelismX1.HasValue)
+                            AddGeoMetricRow(table, "Parallelism X1", geo.JawParallelismX1, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "ParallelismX1"));
+                        if (geo.JawParallelismX2.HasValue)
+                            AddGeoMetricRow(table, "Parallelism X2", geo.JawParallelismX2, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "ParallelismX2"));
+                        if (geo.JawParallelismY1.HasValue)
+                            AddGeoMetricRow(table, "Parallelism Y1", geo.JawParallelismY1, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "ParallelismY1"));
+                        if (geo.JawParallelismY2.HasValue)
+                            AddGeoMetricRow(table, "Parallelism Y2", geo.JawParallelismY2, "mm",
+                                FindThreshold(thresholds, geo.MachineId, "geo", null, "ParallelismY2"));
                     });
                 }
             }
