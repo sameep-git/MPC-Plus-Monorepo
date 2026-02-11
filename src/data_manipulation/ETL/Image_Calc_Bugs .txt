@@ -18,6 +18,9 @@ Image Calculation Notes from Meeting Stephen and Damon:
 
 
 General Bugs (2/11/2026):
-- Machine location not working in Supabase
+- Machine location not working in Supabase (Resolved, Website populated DB)
+- Add timestampz to DB
 - E beam accuracy
 - Syntax error in main.py
+- TODO: 6xMvK is wrong, should just be 6x
+- Dynamic Beam Types (Geo and 6xFFF)
