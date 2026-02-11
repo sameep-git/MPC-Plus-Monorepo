@@ -1,4 +1,5 @@
 using Api.Models;
+using Newtonsoft.Json;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -46,11 +47,28 @@ public class BeamEntity : BaseModel
     [Column("timestamp")]
     public DateTime? Timestamp { get; set; }
 
+    [Column("image_paths")]
+    public string? ImagePaths { get; set; }
+
     /// <summary>
     /// Converts this entity to a domain model.
     /// </summary>
-    public Beam ToModel() =>
-        new()
+    public Beam ToModel()
+    {
+        Dictionary<string, string>? parsedImagePaths = null;
+        if (!string.IsNullOrWhiteSpace(ImagePaths))
+        {
+            try
+            {
+                parsedImagePaths = JsonConvert.DeserializeObject<Dictionary<string, string>>(ImagePaths);
+            }
+            catch
+            {
+                // If parsing fails, leave as null
+            }
+        }
+
+        return new()
         {
             Id = Id,
             Type = Type,
@@ -63,8 +81,10 @@ public class BeamEntity : BaseModel
             MachineId = MachineId,
             Note = Note,
             ApprovedBy = ApprovedBy,
-            ApprovedDate = ApprovedDate
+            ApprovedDate = ApprovedDate,
+            ImagePaths = parsedImagePaths
         };
+    }
 
     /// <summary>
     /// Converts a domain model to this entity.
@@ -83,6 +103,7 @@ public class BeamEntity : BaseModel
             MachineId = beam.MachineId,
             Note = beam.Note,
             ApprovedBy = beam.ApprovedBy,
-            ApprovedDate = beam.ApprovedDate
+            ApprovedDate = beam.ApprovedDate,
+            ImagePaths = beam.ImagePaths != null ? JsonConvert.SerializeObject(beam.ImagePaths) : null
         };
 }
