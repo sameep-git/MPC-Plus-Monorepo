@@ -116,7 +116,8 @@ class DataProcessor:
             # Heuristic based on ending char
             if variant == "6xMVkVEnhancedCouch":
                 # Special case for 6x geometry check
-                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
+                #beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
+                beam_map[variant] = (XBeamModel, "6x", typeID)
             elif variant == "6xFFF":
                 # Special case for 6xFFF check
                 beam_map[variant] = (XBeamModel, "6xFFF", typeID)
@@ -196,10 +197,10 @@ class DataProcessor:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
-        if not is_test:
-            self.connect_to_db()
-        #beam_map = self._get_dynamic_beam_map(is_test)
-        beam_map = self._get_static_beam_map(is_test)
+        
+        self.connect_to_db()
+        beam_map = self._get_dynamic_beam_map(is_test)
+        #beam_map = self._get_static_beam_map(is_test)
         if not beam_map:
             return
 

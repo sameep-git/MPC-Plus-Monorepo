@@ -181,7 +181,7 @@ class image_extractor:
         plt.imshow(flood, cmap='gray')
         plt.title("Flood")
         plt.axis('off')
-        plt.show()
+        #plt.show()
         # Note: Not closing figure here - it needs to remain open for later PNG conversion
         # The figure will be garbage collected when no longer referenced
 
