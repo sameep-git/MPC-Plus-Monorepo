@@ -1,0 +1,26 @@
+Image Calculation Notes from Meeting Stephen and Damon:
+ - .analyze() Hyperparameters
+        - Unlikely cause of the issue
+        - Infield ratio should be 0.8
+- 16e graph is currently inverted - wrong
+- Problem: 
+        - Flood field brightness is too bright
+        - Need to normailze this field, to be center of clinical brightness
+- Solution Ideas
+        - Error Line: corrected_flood = flood - dark
+        - Test these solutions:
+                corrected_flood = (flood - dark) / dark
+                corrected_flood = (flood - dark) / center_pixel_clinical
+                corrected_flood = (flood - dark) / center_pixels_avg_clinical
+                corrected_flood = (flood - dark) / max_pixel_val_clinical
+        - Subtract dark from clinical and flood, normailze, subtract flood from 
+          clinical, FieldAnaysis(clinical)
+
+
+General Bugs (2/11/2026):
+- Machine location not working in Supabase (Resolved, Website populated DB)
+- Add timestampz to DB
+- E beam accuracy
+- Syntax error in main.py
+- TODO: 6xMvK is wrong, should just be 6x
+- Dynamic Beam Types (Geo and 6xFFF)

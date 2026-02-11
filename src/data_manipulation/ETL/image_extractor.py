@@ -29,6 +29,7 @@ class image_extractor:
         clinical = np.array(XIM(clinicalPath))
         dark = np.array(XIM(darkPath))
         flood = np.array(XIM(floodPath))
+        self.show_all_images( clinical, dark, flood)
         if is_test:
             logger.info("Clinical Path: %s", clinicalPath)
             logger.info("Dark Path: %s", darkPath)
@@ -36,12 +37,25 @@ class image_extractor:
             self.show_all_images(clinical, dark, flood)
         
         # Apply corrections
-        corrected_flood = flood - dark
+        #corrected_flood = flood - dark
+        corrected_flood = (flood - dark) 
+        #/ dark
+        #Replce / dark with middle average of clinical 
+        #h, w = clinical.shape
+        #center_pixel = clinical[h//2, w//2]  # Simple center (what you probably want)
+        # h, w = clinical.shape
+        # if h % 2 == 0 and w % 2 == 0:
+        #     # Average of 4 center pixels
+        #     center_pixel = np.mean(clinical[h//2-1:h//2+1, w//2-1:w//2+1])
+        # else:
+        #     center_pixel = clinical[h//2, w//2]
+        # corrected_flood = (flood - dark ) / center_pixel
         corrected_clinical = clinical - dark
         
         # Avoid division by zero
         threshold = 1e-6
         corrected_flood[corrected_flood < threshold] = threshold
+        #corrected_clinical[corrected_flood < threshold] = threshold
         
         # Normalize
         #normalized = corrected_clinical / corrected_flood
@@ -51,82 +65,68 @@ class image_extractor:
         out=np.zeros_like(corrected_clinical, dtype=np.float32),
         where=corrected_flood > threshold
         )
+        #normalized = corrected_clinical
 
         # Create ArrayImage from normalized data
         img = ArrayImage(normalized, dpi=280)
-        
-        # Create FieldAnalysis with the image
-        # Using Protocol.VARIAN as default (can be made configurable)
-        analysis = FieldAnalysis(img)
-        
-        try:
-            # Analyze with VARIAN protocol and in_field_ratio=0.8 (central 80% of field)
-            # This is more robust than default settings
-            analysis.analyze(
-                protocol=Protocol.VARIAN,
-                in_field_ratio=0.8,  # Use central 80% of field for metrics
-                edge_detection_method='FWHM',  # Use FWHM for edge detection
-            )
-            r = analysis.results_data()
-            
-            # Extract and store horizontal and vertical flatness graphs
-            self.create_graphs(analysis, imageModel)
 
-            # Set flatness and symmetry values from analysis results
-            imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
-            imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
-            imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
-            imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
-            
-        except Exception as e:
-            logger.error(f"Error during FieldAnalysis.analyze(): {e}")
-            logger.warning("Attempting analysis with relaxed parameters...")
-            
+        # Create FieldAnalysis with the image
+        analysis = FieldAnalysis(img)
+
+        # Define the sequence of analysis attempts
+        attempts = [
+            {"protocol": Protocol.VARIAN, "in_field_ratio": 0.8, "edge_detection_method": "FWHM"},
+            {"protocol": Protocol.VARIAN, "in_field_ratio": 0.5, "edge_detection_method": "FWHM"},
+            {}  # Generic call with no parameters
+        ]
+
+        analysis_successful = False
+
+        for i, params in enumerate(attempts, start=1):
             try:
-                # Try with more relaxed parameters
-                analysis.analyze(
-                    protocol=Protocol.VARIAN,
-                    in_field_ratio=0.5,  # Use central 50% if 80% fails
-                    edge_detection_method='FWHM',
-                )
+                logger.info(f"Attempt {i}: Running FieldAnalysis")
+                analysis.analyze(**params)
                 r = analysis.results_data()
-                
-                # Extract and store graphs
+
+                # Extract and store horizontal and vertical flatness graphs
                 self.create_graphs(analysis, imageModel)
-                
-                # Set values
+
+                # Set flatness and symmetry values from analysis results
                 imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
                 imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
                 imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
                 imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
-                
-            except Exception as e2:
-                logger.error(f"FieldAnalysis failed even with relaxed parameters: {e2}")
-                logger.warning("Creating basic profile graphs without full analysis...")
-                
-                # Fallback: Create basic profile graphs from the image data directly
-                # This ensures we at least get the profile graphs even if analysis fails
-                try:
-                    self.create_basic_graphs(img, imageModel)
-                    # Set None values for metrics since analysis failed
-                    imageModel.set_symmetry_horizontal(None)
-                    imageModel.set_symmetry_vertical(None)
-                    imageModel.set_flatness_horizontal(None)
-                    imageModel.set_flatness_vertical(None)
-                except Exception as e3:
-                    logger.error(f"Failed to create basic graphs: {e3}")
-                    raise
-        if is_test:
-            # Print numerical analysis results to the console
-            logger.info(f"Flatness (Horizontal): {imageModel.get_flatness_horizontal()}")
-            logger.info(f"Flatness (Vertical):   {imageModel.get_flatness_vertical()}")
-            logger.info(f"Symmetry (Horizontal): {imageModel.get_symmetry_horizontal()}")
-            logger.info(f"Symmetry (Vertical):   {imageModel.get_symmetry_vertical()}")
-            # Display Flatness and Symmetry Profiles
-            fig = imageModel.get_horizontal_profile_graph()
-            fig.savefig("horizontal_profile.png") 
-            fig = imageModel.get_vertical_profile_graph()
-            fig.savefig("vertical_profile.png") 
+
+                analysis_successful = True
+                logger.info("FieldAnalysis completed successfully")
+                if is_test:
+                    logger.info(f"Flatness (Horizontal): {imageModel.get_flatness_horizontal()}")
+                    logger.info(f"Flatness (Vertical):   {imageModel.get_flatness_vertical()}")
+                    logger.info(f"Symmetry (Horizontal): {imageModel.get_symmetry_horizontal()}")
+                    logger.info(f"Symmetry (Vertical):   {imageModel.get_symmetry_vertical()}")
+                    # Display Flatness and Symmetry Profiles
+                    fig = imageModel.get_horizontal_profile_graph()
+                    fig.savefig("horizontal_profile.png") 
+                    fig = imageModel.get_vertical_profile_graph()
+                    fig.savefig("vertical_profile.png") 
+                break
+
+            except Exception as e:
+                logger.error(f"Attempt {i} failed: {e}")
+                if i < len(attempts):
+                    logger.warning("Trying next analysis attempt...")
+                else:
+                    logger.error("All FieldAnalysis attempts failed, falling back to basic graph extraction")
+                    try:
+                        self.create_basic_graphs(img, imageModel)
+                        imageModel.set_symmetry_horizontal(None)
+                        imageModel.set_symmetry_vertical(None)
+                        imageModel.set_flatness_horizontal(None)
+                        imageModel.set_flatness_vertical(None)
+                    except Exception as e2:
+                        logger.error(f"Failed to create basic graphs: {e2}")
+                        raise
+
 
     
     def create_graphs(self, analysis, imageModel):
@@ -181,6 +181,7 @@ class image_extractor:
         plt.imshow(flood, cmap='gray')
         plt.title("Flood")
         plt.axis('off')
+        #plt.show()
         # Note: Not closing figure here - it needs to remain open for later PNG conversion
         # The figure will be garbage collected when no longer referenced
 
@@ -223,4 +224,4 @@ class image_extractor:
         logger.info("Created basic profile graphs from image center (FieldAnalysis failed)")
 
         plt.tight_layout()
-        plt.show()
+        #plt.show()

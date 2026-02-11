@@ -101,17 +101,6 @@ class DataProcessor:
         Connects to Supabase and determines the beam map dynamically 
         based on available variants.
         """
-        # Connect to database using environment variables to fetch variants
-        connection_params = {
-            "url": os.getenv("SUPABASE_URL"),
-            "key": os.getenv("SUPABASE_KEY"),
-        }
-        
-        # We need to connect to get dynamic variants
-        if not self.up.connect(connection_params):
-            logger.error("Could not connect to Supabase to fetch beam variants.")
-            return None
-
         variants = self.up.get_beam_variants()
         if not variants:
             logger.error("No beam variants returned from database. Cannot proceed.")
@@ -127,7 +116,8 @@ class DataProcessor:
             # Heuristic based on ending char
             if variant == "6xMVkVEnhancedCouch":
                 # Special case for 6x geometry check
-                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
+                #beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
+                beam_map[variant] = (XBeamModel, "6x", typeID)
             elif variant == "6xFFF":
                 # Special case for 6xFFF check
                 beam_map[variant] = (XBeamModel, "6xFFF", typeID)
@@ -140,6 +130,32 @@ class DataProcessor:
         
         return beam_map
 
+    def _get_static_beam_map(self, is_test=False):
+        """
+        Returns a static beam map for reingesting purposes.
+        id,variant
+        14ddae42-77a5-4e6a-8f27-6c2b98cb9780,10x
+        1b1f54a1-d35f-4516-8c4b-0c19bada5d6c,16e
+        253c1694-12d0-4497-9bd0-8487ee7c6f6f,6xMVkVEnhancedCouch
+        439e3427-0e3d-4487-99fb-4d5e1c37ea34,12e
+        7e997180-82f5-4922-b10a-d9ef9ecd22a9,15x
+        a285aac2-1b63-4cd1-b7c5-76fcb4d95b84,9e
+        b7afb3b6-8955-479f-a7b4-354b85ab9ff6,2.5x
+        e6763342-a180-444a-a869-ce57d1b086b1,6e
+        ffda6e9f-8f4d-48c3-8270-621d4a99db51,6xFFF
+        """
+        return {
+            "6xMVkVEnhancedCouch": (GeoModel, "6xMVkVEnhancedCouch", "253c1694-12d0-4497-9bd0-8487ee7c6f6f"),
+            "6xFFF": (XBeamModel, "6xFFF", "ffda6e9f-8f4d-48c3-8270-621d4a99db51"),
+            "6e": (EBeamModel, "6e", "e6763342-a180-444a-a869-ce57d1b086b1"),
+            "9e": (EBeamModel, "9e", "a285aac2-1b63-4cd1-b7c5-76fcb4d95b84"),
+            "12e": (EBeamModel, "12e", "439e3427-0e3d-4487-99fb-4d5e1c37ea34"),
+            "15x": (XBeamModel, "15x", "7e997180-82f5-4922-b10a-d9ef9ecd22a9"),
+            "16e": (EBeamModel, "16e", "1b1f54a1-d35f-4516-8c4b-0c19bada5d6c"),
+            "2.5x": (XBeamModel, "2.5x", "b7afb3b6-8955-479f-a7b4-354b85ab9ff6"),
+            "10x": (XBeamModel, "10x", "14ddae42-77a5-4e6a-8f27-6c2b98cb9780"),
+        }
+
     def extract_beam_type(self, path: str) -> str | None:
         """
         Extract the beam type from the path.
@@ -149,6 +165,21 @@ class DataProcessor:
         if m:
             return m.group(1)
         return None
+    
+    def connect_to_db(self):
+        # Connect to database using environment variables to fetch variants
+        connection_params = {
+            "url": os.getenv("SUPABASE_URL"),
+            "key": os.getenv("SUPABASE_KEY"),
+        }
+        
+        # We need to connect to get static variants but connection is need for other parts of the program
+        if not self.up.connect(connection_params):
+            logger.error("Could not connect to Supabase to fetch beam variants.")
+            return None
+        else:
+            logger.info("Connected to Supabase.")
+            return self.up
     
     
     # -------------------------------------------------------------------------
@@ -166,7 +197,10 @@ class DataProcessor:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
+        
+        self.connect_to_db()
         beam_map = self._get_dynamic_beam_map(is_test)
+        #beam_map = self._get_static_beam_map(is_test)
         if not beam_map:
             return
 

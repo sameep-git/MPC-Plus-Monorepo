@@ -52,17 +52,17 @@ class DatabaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> bool:
+    def upload_beam_data(
+        self, 
+        table_name: str, 
+        data: Dict[str, Any], 
+        path: str = None
+    ) -> Dict[str, Any]:
         """
         Upload beam data to the specified table.
-        
-        Args:
-            table_name: Name of the database table
-            data: Dictionary containing the data to upload
-            path: Optional path to extract location from for machine creation
-        
+
         Returns:
-            bool: True if upload successful, False otherwise
+            Dict[str, Any]: The inserted row, including primary key (e.g., 'id')
         """
         pass
 
@@ -215,7 +215,7 @@ class SupabaseAdapter(DatabaseAdapter):
             
             if response.data:
                 logger.info(f"Successfully uploaded data to {table_name}")
-                return True
+                return response.data[0]
             else:
                 logger.warning("No data returned from Supabase insert")
                 return False
@@ -944,10 +944,6 @@ class Uploader:
         Also uploads images to Supabase Storage and stores paths in image_paths column.
         """
         try:
-            print("Here in xBeam Upload")
-            print(xBeam.get_typeID())
-            print(xBeam.get_type())
-            print(xBeam.get_date())
             # Check if this is a baseline
             if xBeam.get_baseline():
                 # Upload to baseline table as individual metric records
@@ -1001,170 +997,117 @@ class Uploader:
     # --- GEO MODEL ---
     def geoModelUpload(self, geoModel):
         """
-        Upload data for GeoModel to the single beam table or baseline table.
-        Maps to schema: type, date, path, rel_uniformity, rel_output, center_shift, machine_id, note
+        Upload data for GeoModel to the geochecks table (with MLC detail rows)
+        or the baseline table.
         
         For baselines: Uploads individual metric records to baseline table.
-        For regular beams: Uploads single record to beam table.
-        Also uploads images to Supabase Storage and stores paths in image_paths column.
-        
-        Note: Geometry models have additional data (isocenter, gantry, couch, MLC, jaws) 
-        that is not stored in the basic beam table. The full extraction code is 
-        commented out below for easy re-enabling when geometry tables are created.
+        For regular checks: Uploads a single row to the geochecks table containing
+        all geometry fields (isocenter, collimation, gantry, couch, jaws, jaw parallelism,
+        MLC offsets/backlash summaries, and MLC leaf/backlash JSONB arrays).
+        Then uploads individual MLC leaf and backlash rows to child tables.
         """
         try:
             # Check if this is a baseline
             if geoModel.get_baseline():
                 # Upload to baseline table as individual metric records
                 return self._upload_baseline_metrics(geoModel, check_type='geometry')
-            else:
-                # Upload images to Supabase Storage first
-                image_urls = None
-                image_model = geoModel.get_image_model()
-                if image_model:
-                    base_folder_path = self._generate_image_folder_path(geoModel)
-                    
-                    # Get images from the model
-                    beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
-                    horizontal_profile = geoModel.get_horizontal_profile_graph()
-                    vertical_profile = geoModel.get_vertical_profile_graph()
-                    
-                    # Upload images (using default bucket name "beam-images", can be configured)
-                    # Returns dictionary with public URLs: {"beamImage": "https://...", "horzProfile": "https://...", "vertProfile": "https://..."}
-                    image_urls = self.db_adapter.upload_beam_images(
-                        bucket_name="beam-images",
-                        base_folder_path=base_folder_path,
-                        beam_image=beam_image,
-                        horizontal_profile=horizontal_profile,
-                        vertical_profile=vertical_profile
-                    )
-                
-                # Prepare basic beam data matching the beam table schema
-                data = {
-                    'typeID': geoModel.get_typeID(),
-                    'type': geoModel.get_type(),
-                    'date': geoModel.get_date(),
-                    'path': geoModel.get_path(),
-                    'rel_uniformity': geoModel.get_relative_uniformity(),
-                    'rel_output': geoModel.get_relative_output(),
-                    'center_shift': geoModel.get_center_shift(),
-                    'vert_flatness': geoModel.get_flatness_vertical(),
-                    'hori_flatness': geoModel.get_flatness_horizontal(),
-                    'vert_symmetry': geoModel.get_symmetry_vertical(),
-                    'hori_symmetry': geoModel.get_symmetry_horizontal(),
-                    'machine_id': geoModel.get_machine_SN(),
-                    'note': None,  # Add note if available in the model
-                    'image_paths': json.dumps(image_urls) if image_urls else None  # Store public URLs as JSONB
-                }
-                result = self.db_adapter.upload_beam_data('beams', data)
             
-            # ========================================================================
-            # COMMENTED OUT: Full geometry data extraction
-            # Uncomment when geometry_data table is created
-            # ========================================================================
-            
-            # ---- Extract IsoCenterGroup data ----
-            isocenter_data = {
-                'beam_id': result_id,  # Foreign key to beam table
-                'isoCenterSize': geoModel.get_IsoCenterSize(),
-                'isoCenterMVOffset': geoModel.get_IsoCenterMVOffset(),
-                'isoCenterKVOffset': geoModel.get_IsoCenterKVOffset(),
-            }
-            
-            # ---- Extract CollimationGroup data ----
-            collimation_data = {
-                'beam_id': result_id,
-                'collimationRotationOffset': geoModel.get_CollimationRotationOffset(),
-            }
-            
-            # ---- Extract GantryGroup data ----
-            gantry_data = {
-                'beam_id': result_id,
-                'gantryAbsolute': geoModel.get_GantryAbsolute(),
-                'gantryRelative': geoModel.get_GantryRelative(),
-            }
-            
-            # ---- Extract EnhancedCouchGroup data ----
-            couch_data = {
-                'beam_id': result_id,
-                'couchMaxPositionError': geoModel.get_CouchMaxPositionError(),
-                'couchLat': geoModel.get_CouchLat(),
-                'couchLng': geoModel.get_CouchLng(),
-                'couchVrt': geoModel.get_CouchVrt(),
-                'couchRtnFine': geoModel.get_CouchRtnFine(),
-                'couchRtnLarge': geoModel.get_CouchRtnLarge(),
-                'rotationInducedCouchShiftFullRange': geoModel.get_RotationInducedCouchShiftFullRange(),
-            }
-            
-            # ---- Extract MLC Leaves data (A and B banks, leaves 11-50) ----
+            # ---- Build MLC leaf data (A and B banks, leaves 11-50) ----
             mlc_leaves_a = {}
             mlc_leaves_b = {}
             for i in range(11, 51):
                 mlc_leaves_a[f"leaf_{i}"] = geoModel.get_MLCLeafA(i)
                 mlc_leaves_b[f"leaf_{i}"] = geoModel.get_MLCLeafB(i)
             
-            # ---- Extract MLC Offsets ----
-            mlc_offset_data = {
-                'beam_id': result_id,
-                'mlcMaxOffsetA': geoModel.get_MaxOffsetA(),
-                'mlcMaxOffsetB': geoModel.get_MaxOffsetB(),
-                'mlcMeanOffsetA': geoModel.get_MeanOffsetA(),
-                'mlcMeanOffsetB': geoModel.get_MeanOffsetB(),
-                'mlcLeavesA': json.dumps(mlc_leaves_a),  # Store as JSONB
-                'mlcLeavesB': json.dumps(mlc_leaves_b),  # Store as JSONB
-            }
-            
-            # ---- Extract MLC Backlash data (A and B banks, leaves 11-50) ----
+            # ---- Build MLC backlash data (A and B banks, leaves 11-50) ----
             mlc_backlash_a = {}
             mlc_backlash_b = {}
             for i in range(11, 51):
                 mlc_backlash_a[f"leaf_{i}"] = geoModel.get_MLCBacklashA(i)
                 mlc_backlash_b[f"leaf_{i}"] = geoModel.get_MLCBacklashB(i)
             
-            mlc_backlash_data = {
-                'beam_id': result_id,
-                'mlcBacklashMaxA': geoModel.get_MLCBacklashMaxA(),
-                'mlcBacklashMaxB': geoModel.get_MLCBacklashMaxB(),
-                'mlcBacklashMeanA': geoModel.get_MLCBacklashMeanA(),
-                'mlcBacklashMeanB': geoModel.get_MLCBacklashMeanB(),
-                'mlcBacklashA': json.dumps(mlc_backlash_a),  # Store as JSONB
-                'mlcBacklashB': json.dumps(mlc_backlash_b),  # Store as JSONB
+            # ---- Build single geochecks row with ALL geometry fields ----
+            geocheck_data = {
+                'machine_id': geoModel.get_machine_SN(),
+                'date': geoModel.get_date(),
+                'path': geoModel.get_path(),
+                'type': geoModel.get_type(),
+                'note': None,
+                # Beam metrics
+                'relative_output': geoModel.get_relative_output(),
+                'relative_uniformity': geoModel.get_relative_uniformity(),
+                'center_shift': geoModel.get_center_shift(),
+                # Isocenter
+                'iso_center_size': geoModel.get_IsoCenterSize(),
+                'iso_center_mv_offset': geoModel.get_IsoCenterMVOffset(),
+                'iso_center_kv_offset': geoModel.get_IsoCenterKVOffset(),
+                # Collimation
+                'collimation_rotation_offset': geoModel.get_CollimationRotationOffset(),
+                # Gantry
+                'gantry_absolute': geoModel.get_GantryAbsolute(),
+                'gantry_relative': geoModel.get_GantryRelative(),
+                # Couch
+                'couch_max_position_error': geoModel.get_CouchMaxPositionError(),
+                'couch_lat': geoModel.get_CouchLat(),
+                'couch_lng': geoModel.get_CouchLng(),
+                'couch_vrt': geoModel.get_CouchVrt(),
+                'couch_rtn_fine': geoModel.get_CouchRtnFine(),
+                'couch_rtn_large': geoModel.get_CouchRtnLarge(),
+                'rotation_induced_couch_shift_full_range': geoModel.get_RotationInducedCouchShiftFullRange(),
+                # MLC offsets (summary values)
+                'max_offset_a': geoModel.get_MaxOffsetA(),
+                'max_offset_b': geoModel.get_MaxOffsetB(),
+                'mean_offset_a': geoModel.get_MeanOffsetA(),
+                'mean_offset_b': geoModel.get_MeanOffsetB(),
+                # MLC backlash (summary values)
+                'mlc_backlash_max_a': geoModel.get_MLCBacklashMaxA(),
+                'mlc_backlash_max_b': geoModel.get_MLCBacklashMaxB(),
+                'mlc_backlash_mean_a': geoModel.get_MLCBacklashMeanA(),
+                'mlc_backlash_mean_b': geoModel.get_MLCBacklashMeanB(),
+                # Jaws
+                'jaw_x1': geoModel.get_JawX1(),
+                'jaw_x2': geoModel.get_JawX2(),
+                'jaw_y1': geoModel.get_JawY1(),
+                'jaw_y2': geoModel.get_JawY2(),
+                # Jaw parallelism
+                'jaw_parallelism_x1': geoModel.get_JawParallelismX1(),
+                'jaw_parallelism_x2': geoModel.get_JawParallelismX2(),
+                'jaw_parallelism_y1': geoModel.get_JawParallelismY1(),
+                'jaw_parallelism_y2': geoModel.get_JawParallelismY2(),
             }
             
-            # ---- Extract Jaws data ----
-            jaws_data = {
-                'beam_id': result_id,
-                'jawX1': geoModel.get_JawX1(),
-                'jawX2': geoModel.get_JawX2(),
-                'jawY1': geoModel.get_JawY1(),
-                'jawY2': geoModel.get_JawY2(),
-            }
+            # Upload to geochecks table (returns geocheck_id)
+            geocheck_id = self.db_adapter.upload_geocheck_data(geocheck_data, path=geoModel.get_path())
             
-            # ---- Extract Jaw Parallelism data ----
-            jaw_parallelism_data = {
-                'beam_id': result_id,
-                'jawParallelismX1': geoModel.get_JawParallelismX1(),
-                'jawParallelismX2': geoModel.get_JawParallelismX2(),
-                'jawParallelismY1': geoModel.get_JawParallelismY1(),
-                'jawParallelismY2': geoModel.get_JawParallelismY2(),
-            }
+            if not geocheck_id:
+                raise RuntimeError("Failed to get geocheck_id from upload_geocheck_data()")
             
-            # ---- Upload to geometry tables ----
-            # Uncomment and adjust table names when geometry tables are created
-            self.db_adapter.upload_beam_data('geometry_isocenter', isocenter_data)
-            self.db_adapter.upload_beam_data('geometry_collimation', collimation_data)
-            self.db_adapter.upload_beam_data('geometry_gantry', gantry_data)
-            self.db_adapter.upload_beam_data('geometry_couch', couch_data)
-            self.db_adapter.upload_beam_data('geometry_mlc', mlc_offset_data)
-            self.db_adapter.upload_beam_data('geometry_mlc_backlash', mlc_backlash_data)
-            self.db_adapter.upload_beam_data('geometry_jaws', jaws_data)
-            self.db_adapter.upload_beam_data('geometry_jaw_parallelism', jaw_parallelism_data)
+            # ---- Upload MLC leaf detail rows to child tables ----
+            leaves_a_list = [
+                {'leaf_number': i, 'leaf_value': geoModel.get_MLCLeafA(i)}
+                for i in range(11, 51)
+            ]
+            leaves_b_list = [
+                {'leaf_number': i, 'leaf_value': geoModel.get_MLCLeafB(i)}
+                for i in range(11, 51)
+            ]
+            self.db_adapter.upload_mlc_leaves(geocheck_id, leaves_a_list, bank='a')
+            self.db_adapter.upload_mlc_leaves(geocheck_id, leaves_b_list, bank='b')
             
-            # ========================================================================
-            # END OF COMMENTED GEOMETRY DATA
-            # ========================================================================
+            # ---- Upload MLC backlash detail rows to child tables ----
+            backlash_a_list = [
+                {'leaf_number': i, 'backlash_value': geoModel.get_MLCBacklashA(i)}
+                for i in range(11, 51)
+            ]
+            backlash_b_list = [
+                {'leaf_number': i, 'backlash_value': geoModel.get_MLCBacklashB(i)}
+                for i in range(11, 51)
+            ]
+            self.db_adapter.upload_mlc_backlash(geocheck_id, backlash_a_list, bank='a')
+            self.db_adapter.upload_mlc_backlash(geocheck_id, backlash_b_list, bank='b')
             
-            return result
+            logger.info(f"Successfully uploaded geometry check with geocheck_id: {geocheck_id}")
+            return geocheck_id
 
         except Exception as e:
             logger.error(f"Error during Geo model upload: {e}", exc_info=True)
@@ -1253,6 +1196,20 @@ class Uploader:
         except Exception as e:
             logger.error(f"Error uploading MLC backlash: {e}", exc_info=True)
             return False
+
+
+    def make_json_safe(self, obj):
+        """
+        Recursively convert Decimal objects to float for JSON serialization.
+        """
+        if isinstance(obj, Decimal):
+            return float(obj)
+        elif isinstance(obj, list):
+            return [self.make_json_safe(x) for x in obj]
+        elif isinstance(obj, dict):
+            return {k: self.make_json_safe(v) for k, v in obj.items()}
+        else:
+            return obj
 
     def close(self):
         """Close the database connection."""
