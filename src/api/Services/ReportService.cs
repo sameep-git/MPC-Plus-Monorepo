@@ -37,7 +37,7 @@ public class ReportService : IReportService
         // 2. Parse SelectedChecks
         Console.WriteLine($"[ReportService] SelectedChecks: [{string.Join(", ", request.SelectedChecks)}]");
 
-        var selectedBeamIds = request.SelectedChecks
+        var selectedBeamTypes = request.SelectedChecks
             .Where(c => c.StartsWith("beam-", StringComparison.OrdinalIgnoreCase))
             .Select(c => c.Substring(5))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -47,7 +47,7 @@ public class ReportService : IReportService
             .Select(c => c.Substring(4))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        Console.WriteLine($"[ReportService] Parsed beam IDs count: {selectedBeamIds.Count}");
+        Console.WriteLine($"[ReportService] Parsed beam types count: {selectedBeamTypes.Count}, types: [{string.Join(", ", selectedBeamTypes)}]");
         Console.WriteLine($"[ReportService] Parsed geo types: [{string.Join(", ", selectedGeoTypes)}]");
 
         // 3. Fetch ALL data for the full range once
@@ -75,14 +75,14 @@ public class ReportService : IReportService
 
         // 4. Filter data by selected checks
         List<Beam> filteredBeams;
-        if (selectedBeamIds.Count == 0)
+        if (selectedBeamTypes.Count == 0)
         {
             filteredBeams = allBeams.OrderBy(b => b.Date).ThenBy(b => b.Type).ToList();
         }
         else
         {
             filteredBeams = allBeams
-                .Where(b => selectedBeamIds.Contains(b.Id ?? ""))
+                .Where(b => selectedBeamTypes.Contains(b.Type ?? ""))
                 .OrderBy(b => b.Date)
                 .ThenBy(b => b.Type)
                 .ToList();
