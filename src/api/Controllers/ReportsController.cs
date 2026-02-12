@@ -16,10 +16,12 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
-    /// Generates a PDF report based on the provided request.
+    /// Generates a report based on the provided request.
+    /// Returns a single PDF for single-day data, or a ZIP archive
+    /// containing one PDF per day for multi-day data.
     /// </summary>
     /// <param name="request">The report generation request.</param>
-    /// <returns>A PDF file download.</returns>
+    /// <returns>A PDF or ZIP file download.</returns>
     [HttpPost("generate")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -38,10 +40,9 @@ public class ReportsController : ControllerBase
 
         try
         {
-            var pdfBytes = await _reportService.GenerateReportAsync(request, cancellationToken);
-            var fileName = $"MPC_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-            Console.WriteLine($"[ReportsController] PDF generated successfully. Size: {pdfBytes.Length} bytes.");
-            return File(pdfBytes, "application/pdf", fileName);
+            var (data, contentType, fileName) = await _reportService.GenerateReportAsync(request, cancellationToken);
+            Console.WriteLine($"[ReportsController] Report generated successfully. Size: {data.Length} bytes, Type: {contentType}, File: {fileName}");
+            return File(data, contentType, fileName);
         }
         catch (Exception ex)
         {

@@ -8,10 +8,12 @@ namespace Api.Services;
 public interface IReportService
 {
     /// <summary>
-    /// Generates a PDF report based on the provided request.
+    /// Generates a report based on the provided request.
+    /// Returns per-day PDFs: a single PDF if only one day has data,
+    /// or a ZIP archive containing one PDF per day if multiple days have data.
     /// </summary>
     /// <param name="request">The report generation request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The PDF file content as a byte array.</returns>
-    Task<byte[]> GenerateReportAsync(ReportRequest request, CancellationToken cancellationToken = default);
+    /// <returns>A tuple of (file bytes, content type, suggested filename).</returns>
+    Task<(byte[] Data, string ContentType, string FileName)> GenerateReportAsync(ReportRequest request, CancellationToken cancellationToken = default);
 }
