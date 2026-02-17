@@ -55,14 +55,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors("AllowFrontend");
+
 app.UseStaticFiles(); // Enable static file serving for images
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-
-app.UseCors("AllowFrontend");
 
 app.MapControllers();
 
