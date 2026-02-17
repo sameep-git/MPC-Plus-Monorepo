@@ -121,7 +121,7 @@ class PostgresAdapter(DatabaseAdapter):
                 port = connection_params.get('port', 5432)
                 dbname = connection_params.get('dbname', 'mpc_plus_db')
                 user = connection_params.get('user', 'postgres')
-                password = connection_params.get('password', 'postgres')
+                password = connection_params.get('password', os.environ.get('PGPASSWORD', ''))
                 conn_str = f"host={host} port={port} dbname={dbname} user={user} password={password}"
 
             self.conn = psycopg2.connect(conn_str)
