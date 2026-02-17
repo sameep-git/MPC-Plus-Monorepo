@@ -77,11 +77,27 @@ public class GeoCheck
     public double? RotationInducedCouchShiftFullRange { get; set; }
 
     // ---- MLCGroup ----
+    /// <summary>Raw JSON for MLC leaves A from DB.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? MLCLeavesAJson { get; set; }
+
+    /// <summary>Raw JSON for MLC leaves B from DB.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? MLCLeavesBJson { get; set; }
+
     /// <summary>MLC leaves A measurements (Leaf11-Leaf50).</summary>
-    public Dictionary<string, double>? MLCLeavesA { get; set; }
+    public Dictionary<string, double>? MLCLeavesA
+    {
+        get => ParseJsonDict(MLCLeavesAJson);
+        set => MLCLeavesAJson = value != null ? System.Text.Json.JsonSerializer.Serialize(value) : null;
+    }
 
     /// <summary>MLC leaves B measurements (Leaf11-Leaf50).</summary>
-    public Dictionary<string, double>? MLCLeavesB { get; set; }
+    public Dictionary<string, double>? MLCLeavesB
+    {
+        get => ParseJsonDict(MLCLeavesBJson);
+        set => MLCLeavesBJson = value != null ? System.Text.Json.JsonSerializer.Serialize(value) : null;
+    }
 
     /// <summary>Maximum offset for MLC bank A.</summary>
     public double? MaxOffsetA { get; set; }
@@ -96,11 +112,27 @@ public class GeoCheck
     public double? MeanOffsetB { get; set; }
 
     // ---- MLCBacklashGroup ----
+    /// <summary>Raw JSON for MLC backlash A from DB.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? MLCBacklashAJson { get; set; }
+
+    /// <summary>Raw JSON for MLC backlash B from DB.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? MLCBacklashBJson { get; set; }
+
     /// <summary>MLC backlash A measurements (Leaf11-Leaf50).</summary>
-    public Dictionary<string, double>? MLCBacklashA { get; set; }
+    public Dictionary<string, double>? MLCBacklashA
+    {
+        get => ParseJsonDict(MLCBacklashAJson);
+        set => MLCBacklashAJson = value != null ? System.Text.Json.JsonSerializer.Serialize(value) : null;
+    }
 
     /// <summary>MLC backlash B measurements (Leaf11-Leaf50).</summary>
-    public Dictionary<string, double>? MLCBacklashB { get; set; }
+    public Dictionary<string, double>? MLCBacklashB
+    {
+        get => ParseJsonDict(MLCBacklashBJson);
+        set => MLCBacklashBJson = value != null ? System.Text.Json.JsonSerializer.Serialize(value) : null;
+    }
 
     /// <summary>Maximum backlash for MLC bank A.</summary>
     public double? MLCBacklashMaxA { get; set; }
@@ -148,4 +180,28 @@ public class GeoCheck
 
     /// <summary>Date when the geometry check was accepted/signed off.</summary>
     public DateTime? ApprovedDate { get; set; }
+
+    /// <summary>ID of the beam variant (e.g. 6xff).</summary>
+    public Guid? BeamVariantId { get; set; }
+
+    /// <summary>Helper to parse potentially double-serialized JSONB dictionaries.</summary>
+    private static Dictionary<string, double>? ParseJsonDict(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+        try
+        {
+            // Handle double-serialized JSONB: if the value is a JSON string (starts with '"'),
+            // unwrap it first to get the inner JSON object.
+            if (json.StartsWith("\""))
+            {
+                json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                if (string.IsNullOrEmpty(json)) return null;
+            }
+            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, double>>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

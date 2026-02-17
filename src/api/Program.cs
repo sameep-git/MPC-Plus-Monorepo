@@ -20,22 +20,8 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Override configuration with environment variables
-var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
-var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
-
-Console.WriteLine($"[DEBUG] SUPABASE_URL: {supabaseUrl}");
-Console.WriteLine($"[DEBUG] SUPABASE_KEY: {(string.IsNullOrWhiteSpace(supabaseKey) ? "EMPTY" : "SET")}");
-
-builder.Configuration["Supabase:Url"] = supabaseUrl;
-builder.Configuration["Supabase:Key"] = supabaseKey;
-
-builder.Services.AddMachineDataAccess(builder.Configuration);
-builder.Services.AddBeamDataAccess(builder.Configuration);
-builder.Services.AddUpdateDataAccess(builder.Configuration);
-builder.Services.AddGeoCheckDataAccess(builder.Configuration);
-builder.Services.AddThresholdDataAccess(builder.Configuration);
-builder.Services.AddDocFactorDataAccess(builder.Configuration);
+// Register Data Access Layer (Npgsql + Dapper)
+builder.Services.AddDataAccess(builder.Configuration);
 
 builder.Services.AddScoped<IReportService, ReportService>();
 
@@ -68,6 +54,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseStaticFiles(); // Enable static file serving for images
 
 if (!app.Environment.IsDevelopment())
 {

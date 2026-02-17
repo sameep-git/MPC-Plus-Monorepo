@@ -42,7 +42,36 @@ public class Beam
     public DateTime? ApprovedDate { get; set; }
 
     /// <summary>Image storage paths — maps labels (e.g. "beamImage", "horzProfile") to storage URLs.</summary>
-    public Dictionary<string, string>? ImagePaths { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? ImagePathsJson { get; set; }
+
+    /// <summary>Parsed image paths dictionary. Computed from ImagePathsJson.</summary>
+    public Dictionary<string, string>? ImagePaths
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(ImagePathsJson)) return null;
+            try
+            {
+                var json = ImagePathsJson;
+                // Handle double-serialized JSONB: if the value is a JSON string (starts with '"'),
+                // unwrap it first to get the inner JSON object.
+                if (json.StartsWith("\""))
+                {
+                    json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                    if (string.IsNullOrEmpty(json)) return null;
+                }
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        set => ImagePathsJson = value != null
+            ? System.Text.Json.JsonSerializer.Serialize(value)
+            : null;
+    }
 
     /// <summary>
     /// Convenience property representing a single numeric value to display in UIs.

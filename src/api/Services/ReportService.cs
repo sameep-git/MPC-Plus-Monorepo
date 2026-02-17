@@ -10,6 +10,7 @@ namespace Api.Services;
 
 public class ReportService : IReportService
 {
+    private static readonly TimeZoneInfo CentralTz = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
     private readonly IBeamRepository _beamRepository;
     private readonly IGeoCheckRepository _geoCheckRepository;
     private readonly IMachineRepository _machineRepository;
@@ -206,7 +207,7 @@ public class ReportService : IReportService
                 column.Item().Text("Session Report").FontSize(20).SemiBold();
                 column.Item().Text($"Machine: {machineName}").FontSize(12);
                 column.Item().Text($"Date Range: {startDate:MM/dd/yyyy} - {endDate:MM/dd/yyyy}").FontSize(10);
-                column.Item().Text($"Generated: {DateTime.Now:g}").FontSize(9).FontColor(Colors.Grey.Medium);
+                column.Item().Text($"Generated: {TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, CentralTz):g}").FontSize(9).FontColor(Colors.Grey.Medium);
             });
         });
     }
@@ -366,7 +367,7 @@ public class ReportService : IReportService
         var statusText = isPass ? "PASS" : "FAIL";
         
         // Use Timestamp if available, otherwise fall back to Date, convert to local time
-        var displayTime = (beam.Timestamp ?? beam.Date).ToLocalTime();
+        var displayTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(beam.Timestamp ?? beam.Date, DateTimeKind.Utc), CentralTz);
 
         container.PaddingTop(0.4f, Unit.Centimetre).Column(column =>
         {
@@ -474,7 +475,7 @@ public class ReportService : IReportService
         container.PaddingTop(0.4f, Unit.Centimetre).Column(column =>
         {
             // Use Timestamp if available, otherwise fall back to Date, convert to local time
-            var geoDisplayTime = (geo.Timestamp ?? geo.Date).ToLocalTime();
+            var geoDisplayTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(geo.Timestamp ?? geo.Date, DateTimeKind.Utc), CentralTz);
             
             // Header with overall status (no N/A for type)
             column.Item().Row(row =>
