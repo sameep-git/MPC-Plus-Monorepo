@@ -42,7 +42,7 @@ public class InMemoryBeamRepositoryTests
     public async Task GetAllAsync_WithDateFilter_ReturnsBeamsFromThatDate()
     {
         // Act
-        var testDate = new DateOnly(2025, 11, 9);
+        var testDate = new DateTime(2025, 11, 9);
         var result = await _repository.GetAllAsync(date: testDate);
 
         // Assert
@@ -53,8 +53,8 @@ public class InMemoryBeamRepositoryTests
     public async Task GetAllAsync_WithDateRangeFilter_ReturnsBeamsInRange()
     {
         // Act
-        var startDate = new DateOnly(2025, 11, 7);
-        var endDate = new DateOnly(2025, 11, 9);
+        var startDate = new DateTime(2025, 11, 7);
+        var endDate = new DateTime(2025, 11, 9);
         var result = await _repository.GetAllAsync(startDate: startDate, endDate: endDate);
 
         // Assert
@@ -110,7 +110,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "test-beam",
             Type = "9e",
-            Date = new DateOnly(2025, 11, 12),
+            Date = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0
@@ -134,7 +134,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "beam-001",
             Type = "9e",
-            Date = new DateOnly(2025, 11, 12),
+            Date = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0
@@ -153,7 +153,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "beam-001",
             Type = "6e",
-            Date = new DateOnly(2025, 11, 7),
+            Date = new DateTime(2025, 11, 7),
             MachineId = "MPC-001",
             RelUniformity = 99.5,
             RelOutput = 99.0,
@@ -178,7 +178,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "nonexistent-beam",
             Type = "9e",
-            Date = new DateOnly(2025, 11, 12),
+            Date = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0

@@ -1,5 +1,6 @@
 using Api.Controllers;
 using Api.Models;
+using Api.Repositories;
 using Api.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,12 +9,14 @@ namespace Api.Tests.Controllers;
 public class BeamControllerTests
 {
     private readonly Mock<IBeamRepository> _mockRepository;
+    private readonly Mock<IThresholdRepository> _mockValidator; // Renaming to _mockValidator as it was used in previous code
     private readonly BeamsController _controller;
 
     public BeamControllerTests()
     {
         _mockRepository = new Mock<IBeamRepository>();
-    _controller = new BeamsController(_mockRepository.Object);
+        _mockValidator = new Mock<IThresholdRepository>();
+        _controller = new BeamsController(_mockRepository.Object, _mockValidator.Object);
     }
 
     [Fact]
@@ -22,8 +25,8 @@ public class BeamControllerTests
         // Arrange
         var beams = new List<Beam>
         {
-            new() { Id = "beam-001", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 },
-            new() { Id = "beam-002", Type = "9e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-002", RelUniformity = 98.9, RelOutput = 98.2 }
+            new() { Id = "beam-001", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 },
+            new() { Id = "beam-002", Type = "9e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-002", RelUniformity = 98.9, RelOutput = 98.2 }
         };
         _mockRepository.Setup(r => r.GetAllAsync(null, null, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(beams);
@@ -43,7 +46,7 @@ public class BeamControllerTests
         // Arrange
         var beams = new List<Beam>
         {
-            new() { Id = "beam-001", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 }
+            new() { Id = "beam-001", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 }
         };
         _mockRepository.Setup(r => r.GetAllAsync(null, "6e", null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(beams);
@@ -61,7 +64,7 @@ public class BeamControllerTests
         // Arrange
         var beams = new List<Beam>
         {
-            new() { Id = "beam-001", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 }
+            new() { Id = "beam-001", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 }
         };
         _mockRepository.Setup(r => r.GetAllAsync("MPC-001", null, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(beams);
@@ -77,7 +80,7 @@ public class BeamControllerTests
     public async Task GetAll_WithDateFilter_ParsesAndPassesDateToRepository()
     {
         // Arrange
-        var testDate = new DateOnly(2025, 11, 9);
+        var testDate = new DateTime(2025, 11, 9);
         var beams = new List<Beam>
         {
             new() { Id = "beam-001", Type = "6e", Date = testDate, MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 }
@@ -96,7 +99,7 @@ public class BeamControllerTests
     public async Task GetById_WithValidId_ReturnsOkWithBeam()
     {
         // Arrange
-        var beam = new Beam { Id = "beam-001", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 };
+        var beam = new Beam { Id = "beam-001", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.2, RelOutput = 98.5 };
         _mockRepository.Setup(r => r.GetByIdAsync("beam-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(beam);
 
@@ -127,7 +130,7 @@ public class BeamControllerTests
     public async Task Create_WithValidBeam_ReturnsCreatedAtActionResult()
     {
         // Arrange
-        var beam = new Beam { Id = "beam-new", Type = "9e", Date = new DateOnly(2025, 11, 12), MachineId = "MPC-001", RelUniformity = 99.0, RelOutput = 98.0 };
+        var beam = new Beam { Id = "beam-new", Type = "9e", Date = new DateTime(2025, 11, 12), MachineId = "MPC-001", RelUniformity = 99.0, RelOutput = 98.0 };
         _mockRepository.Setup(r => r.CreateAsync(beam, It.IsAny<CancellationToken>()))
             .ReturnsAsync(beam);
 
@@ -144,7 +147,7 @@ public class BeamControllerTests
     public async Task Create_WithDuplicateId_ReturnsConflict()
     {
         // Arrange
-        var beam = new Beam { Id = "beam-001", Type = "9e", Date = new DateOnly(2025, 11, 12), MachineId = "MPC-001", RelUniformity = 99.0, RelOutput = 98.0 };
+        var beam = new Beam { Id = "beam-001", Type = "9e", Date = new DateTime(2025, 11, 12), MachineId = "MPC-001", RelUniformity = 99.0, RelOutput = 98.0 };
         _mockRepository.Setup(r => r.CreateAsync(beam, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Beam already exists"));
 
@@ -159,7 +162,7 @@ public class BeamControllerTests
     public async Task Update_WithMatchingIds_ReturnsNoContent()
     {
         // Arrange
-        var beam = new Beam { Id = "beam-001", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
+        var beam = new Beam { Id = "beam-001", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
         _mockRepository.Setup(r => r.UpdateAsync(beam, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -174,7 +177,7 @@ public class BeamControllerTests
     public async Task Update_WithMismatchedIds_ReturnsBadRequest()
     {
         // Arrange
-        var beam = new Beam { Id = "beam-002", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
+        var beam = new Beam { Id = "beam-002", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
 
         // Act
         var result = await _controller.Update("beam-001", beam, CancellationToken.None);
@@ -187,7 +190,7 @@ public class BeamControllerTests
     public async Task Update_WithNonExistentId_ReturnsNotFound()
     {
         // Arrange
-        var beam = new Beam { Id = "nonexistent", Type = "6e", Date = new DateOnly(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
+        var beam = new Beam { Id = "nonexistent", Type = "6e", Date = new DateTime(2025, 11, 9), MachineId = "MPC-001", RelUniformity = 99.5, RelOutput = 98.8 };
         _mockRepository.Setup(r => r.UpdateAsync(beam, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 

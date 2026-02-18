@@ -7,7 +7,7 @@ allowing easy switching between different database management systems.
 
 The module includes:
     - DatabaseAdapter: Abstract interface for database operations
-    - SupabaseAdapter: Concrete implementation for Supabase DBMS
+    - PostgresAdapter: Concrete implementation for PostgreSQL (using psycopg2)
     - Uploader: Main class that uses model getters to upload data
 
 Supported beam models:
@@ -19,13 +19,15 @@ Supported beam models:
 from abc import ABC, abstractmethod
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import logging
 import os
 import json
 import io
 import numpy as np
 from PIL import Image
+import psycopg2
+from psycopg2 import sql, extras
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -44,7 +46,6 @@ class DatabaseAdapter(ABC):
         
         Args:
             connection_params: Dictionary containing connection parameters
-                              (e.g., url, key, etc.)
         
         Returns:
             bool: True if connection successful, False otherwise
@@ -82,529 +83,301 @@ class DatabaseAdapter(ABC):
         pass
 
 
-class SupabaseAdapter(DatabaseAdapter):
+class PostgresAdapter(DatabaseAdapter):
     """
-    Concrete implementation of DatabaseAdapter for Supabase DBMS.
-    Uses the supabase-py library to interact with Supabase.
+    Concrete implementation of DatabaseAdapter for PostgreSQL.
+    Uses psycopg2 library.
+    Handles image uploads by saving to local filesystem (for self-hosted setup).
     """
 
     def __init__(self):
-        self.client = None
+        self.conn = None
         self.connected = False
+        # Default local storage path matching the ASP.NET Core wwwroot/images structure
+        # Assumes running from src/data_manipulation/ETL
+        self.storage_root = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), 
+            "../../../api/wwwroot/images"
+        ))
+        
+        # Base URL for accessing images via the API (should match static file serving)
+        self.base_url = "/images"
 
     def connect(self, connection_params: Dict[str, Any]) -> bool:
         """
-        Establish connection to Supabase.
+        Establish connection to PostgreSQL.
         
         Args:
-            connection_params: Dictionary with 'url' and 'key' keys
+            connection_params: Dictionary with 'connection_string' or individual params
         
         Returns:
             bool: True if connection successful, False otherwise
         """
         try:
-            from supabase import create_client, Client
-            url = connection_params.get('url')
-            key = connection_params.get('key')
+            conn_str = connection_params.get('connection_string')
+            if not conn_str:
+                # Fallback to building from individual params
+                host = connection_params.get('host', 'localhost')
+                port = connection_params.get('port', 5432)
+                dbname = connection_params.get('dbname', 'mpc_plus_db')
+                user = connection_params.get('user', 'postgres')
+                password = connection_params.get('password', os.environ.get('PGPASSWORD', ''))
+                conn_str = f"host={host} port={port} dbname={dbname} user={user} password={password}"
 
-            if not url or not key:
-                logger.error("Supabase connection requires 'url' and 'key' parameters")
-                return False
-            
-            self.client: Client = create_client(url, key)
-            self._supabase_url = url.rstrip('/')  # Store URL for constructing public URLs
+            self.conn = psycopg2.connect(conn_str)
             self.connected = True
-            logger.info("Successfully connected to Supabase")
+            logger.info("Successfully connected to PostgreSQL")
             return True
             
         except ImportError:
-            logger.error("supabase-py library not installed. Install with: pip install supabase")
+            logger.error("psycopg2 library not installed. Install with: pip install psycopg2-binary")
             return False
         except Exception as e:
-            logger.error(f"Error connecting to Supabase: {e}")
+            logger.error(f"Error connecting to PostgreSQL: {e}")
             self.connected = False
             return False
 
     def ensure_machine_exists(self, machine_id: str, path: str = None) -> bool:
         """
-        Ensure a machine exists in the machines table before uploading beams.
-        Creates the machine if it doesn't exist.
-        
-        Args:
-            machine_id: The machine ID (serial number)
-            path: Optional path to extract location from (e.g., "/Volumes/Lexar/MPC Data/Arlington/...")
-        
-        Returns:
-            bool: True if machine exists or was created successfully, False otherwise
+        Ensure a machine exists in the machines table.
         """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
+        if not self.connected or not self.conn:
+            logger.error("Not connected to database")
             return False
         
         try:
-            # Check if machine exists
-            response = self.client.table('machines').select('id').eq('id', machine_id).execute()
-            
-            if response.data and len(response.data) > 0:
-                logger.debug(f"Machine {machine_id} already exists")
-                return True
-            
-            # Machine doesn't exist, create it
-            logger.info(f"Creating machine {machine_id}...")
-            
-            # Extract location from path if provided
-            location = "Unknown"
-            if path:
-                # Try to extract location from path (e.g., "/Volumes/Lexar/MPC Data/Arlington/..." -> "Arlington")
-                path_parts = path.split(os.sep)
-                for part in path_parts:
-                    if part in ["Arlington", "Weatherford"]:
-                        location = part
-                        break
-            
-            # Create machine with default values
-            machine_data = {
-                'id': machine_id,
-                'name': f"Machine {machine_id}",
-                'location': location,
-                'type': 'NDS-WKS'  # Default type based on folder naming pattern
-            }
-            
-            response = self.client.table('machines').insert(machine_data).execute()
-            
-            if response.data:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT id FROM machines WHERE id = %s", (machine_id,))
+                if cur.fetchone():
+                    return True
+                
+                # Create machine
+                logger.info(f"Creating machine {machine_id}...")
+                location = "Unknown"
+                if path:
+                    path_parts = path.split(os.sep)
+                    for part in path_parts:
+                        if part in ["Arlington", "Weatherford"]:
+                            location = part
+                            break
+                            
+                cur.execute(
+                    "INSERT INTO machines (id, name, type, location) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (machine_id, f"Machine {machine_id}", 'NDS-WKS', location)
+                )
+                self.conn.commit()
                 logger.info(f"Created machine {machine_id} in location {location}")
                 return True
-            else:
-                logger.warning(f"No data returned when creating machine {machine_id}")
-                return False
                 
         except Exception as e:
             logger.error(f"Error ensuring machine exists: {e}", exc_info=True)
+            self.conn.rollback()
             return False
 
-    def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> bool:
+    def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> Dict[str, Any]:
         """
-        Upload beam data to Supabase table.
-        
-        Args:
-            table_name: Name of the Supabase table
-            data: Dictionary containing the data to upload
-            path: Optional path to extract location from for machine creation
-        
-        Returns:
-            bool: True if upload successful, False otherwise
+        Upload beam data to PostgreSQL table.
         """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
-            return False
+        if not self.connected or not self.conn:
+            logger.error("Not connected to database")
+            return None
         
         try:
-            # Ensure machine exists before uploading beam
+            # Ensure machine exists
             machine_id = data.get('machine_id')
             if machine_id:
-                if not self.ensure_machine_exists(machine_id, path):
-                    logger.warning(f"Could not ensure machine {machine_id} exists, but continuing with upload attempt")
+                self.ensure_machine_exists(machine_id, path)
             
-            # Convert Decimal to float for JSON serialization
-            serialized_data = self._serialize_data(data)
-            logger.debug(f"Uploading data to {table_name}: {serialized_data}")
+            # Serialize data (handle dates, JSON) and filter None keys if necessary
+            # For SQL insert, we need strict column matching
+            # Filter out keys that might not be in the table if they are strictly internal
+            # But usually we pass correct keys.
             
-            # Insert data into Supabase table
-            response = self.client.table(table_name).insert(serialized_data).execute()
+            # Special handling for JSON fields (image_paths)
+            # data has 'image_paths' as string json dump?
             
-            if response.data:
+            columns = data.keys()
+            values = [data[k] for k in columns]
+            
+            query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
+                sql.Identifier(table_name),
+                sql.SQL(', ').join(map(sql.Identifier, columns)),
+                sql.SQL(', ').join(sql.Placeholder() * len(columns))
+            )
+            
+            with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(query, values)
+                inserted = cur.fetchone()
+                self.conn.commit()
                 logger.info(f"Successfully uploaded data to {table_name}")
-                return response.data[0]
-            else:
-                logger.warning("No data returned from Supabase insert")
-                return False
-                
+                return inserted
+
         except Exception as e:
-            logger.error(f"Error uploading data to Supabase: {e}", exc_info=True)
-            return False
-            
+            logger.error(f"Error uploading data to PostgreSQL: {e}", exc_info=True)
+            self.conn.rollback()
+            return None
+
     def get_beam_variants(self) -> list:
-        """
-        Fetch the list of valid beam variants from the beam_variants table.
-        
-        Returns:
-            list: List of beam variant strings (e.g., ['6e', '10x'])
-        """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
+        if not self.connected or not self.conn:
             return []
-            
         try:
-            response = self.client.table('beam_variants').select('id, variant').execute()
-            
-            if response.data:
-                # Return the list of dictionaries directly (e.g., [{'id': '...', 'variant': '...'}])
-                variants = response.data
-                logger.info(f"Fetched {len(variants)} beam variants from database")
-                return variants
-            else:
-                logger.warning("No beam variants found in database")
-                return []
-                
+            with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("SELECT id, variant FROM beam_variants")
+                return cur.fetchall()
         except Exception as e:
             logger.error(f"Error fetching beam variants: {e}", exc_info=True)
             return []
 
     def upload_geocheck_data(self, data: Dict[str, Any], path: str = None) -> Optional[str]:
-        """
-        Upload geometry check data to geochecks table.
-        Note: MLC leaves and backlash should NOT be included here - they go to separate tables.
-        
-        Args:
-            data: Dictionary containing the geocheck data to upload (geometry data only: jaws, couch, gantry, etc.)
-            path: Optional path to extract location from for machine creation
-        
-        Returns:
-            str: The geocheck_id if upload successful, None otherwise
-        """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
-            return None
-        
-        try:
-            # Ensure machine exists before uploading geocheck
-            machine_id = data.get('machine_id')
-            if machine_id:
-                if not self.ensure_machine_exists(machine_id, path):
-                    logger.warning(f"Could not ensure machine {machine_id} exists, but continuing with upload attempt")
+        # Reuse generic upload
+        # Remove MLC detail lists that are not columns in geochecks
+        data_clean = data.copy()
+        keys_to_remove = ['mlc_leaves_a', 'mlc_leaves_b', 'mlc_backlash_a', 'mlc_backlash_b']
+        for k in keys_to_remove:
+            data_clean.pop(k, None)
             
-            # Remove MLC data if accidentally included (it goes to separate tables)
-            data.pop('mlc_leaves_a', None)
-            data.pop('mlc_leaves_b', None)
-            data.pop('mlc_backlash_a', None)
-            data.pop('mlc_backlash_b', None)
-            
-            # Convert Decimal to float for JSON serialization
-            serialized_data = self._serialize_data(data)
-            logger.debug(f"Uploading geocheck data: {serialized_data}")
-            
-            # Insert data into geochecks table
-            response = self.client.table('geochecks').insert(serialized_data).execute()
-            
-            if response.data and len(response.data) > 0:
-                geocheck_id = response.data[0].get('id')
-                logger.info(f"Successfully uploaded geocheck data with id: {geocheck_id}")
-                return geocheck_id
-            else:
-                logger.warning("No data returned from Supabase geocheck insert")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error uploading geocheck data to Supabase: {e}", exc_info=True)
-            return None
+        result = self.upload_beam_data('geochecks', data_clean, path)
+        return result['id'] if result else None
 
     def upload_mlc_leaves(self, geocheck_id: str, leaves_data: list, bank: str) -> bool:
-        """
-        Upload MLC leaves data to geocheck_mlc_leaves_a or geocheck_mlc_leaves_b table.
-        
-        Args:
-            geocheck_id: The geocheck ID to associate leaves with
-            leaves_data: List of dictionaries with 'leaf_number' and 'leaf_value'
-            bank: Either 'a' or 'b' to determine which table to use
-        
-        Returns:
-            bool: True if all leaves uploaded successfully, False otherwise
-        """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
+        if not self.connected or not self.conn or not geocheck_id or not leaves_data:
             return False
-        
-        if not geocheck_id or not leaves_data:
-            return False
-        
+            
         table_name = f'geocheck_mlc_leaves_{bank.lower()}'
         
         try:
-            # Prepare data with geocheck_id
-            upload_data = []
+            records = []
             for leaf in leaves_data:
-                leaf_record = {
-                    'geocheck_id': geocheck_id,
-                    'leaf_number': leaf.get('leaf_number'),
-                    'leaf_value': float(leaf.get('leaf_value')) if leaf.get('leaf_value') is not None else None
-                }
-                upload_data.append(leaf_record)
+                records.append((
+                    geocheck_id,
+                    leaf.get('leaf_number'),
+                    float(leaf.get('leaf_value')) if leaf.get('leaf_value') is not None else None
+                ))
             
-            # Insert all leaves at once
-            response = self.client.table(table_name).insert(upload_data).execute()
-            
-            if response.data:
-                logger.info(f"Successfully uploaded {len(upload_data)} MLC leaves to {table_name}")
+            with self.conn.cursor() as cur:
+                extras.execute_values(
+                    cur,
+                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, leaf_value) VALUES %s",
+                    records
+                )
+                self.conn.commit()
+                logger.info(f"Uploaded {len(records)} MLC leaves to {table_name}")
                 return True
-            else:
-                logger.warning(f"No data returned from {table_name} insert")
-                return False
-                
         except Exception as e:
-            logger.error(f"Error uploading MLC leaves to {table_name}: {e}", exc_info=True)
+            logger.error(f"Error uploading MLC leaves: {e}", exc_info=True)
+            self.conn.rollback()
             return False
 
     def upload_mlc_backlash(self, geocheck_id: str, backlash_data: list, bank: str) -> bool:
-        """
-        Upload MLC backlash data to geocheck_mlc_backlash_a or geocheck_mlc_backlash_b table.
-        
-        Args:
-            geocheck_id: The geocheck ID to associate backlash with
-            backlash_data: List of dictionaries with 'leaf_number' and 'backlash_value'
-            bank: Either 'a' or 'b' to determine which table to use
-        
-        Returns:
-            bool: True if all backlash data uploaded successfully, False otherwise
-        """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
+        if not self.connected or not self.conn or not geocheck_id or not backlash_data:
             return False
-        
-        if not geocheck_id or not backlash_data:
-            return False
-        
+            
         table_name = f'geocheck_mlc_backlash_{bank.lower()}'
         
         try:
-            # Prepare data with geocheck_id
-            upload_data = []
-            for backlash in backlash_data:
-                backlash_record = {
-                    'geocheck_id': geocheck_id,
-                    'leaf_number': backlash.get('leaf_number'),
-                    'backlash_value': float(backlash.get('backlash_value')) if backlash.get('backlash_value') is not None else None
-                }
-                upload_data.append(backlash_record)
+            records = []
+            for item in backlash_data:
+                records.append((
+                    geocheck_id,
+                    item.get('leaf_number'),
+                    float(item.get('backlash_value')) if item.get('backlash_value') is not None else None
+                ))
             
-            # Insert all backlash records at once
-            response = self.client.table(table_name).insert(upload_data).execute()
-            
-            if response.data:
-                logger.info(f"Successfully uploaded {len(upload_data)} MLC backlash records to {table_name}")
+            with self.conn.cursor() as cur:
+                extras.execute_values(
+                    cur,
+                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, backlash_value) VALUES %s",
+                    records
+                )
+                self.conn.commit()
+                logger.info(f"Uploaded {len(records)} MLC backlash to {table_name}")
                 return True
-            else:
-                logger.warning(f"No data returned from {table_name} insert")
-                return False
-                
         except Exception as e:
-            logger.error(f"Error uploading MLC backlash to {table_name}: {e}", exc_info=True)
+            logger.error(f"Error uploading MLC backlash: {e}", exc_info=True)
+            self.conn.rollback()
             return False
 
-    def _serialize_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert data types to JSON-serializable formats.
-        
-        Args:
-            data: Dictionary with potentially non-serializable values
-        
-        Returns:
-            Dictionary with serialized values
-        """
-        serialized = {}
-        for key, value in data.items():
-            if isinstance(value, Decimal):
-                serialized[key] = float(value)
-            elif isinstance(value, (datetime, date)):
-                # Convert both datetime and date objects to ISO format strings
-                serialized[key] = value.isoformat()
-            elif value is None:
-                serialized[key] = None
-            else:
-                serialized[key] = value
-        return serialized
-
-    def upload_image_to_storage(self, bucket_name: str, file_path: str, image_data: bytes, content_type: str = "image/png") -> Optional[str]:
-        """
-        Upload an image file to Supabase Storage and return the public URL.
-        
-        Args:
-            bucket_name: Name of the storage bucket
-            file_path: Path within the bucket (e.g., "machine_id/date/beam_type/time/image.png")
-            image_data: Image file data as bytes
-            content_type: MIME type of the image (default: "image/png")
-        
-        Returns:
-            str: Public URL of the uploaded image if successful, None otherwise
-            Format: {SUPABASE_URL}/storage/v1/object/public/{bucket_name}/{file_path}
-        """
-        if not self.connected or not self.client:
-            logger.error("Not connected to Supabase")
-            return None
-        
-        try:
-            # Upload file to storage bucket
-            # Supabase storage accepts bytes directly
-            response = self.client.storage.from_(bucket_name).upload(
-                path=file_path,
-                file=image_data,  # Pass bytes directly
-                file_options={"content-type": content_type, "upsert": "true"}
-            )
-            
-            # Check if upload was successful
-            if response is not None:
-                logger.info(f"Successfully uploaded image to {bucket_name}/{file_path}")
-                
-                # Get the public URL for the uploaded file
-                # Try to get public URL from Supabase client
-                try:
-                    # get_public_url() returns the full public URL
-                    public_url = self.client.storage.from_(bucket_name).get_public_url(file_path)
-                    if public_url:
-                        logger.debug(f"Got public URL: {public_url}")
-                        return public_url
-                    else:
-                        raise ValueError("get_public_url returned None")
-                except (AttributeError, Exception) as url_error:
-                    # Fallback: construct URL manually if get_public_url fails or doesn't exist
-                    logger.debug(f"Constructing public URL manually: {url_error}")
-                    # Get Supabase URL from connection params or environment
-                    supabase_url = None
-                    if hasattr(self, '_supabase_url'):
-                        supabase_url = self._supabase_url
-                    else:
-                        # Try to get from environment or extract from client
-                        supabase_url = os.getenv("SUPABASE_URL", "").rstrip('/')
-                        # Store for future use
-                        self._supabase_url = supabase_url
-                    
-                    if supabase_url:
-                        public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/{file_path}"
-                        logger.debug(f"Constructed public URL: {public_url}")
-                        return public_url
-                    else:
-                        logger.error("Cannot construct public URL: SUPABASE_URL not available")
-                        return None
-            else:
-                logger.warning(f"Upload response was empty for {file_path}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error uploading image to storage: {e}", exc_info=True)
-            return None
-
     def _numpy_array_to_png_bytes(self, image_array: np.ndarray) -> Optional[bytes]:
-        """
-        Convert a numpy array image to PNG bytes.
-        
-        Args:
-            image_array: NumPy array representing the image
-        
-        Returns:
-            bytes: PNG image data as bytes, or None if conversion fails
-        """
         try:
             # Normalize array to 0-255 range if needed
             if image_array.dtype != np.uint8:
-                # Normalize to 0-1 range first
                 if image_array.max() > 1.0:
                     image_array = image_array / image_array.max()
-                # Convert to 0-255 range
                 image_array = (image_array * 255).astype(np.uint8)
             
-            # Convert to PIL Image
             pil_image = Image.fromarray(image_array)
-            
-            # Convert to PNG bytes
             img_bytes = io.BytesIO()
             pil_image.save(img_bytes, format='PNG')
             img_bytes.seek(0)
-            
             return img_bytes.getvalue()
-            
         except Exception as e:
-            logger.error(f"Error converting numpy array to PNG bytes: {e}", exc_info=True)
+            logger.error(f"Error converting numpy array to PNG: {e}")
             return None
 
     def _matplotlib_figure_to_png_bytes(self, fig) -> Optional[bytes]:
-        """
-        Convert a matplotlib figure to PNG bytes.
-        
-        Args:
-            fig: Matplotlib figure object
-        
-        Returns:
-            bytes: PNG image data as bytes, or None if conversion fails
-        """
         try:
             img_bytes = io.BytesIO()
             fig.savefig(img_bytes, format='PNG', dpi=300, bbox_inches='tight')
             img_bytes.seek(0)
             return img_bytes.getvalue()
-            
         except Exception as e:
-            logger.error(f"Error converting matplotlib figure to PNG bytes: {e}", exc_info=True)
+            logger.error(f"Error converting matplotlib figure to PNG: {e}")
             return None
 
     def upload_beam_images(self, bucket_name: str, base_folder_path: str, 
                           beam_image: Optional[np.ndarray] = None,
                           horizontal_profile: Optional[Any] = None,
                           vertical_profile: Optional[Any] = None) -> Optional[Dict[str, str]]:
-        """
-        Upload beam images to Supabase Storage.
         
-        Args:
-            bucket_name: Name of the storage bucket (e.g., "beam-images")
-            base_folder_path: Base folder path (e.g., "SN6543/20250919/10x/074149")
-            beam_image: NumPy array of the main beam image
-            horizontal_profile: Matplotlib figure for horizontal profile graph
-            vertical_profile: Matplotlib figure for vertical profile graph
+        # Determine local storage path
+        # bucket_name is ignored essentially, mapped to 'images' folder
+        # storage_path = storage_root / base_folder_path
         
-        Returns:
-            Dict[str, str]: Dictionary mapping image types to their public URLs, or None if upload fails
-            Format: {
-                "beamImage": "https://...supabase.co/storage/v1/object/public/beam-images/SN6543/20250919/6e/074149/beamImage.png",
-                "horzProfile": "https://...supabase.co/storage/v1/object/public/beam-images/SN6543/20250919/6e/074149/horzProfile.png",
-                "vertProfile": "https://...supabase.co/storage/v1/object/public/beam-images/SN6543/20250919/6e/074149/vertProfile.png"
-            }
-        """
+        full_path = os.path.join(self.storage_root, base_folder_path)
+        os.makedirs(full_path, exist_ok=True)
+        
         image_urls = {}
         
-        # Upload main beam image
-        if beam_image is not None:
-            beam_image_bytes = self._numpy_array_to_png_bytes(beam_image)
-            if beam_image_bytes:
-                beam_image_path = f"{base_folder_path}/beamImage.png"
-                public_url = self.upload_image_to_storage(bucket_name, beam_image_path, beam_image_bytes)
-                if public_url:
-                    image_urls["beamImage"] = public_url
-                else:
-                    logger.warning("Failed to upload beam image")
-        
-        # Upload horizontal profile graph
-        if horizontal_profile is not None:
-            horz_profile_bytes = self._matplotlib_figure_to_png_bytes(horizontal_profile)
-            if horz_profile_bytes:
-                horz_profile_path = f"{base_folder_path}/horzProfile.png"
-                public_url = self.upload_image_to_storage(bucket_name, horz_profile_path, horz_profile_bytes)
-                if public_url:
-                    image_urls["horzProfile"] = public_url
-                else:
-                    logger.warning("Failed to upload horizontal profile graph")
-        
-        # Upload vertical profile graph
-        if vertical_profile is not None:
-            vert_profile_bytes = self._matplotlib_figure_to_png_bytes(vertical_profile)
-            if vert_profile_bytes:
-                vert_profile_path = f"{base_folder_path}/vertProfile.png"
-                public_url = self.upload_image_to_storage(bucket_name, vert_profile_path, vert_profile_bytes)
-                if public_url:
-                    image_urls["vertProfile"] = public_url
-                else:
-                    logger.warning("Failed to upload vertical profile graph")
-        
-        if image_urls:
-            logger.info(f"Successfully uploaded {len(image_urls)} image(s) to storage")
-            return image_urls
-        else:
-            logger.warning("No images were successfully uploaded")
+        try:
+            if beam_image is not None:
+                b_bytes = self._numpy_array_to_png_bytes(beam_image)
+                if b_bytes:
+                    file_path = os.path.join(full_path, "beamImage.png")
+                    with open(file_path, "wb") as f:
+                        f.write(b_bytes)
+                    image_urls["beamImage"] = f"{self.base_url}/{base_folder_path}/beamImage.png"
+            
+            if horizontal_profile is not None:
+                b_bytes = self._matplotlib_figure_to_png_bytes(horizontal_profile)
+                if b_bytes:
+                    file_path = os.path.join(full_path, "horzProfile.png")
+                    with open(file_path, "wb") as f:
+                        f.write(b_bytes)
+                    image_urls["horzProfile"] = f"{self.base_url}/{base_folder_path}/horzProfile.png"
+
+            if vertical_profile is not None:
+                b_bytes = self._matplotlib_figure_to_png_bytes(vertical_profile)
+                if b_bytes:
+                    file_path = os.path.join(full_path, "vertProfile.png")
+                    with open(file_path, "wb") as f:
+                        f.write(b_bytes)
+                    image_urls["vertProfile"] = f"{self.base_url}/{base_folder_path}/vertProfile.png"
+            
+            if image_urls:
+                logger.info(f"Saved {len(image_urls)} images to {full_path}")
+                return image_urls
+            else:
+                return None
+        except Exception as e:
+            logger.error(f"Error saving images to disk: {e}", exc_info=True)
             return None
 
     def close(self):
-        """Close the Supabase connection."""
-        self.client = None
-        self.connected = False
-        logger.info("Supabase connection closed")
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+            self.connected = False
+            logger.info("PostgreSQL connection closed")
 
 
 class Uploader:
@@ -619,10 +392,10 @@ class Uploader:
         Initialize the Uploader with a database adapter.
         
         Args:
-            db_adapter: Database adapter instance. If None, defaults to SupabaseAdapter
+            db_adapter: Database adapter instance. If None, defaults to PostgresAdapter
         """
         if db_adapter is None:
-            self.db_adapter = SupabaseAdapter()
+            self.db_adapter = PostgresAdapter()
         else:
             self.db_adapter = db_adapter
         
@@ -680,15 +453,6 @@ class Uploader:
             return []
             
         return self.db_adapter.get_beam_variants()
-
-        if "ebeam" in model_type:
-            return self.eModelUpload(model)
-        elif "xbeam" in model_type:
-            return self.xModelUpload(model)
-        elif "geo" in model_type:
-            return self.geoModelUpload(model)
-        else:
-            raise TypeError(f"Unsupported model type: {type(model).__name__}")
 
     def _upload_baseline_metrics(self, model, check_type: str):
         """
@@ -814,7 +578,7 @@ class Uploader:
                 else:
                     logger.error(f"Failed to upload baseline metric: {metric_data['metric_type']}")
             
-            logger.error(f"Uploaded {success_count}/{len(metrics)} baseline metric records")
+            logger.info(f"Uploaded {success_count}/{len(metrics)} baseline metric records")
             return success_count == len(metrics) and len(metrics) > 0
             
         except Exception as e:
@@ -844,17 +608,17 @@ class Uploader:
         model_type = type(model).__name__.lower()
 
         if "ebeam" in model_type:
-            return self.testeModelUpload(model)
+            return self.eModelUpload(model)
         elif "xbeam" in model_type:
-            return self.testxModelUpload(model)
+            return self.xModelUpload(model)
         elif "geo" in model_type:
-            return self.testGeoModelUpload(model)
+            return self.geoModelUpload(model)
         else:
             raise TypeError(f"Unsupported model type: {type(model).__name__}")
 
     def _generate_image_folder_path(self, model) -> str:
         """
-        Generate the base folder path for storing images in Supabase Storage.
+        Generate the base folder path for storing images.
         Format: machine_id/date/beam_type/time
         
         Args:
@@ -876,11 +640,6 @@ class Uploader:
     def eModelUpload(self, eBeam):
         """
         Upload data for E-beam model to the single beam table or baseline table.
-        Maps to schema: type, date, path, rel_uniformity, rel_output, center_shift, machine_id, note
-        
-        For baselines: Uploads individual metric records to baseline table.
-        For regular beams: Uploads single record to beam table.
-        Also uploads images to Supabase Storage and stores paths in image_paths column.
         """
         try:
             # Check if this is a baseline
@@ -888,7 +647,7 @@ class Uploader:
                 # Upload to baseline table as individual metric records
                 return self._upload_baseline_metrics(eBeam, check_type='beam')
             else:
-                # Upload images to Supabase Storage first
+                # Upload images
                 image_urls = None
                 image_model = eBeam.get_image_model()
                 if image_model:
@@ -896,13 +655,18 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
-                    horizontal_profile = eBeam.get_horizontal_profile_graph()
-                    vertical_profile = eBeam.get_vertical_profile_graph()
                     
-                    # Upload images (using default bucket name "beam-images", can be configured)
-                    # Returns dictionary with public URLs: {"beamImage": "https://...", "horzProfile": "https://...", "vertProfile": "https://..."}
+                    horizontal_profile = None
+                    if hasattr(eBeam, 'get_horizontal_profile_graph'):
+                         horizontal_profile = eBeam.get_horizontal_profile_graph()
+                         
+                    vertical_profile = None
+                    if hasattr(eBeam, 'get_vertical_profile_graph'):
+                         vertical_profile = eBeam.get_vertical_profile_graph()
+                    
+                    # Upload images
                     image_urls = self.db_adapter.upload_beam_images(
-                        bucket_name="beam-images",
+                        bucket_name="beam-images", # Ignored by PostgresAdapter
                         base_folder_path=base_folder_path,
                         beam_image=beam_image,
                         horizontal_profile=horizontal_profile,
@@ -926,7 +690,8 @@ class Uploader:
                     'note': None,  # Add note if available in the model
                     'image_paths': json.dumps(image_urls) if image_urls else None  # Store public URLs as JSONB
                 }
-                return self.db_adapter.upload_beam_data('beams', data)
+                result = self.db_adapter.upload_beam_data('beams', data)
+                return result is not None
 
         except Exception as e:
             logger.error(f"Error during E-beam upload: {e}", exc_info=True)
@@ -937,11 +702,6 @@ class Uploader:
     def xModelUpload(self, xBeam):
         """
         Upload data for X-beam model to the single beam table or baseline table.
-        Maps to schema: type, date, path, rel_uniformity, rel_output, center_shift, machine_id, note
-        
-        For baselines: Uploads individual metric records to baseline table.
-        For regular beams: Uploads single record to beam table.
-        Also uploads images to Supabase Storage and stores paths in image_paths column.
         """
         try:
             # Check if this is a baseline
@@ -949,7 +709,7 @@ class Uploader:
                 # Upload to baseline table as individual metric records
                 return self._upload_baseline_metrics(xBeam, check_type='beam')
             else:
-                # Upload images to Supabase Storage first
+                # Upload images
                 image_urls = None
                 image_model = xBeam.get_image_model()
                 if image_model:
@@ -957,11 +717,10 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
-                    horizontal_profile = xBeam.get_horizontal_profile_graph()
-                    vertical_profile = xBeam.get_vertical_profile_graph()
+                    horizontal_profile = xBeam.get_horizontal_profile_graph() if hasattr(xBeam, 'get_horizontal_profile_graph') else None
+                    vertical_profile = xBeam.get_vertical_profile_graph() if hasattr(xBeam, 'get_vertical_profile_graph') else None
                     
-                    # Upload images (using default bucket name "beam-images", can be configured)
-                    # Returns dictionary with public URLs: {"beamImage": "https://...", "horzProfile": "https://...", "vertProfile": "https://..."}
+                    # Upload images
                     image_urls = self.db_adapter.upload_beam_images(
                         bucket_name="beam-images",
                         base_folder_path=base_folder_path,
@@ -987,7 +746,8 @@ class Uploader:
                     'note': None,  # Add note if available in the model
                     'image_paths': json.dumps(image_urls) if image_urls else None  # Store public URLs as JSONB
                 }
-                return self.db_adapter.upload_beam_data('beams', data)
+                result = self.db_adapter.upload_beam_data('beams', data)
+                return result is not None
 
         except Exception as e:
             logger.error(f"Error during X-beam upload: {e}", exc_info=True)
@@ -999,32 +759,12 @@ class Uploader:
         """
         Upload data for GeoModel to the geochecks table (with MLC detail rows)
         or the baseline table.
-        
-        For baselines: Uploads individual metric records to baseline table.
-        For regular checks: Uploads a single row to the geochecks table containing
-        all geometry fields (isocenter, collimation, gantry, couch, jaws, jaw parallelism,
-        MLC offsets/backlash summaries, and MLC leaf/backlash JSONB arrays).
-        Then uploads individual MLC leaf and backlash rows to child tables.
         """
         try:
             # Check if this is a baseline
             if geoModel.get_baseline():
                 # Upload to baseline table as individual metric records
                 return self._upload_baseline_metrics(geoModel, check_type='geometry')
-            
-            # ---- Build MLC leaf data (A and B banks, leaves 11-50) ----
-            mlc_leaves_a = {}
-            mlc_leaves_b = {}
-            for i in range(11, 51):
-                mlc_leaves_a[f"leaf_{i}"] = geoModel.get_MLCLeafA(i)
-                mlc_leaves_b[f"leaf_{i}"] = geoModel.get_MLCLeafB(i)
-            
-            # ---- Build MLC backlash data (A and B banks, leaves 11-50) ----
-            mlc_backlash_a = {}
-            mlc_backlash_b = {}
-            for i in range(11, 51):
-                mlc_backlash_a[f"leaf_{i}"] = geoModel.get_MLCBacklashA(i)
-                mlc_backlash_b[f"leaf_{i}"] = geoModel.get_MLCBacklashB(i)
             
             # ---- Build single geochecks row with ALL geometry fields ----
             geocheck_data = {
@@ -1091,6 +831,7 @@ class Uploader:
                 {'leaf_number': i, 'leaf_value': geoModel.get_MLCLeafB(i)}
                 for i in range(11, 51)
             ]
+            # Use bank='a' / 'b'
             self.db_adapter.upload_mlc_leaves(geocheck_id, leaves_a_list, bank='a')
             self.db_adapter.upload_mlc_leaves(geocheck_id, leaves_b_list, bank='b')
             
@@ -1113,91 +854,6 @@ class Uploader:
             logger.error(f"Error during Geo model upload: {e}", exc_info=True)
             return False
 
-    def uploadMLCLeaves(self, geoModel, table_name: str = 'mlc_leaves_data'):
-        """
-        Upload MLC leaf data separately (optional helper method).
-        This can be called after geoModelUpload() if you want to store
-        individual leaf data in a separate table.
-        """
-        try:
-            leaves_data = []
-            
-            # Collect all MLC leaf A data (leaves 1-60)
-            for i in range(1, 61):
-                leaves_data.append({
-                    'date': geoModel.get_date(),
-                    'machine_sn': geoModel.get_machine_SN(),
-                    'leaf_bank': 'A',
-                    'leaf_index': i,
-                    'leaf_value': geoModel.get_MLCLeafA(i),
-                })
-            
-            # Collect all MLC leaf B data (leaves 1-60)
-            for i in range(1, 61):
-                leaves_data.append({
-                    'date': geoModel.get_date(),
-                    'machine_sn': geoModel.get_machine_SN(),
-                    'leaf_bank': 'B',
-                    'leaf_index': i,
-                    'leaf_value': geoModel.get_MLCLeafB(i),
-                })
-            
-            # Upload each leaf record
-            success_count = 0
-            for leaf_data in leaves_data:
-                if self.db_adapter.upload_beam_data(table_name, leaf_data):
-                    success_count += 1
-            
-            logger.info(f"Uploaded {success_count}/{len(leaves_data)} MLC leaf records")
-            return success_count == len(leaves_data)
-
-        except Exception as e:
-            logger.error(f"Error uploading MLC leaves: {e}", exc_info=True)
-            return False
-
-    def uploadMLCBacklash(self, geoModel, table_name: str = 'mlc_backlash_data'):
-        """
-        Upload MLC backlash data separately (optional helper method).
-        This can be called after geoModelUpload() if you want to store
-        individual backlash data in a separate table.
-        """
-        try:
-            backlash_data = []
-            
-            # Collect all MLC backlash A data (leaves 1-60)
-            for i in range(1, 61):
-                backlash_data.append({
-                    'date': geoModel.get_date(),
-                    'machine_sn': geoModel.get_machine_SN(),
-                    'leaf_bank': 'A',
-                    'leaf_index': i,
-                    'backlash_value': geoModel.get_MLCBacklashA(i),
-                })
-            
-            # Collect all MLC backlash B data (leaves 1-60)
-            for i in range(1, 61):
-                backlash_data.append({
-                    'date': geoModel.get_date(),
-                    'machine_sn': geoModel.get_machine_SN(),
-                    'leaf_bank': 'B',
-                    'leaf_index': i,
-                    'backlash_value': geoModel.get_MLCBacklashB(i),
-                })
-            
-            # Upload each backlash record
-            success_count = 0
-            for backlash_record in backlash_data:
-                if self.db_adapter.upload_beam_data(table_name, backlash_record):
-                    success_count += 1
-            
-            logger.info(f"Uploaded {success_count}/{len(backlash_data)} MLC backlash records")
-            return success_count == len(backlash_data)
-
-        except Exception as e:
-            logger.error(f"Error uploading MLC backlash: {e}", exc_info=True)
-            return False
-
-
     def make_json_safe(self, obj):
         """
         Recursively convert Decimal objects to float for JSON serialization.
@@ -1210,10 +866,3 @@ class Uploader:
             return {k: self.make_json_safe(v) for k, v in obj.items()}
         else:
             return obj
-
-    def close(self):
-        """Close the database connection."""
-        if self.db_adapter and hasattr(self.db_adapter, 'close'):
-            self.db_adapter.close()
-
-

@@ -10,8 +10,9 @@
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
     <PackageReference Include="QuestPDF" Version="2025.12.3" />
-    <PackageReference Include="Supabase" Version="1.1.1" />
-    <PackageReference Include="Supabase.Postgrest" Version="4.1.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
 </Project>

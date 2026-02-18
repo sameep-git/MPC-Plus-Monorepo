@@ -43,6 +43,9 @@ Thumbs.db
 # (relative to repo root)
 src/api/Constants/SupabaseSecrets.Local.cs
 
+# Beam check images (served locally from wwwroot)
+src/api/wwwroot/images/
+
 # --- Python ignores ---
 # Byte-compiled / optimized / DLL files
 __pycache__/

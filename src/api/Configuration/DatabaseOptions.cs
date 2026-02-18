@@ -4,6 +4,6 @@ public class DatabaseOptions
 {
     public const string SectionName = "Database";
 
-    public string Provider { get; init; } = "Supabase";
+    public string ConnectionString { get; init; } = string.Empty;
 }
 
