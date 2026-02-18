@@ -75,34 +75,22 @@ def start_monitor(idrive_path="iDrive", background=False, lexar=False):
             
             # Direct monitoring mode for multiple paths
             monitor = FolderMonitor(existing_paths)
-        print(f"Starting folder monitor for: {os.path.abspath(idrive_path)}")
-        
-        # Load Supabase credentials from environment
-        supabase_url = os.getenv('SUPABASE_URL')
-        supabase_key = os.getenv('SUPABASE_KEY')
-        
-        if supabase_url and supabase_key:
-            print("✓ Supabase credentials loaded - uploads enabled")
-        else:
-            print("⚠ No Supabase credentials - uploads disabled")
-            print("  Set SUPABASE_URL and SUPABASE_KEY in .env to enable uploads")
-        
-        if background:
-            # Use the service runner for background mode
-            service = MonitorService()
-            service.start_background()
-        else:
-            # Direct monitoring mode
-            monitor = FolderMonitor(
-                idrive_path,
-                supabase_url=supabase_url,
-                supabase_key=supabase_key
-            )
             monitor.scan_existing_folders()
             monitor.start_monitoring()
         else:
             # Single path monitoring
             print(f"Starting folder monitor for: {os.path.abspath(idrive_path)}")
+            
+            # Load PostgreSQL credentials from environment
+            postgres_host = os.getenv('POSTGRES_HOST')
+            postgres_database = os.getenv('POSTGRES_DATABASE')
+            postgres_user = os.getenv('POSTGRES_USER')
+            
+            if postgres_host and postgres_database and postgres_user:
+                print("✓ PostgreSQL credentials loaded - uploads enabled")
+            else:
+                print("⚠ No PostgreSQL credentials - uploads disabled")
+                print("  Set POSTGRES_HOST, POSTGRES_DATABASE, POSTGRES_USER, and POSTGRES_PASSWORD in .env to enable uploads")
             
             if background:
                 # Use the service runner for background mode
@@ -146,7 +134,7 @@ def setup_system():
     print("System setup completed successfully!")
     print()
     print("You can now start the monitor with:")
-    print("  python src/main.py start")
+    print("  python -m src.data_manipulation.file_monitoring.main start")
     return True
 
 def main():
