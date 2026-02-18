@@ -174,6 +174,8 @@ class FolderMonitor:
             for path in self.idrive_paths:
                 logger.info(f"  - {path}")
             
+            logger.info("Monitoring for NEW folders only (existing folders will not be processed)")
+            
             # Set up observers for each path
             for path in self.idrive_paths:
                 observer = Observer()
@@ -184,6 +186,7 @@ class FolderMonitor:
             self.is_running = True
             
             logger.info("Folder monitoring started successfully")
+            logger.info("Waiting for new folders to be added...")
             logger.info("Press Ctrl+C to stop monitoring")
             
             # Keep the program running
@@ -214,7 +217,9 @@ class FolderMonitor:
     
     def scan_existing_folders(self):
         """
-        Scan for existing folders that might need processing
+        Scan for existing folders that might need processing.
+        This method processes all existing folders in the monitored directories.
+        Use the --scan-existing command-line option to invoke this on startup.
         """
         try:
             logger.info(f"Scanning for existing folders in {len(self.idrive_paths)} location(s)...")
@@ -255,10 +260,7 @@ def main():
     # Create and configure monitor
     monitor = FolderMonitor()
     
-    # Scan for existing folders first
-    #monitor.scan_existing_folders()
-    
-    # Start continuous monitoring
+    # Start continuous monitoring (only processes NEW folders added while running)
     monitor.start_monitoring()
 
 if __name__ == "__main__":

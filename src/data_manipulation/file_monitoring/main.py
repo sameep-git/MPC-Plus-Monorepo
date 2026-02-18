@@ -41,7 +41,7 @@ def print_banner():
     print("=" * 50)
     print()
 
-def start_monitor(idrive_path="iDrive", background=False, lexar=False):
+def start_monitor(idrive_path="iDrive", background=False, lexar=False, scan_existing=False):
     """
     Start the folder monitor
     
@@ -49,6 +49,7 @@ def start_monitor(idrive_path="iDrive", background=False, lexar=False):
         idrive_path (str): Path to monitor (or 'lexar' for Lexar drive)
         background (bool): Whether to run in background
         lexar (bool): Whether to monitor Lexar drive locations
+        scan_existing (bool): Whether to scan and process existing folders on startup
     """
     try:
         # Handle Lexar drive monitoring
@@ -75,7 +76,8 @@ def start_monitor(idrive_path="iDrive", background=False, lexar=False):
             
             # Direct monitoring mode for multiple paths
             monitor = FolderMonitor(existing_paths)
-            monitor.scan_existing_folders()
+            if scan_existing:
+                monitor.scan_existing_folders()
             monitor.start_monitoring()
         else:
             # Single path monitoring
@@ -99,7 +101,8 @@ def start_monitor(idrive_path="iDrive", background=False, lexar=False):
             else:
                 # Direct monitoring mode
                 monitor = FolderMonitor(idrive_path)
-                monitor.scan_existing_folders()
+                if scan_existing:
+                    monitor.scan_existing_folders()
                 monitor.start_monitoring()
             
     except KeyboardInterrupt:
@@ -146,12 +149,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python src/main.py setup           # Set up the system
-  python src/main.py start           # Start folder monitoring
-  python src/main.py start --path custom_folder  # Monitor custom folder
-  python src/main.py start --lexar   # Monitor Lexar drive (Arlington & Weatherford)
-  python src/main.py start --background          # Run in background
-  python -m src.data_manipulation.file_monitoring.main start --lexar
+  python -m src.data_manipulation.file_monitoring.main setup           # Set up the system
+  python -m src.data_manipulation.file_monitoring.main start             # Start folder monitoring (new folders only)
+  python -m src.data_manipulation.file_monitoring.main start --scan-existing  # Scan existing folders on startup
+  python -m src.data_manipulation.file_monitoring.main start --path custom_folder  # Monitor custom folder
+  python -m src.data_manipulation.file_monitoring.main start --lexar   # Monitor Lexar drive (Arlington & Weatherford)
+  python -m src.data_manipulation.file_monitoring.main start --background          # Run in background
         """
     )
     
@@ -163,6 +166,8 @@ Examples:
                        help='Monitor Lexar drive locations (Arlington and Weatherford)')
     parser.add_argument('--background', '-b', action='store_true',
                        help='Run in background mode')
+    parser.add_argument('--scan-existing', '-s', action='store_true',
+                       help='Scan and process existing folders on startup (default: only process new folders)')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Enable verbose logging')
     
@@ -177,7 +182,7 @@ Examples:
     if args.command == 'setup':
         setup_system()
     elif args.command == 'start':
-        start_monitor(args.path, args.background, args.lexar)
+        start_monitor(args.path, args.background, args.lexar, args.scan_existing)
     elif args.command == 'status':
         service = MonitorService()
         service.status()

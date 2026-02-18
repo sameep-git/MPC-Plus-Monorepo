@@ -23,9 +23,14 @@ python -m src.data_manipulation.file_monitoring.main setup
 
 ### 2. Start Monitoring
 
-**Simple start (interactive mode):**
+**Simple start (interactive mode) - only processes NEW folders:**
 ```bash
 python -m src.data_manipulation.file_monitoring.main start
+```
+
+**Start and scan existing folders on startup:**
+```bash
+python -m src.data_manipulation.file_monitoring.main start --scan-existing
 ```
 
 **Background service mode:**
@@ -50,8 +55,11 @@ python -m src.data_manipulation.file_monitoring.main start --background
 # System setup
 python -m src.data_manipulation.file_monitoring.main setup
 
-# Start monitoring (interactive)
+# Start monitoring (interactive) - only processes NEW folders added while running
 python -m src.data_manipulation.file_monitoring.main start
+
+# Start monitoring and scan existing folders on startup
+python -m src.data_manipulation.file_monitoring.main start --scan-existing
 
 # Start monitoring custom folder
 python -m src.data_manipulation.file_monitoring.main start --path /path/to/custom/folder
@@ -83,10 +91,13 @@ python -m src.data_manipulation.file_monitoring.run_monitor_service status
 
 1. **Folder Monitoring**: Uses the `watchdog` library to monitor filesystem events
 2. **Event Detection**: Detects when new folders are created or moved into iDrive
-3. **Readiness Check**: Verifies that uploads are complete (checks for Results.csv)
-4. **Data Processing**: Creates a DataProcessor instance and calls its Run() method
-5. **Beam Detection**: The DataProcessor automatically detects beam types (6e, 15x, etc.)
-6. **Logging**: All operations are logged with timestamps and details
+3. **Startup Behavior**: 
+   - By default, only processes NEW folders added while the monitor is running
+   - Use `--scan-existing` flag to process existing folders on startup
+4. **Readiness Check**: Verifies that uploads are complete (checks for Results.csv)
+5. **Data Processing**: Creates a DataProcessor instance and calls its Run() method
+6. **Beam Detection**: The DataProcessor automatically detects beam types (6e, 15x, etc.)
+7. **Logging**: All operations are logged with timestamps and details
 
 ## Supported Beam Types
 
