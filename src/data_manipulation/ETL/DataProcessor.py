@@ -98,7 +98,7 @@ class DataProcessor:
 
     def _get_dynamic_beam_map(self, is_test=False):
         """
-        Connects to Supabase and determines the beam map dynamically 
+        Connects to PostgreSQL and determines the beam map dynamically 
         based on available variants.
         """
         variants = self.up.get_beam_variants()
@@ -169,16 +169,25 @@ class DataProcessor:
     def connect_to_db(self):
         # Connect to database using environment variables to fetch variants
         connection_params = {
-            "url": os.getenv("SUPABASE_URL"),
-            "key": os.getenv("SUPABASE_KEY"),
+            "host": os.getenv("POSTGRES_HOST", "localhost"),
+            "port": os.getenv("POSTGRES_PORT", "5432"),
+            "database": os.getenv("POSTGRES_DATABASE"),
+            "user": os.getenv("POSTGRES_USER"),
+            "password": os.getenv("POSTGRES_PASSWORD"),
         }
+        
+        # Alternative: use connection_string if provided
+        if os.getenv("POSTGRES_CONNECTION_STRING"):
+            connection_params = {
+                "connection_string": os.getenv("POSTGRES_CONNECTION_STRING")
+            }
         
         # We need to connect to get static variants but connection is need for other parts of the program
         if not self.up.connect(connection_params):
-            logger.error("Could not connect to Supabase to fetch beam variants.")
+            logger.error("Could not connect to PostgreSQL to fetch beam variants.")
             return None
         else:
-            logger.info("Connected to Supabase.")
+            logger.info("Connected to PostgreSQL.")
             return self.up
     
     
@@ -240,7 +249,7 @@ class DataProcessor:
                 else:
                     logger.info("Running normal extraction...")
                     self.data_ex.extract(beam)
-                    logger.info("Uploading to Supabase...")
+                    logger.info("Uploading to PostgreSQL...")
                     # Connection is already established at start of function
                     if(not self.up.upload(beam)):
                         logger.error("Cannot upload to the database")

@@ -18,19 +18,24 @@ This system provides:
 Run the setup command to install dependencies and create necessary folders:
 
 ```bash
-python src/main.py setup
+python -m src.data_manipulation.file_monitoring.main setup
 ```
 
 ### 2. Start Monitoring
 
-**Simple start (interactive mode):**
+**Simple start (interactive mode) - only processes NEW folders:**
 ```bash
-python src/main.py start
+python -m src.data_manipulation.file_monitoring.main start
+```
+
+**Start and scan existing folders on startup:**
+```bash
+python -m src.data_manipulation.file_monitoring.main start --scan-existing
 ```
 
 **Background service mode:**
 ```bash
-python src/main.py start --background
+python -m src.data_manipulation.file_monitoring.main start --background
 ```
 
 
@@ -44,49 +49,55 @@ python src/main.py start --background
 
 ## Commands
 
-### Main Entry Point (`src/main.py`)
+### Main Entry Point (`src/data_manipulation/file_monitoring/main.py`)
 
 ```bash
 # System setup
-python src/main.py setup
+python -m src.data_manipulation.file_monitoring.main setup
 
-# Start monitoring (interactive)
-python src/main.py start
+# Start monitoring (interactive) - only processes NEW folders added while running
+python -m src.data_manipulation.file_monitoring.main start
+
+# Start monitoring and scan existing folders on startup
+python -m src.data_manipulation.file_monitoring.main start --scan-existing
 
 # Start monitoring custom folder
-python src/main.py start --path /path/to/custom/folder
+python -m src.data_manipulation.file_monitoring.main start --path /path/to/custom/folder
 
 # Start in background mode
-python src/main.py start --background
+python -m src.data_manipulation.file_monitoring.main start --background
 
 # Check service status
-python src/main.py status
+python -m src.data_manipulation.file_monitoring.main status
 
 # Enable verbose logging
-python src/main.py start --verbose
+python -m src.data_manipulation.file_monitoring.main start --verbose
 ```
 
-### Service Runner (`src/run_monitor_service.py`)
+### Service Runner (`src/data_manipulation/file_monitoring/run_monitor_service.py`)
 
 ```bash
 # Install dependencies only
-python src/run_monitor_service.py install-deps
+python -m src.data_manipulation.file_monitoring.run_monitor_service install-deps
 
 # Start service
-python src/run_monitor_service.py start
+python -m src.data_manipulation.file_monitoring.run_monitor_service start
 
 # Check status
-python src/run_monitor_service.py status
+python -m src.data_manipulation.file_monitoring.run_monitor_service status
 ```
 
 ## How It Works
 
 1. **Folder Monitoring**: Uses the `watchdog` library to monitor filesystem events
 2. **Event Detection**: Detects when new folders are created or moved into iDrive
-3. **Readiness Check**: Verifies that uploads are complete (checks for Results.csv)
-4. **Data Processing**: Creates a DataProcessor instance and calls its Run() method
-5. **Beam Detection**: The DataProcessor automatically detects beam types (6e, 15x, etc.)
-6. **Logging**: All operations are logged with timestamps and details
+3. **Startup Behavior**: 
+   - By default, only processes NEW folders added while the monitor is running
+   - Use `--scan-existing` flag to process existing folders on startup
+4. **Readiness Check**: Verifies that uploads are complete (checks for Results.csv)
+5. **Data Processing**: Creates a DataProcessor instance and calls its Run() method
+6. **Beam Detection**: The DataProcessor automatically detects beam types (6e, 15x, etc.)
+7. **Logging**: All operations are logged with timestamps and details
 
 ## Supported Beam Types
 
@@ -98,17 +109,34 @@ Detection is based on the folder path containing these identifiers.
 
 ## Configuration
 
+### Database Connection
+The system uses PostgreSQL for data storage. Configure connection parameters in your `.env` file:
+
+```
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=your_database_name
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+```
+
+Alternatively, you can use a connection string:
+```
+POSTGRES_CONNECTION_STRING=postgresql://user:password@host:port/database
+```
+
 ### Monitored Folder
 Default: `iDrive` (in project root)
 Can be changed using the `--path` argument.
 
 ### Log Files
-- Monitor logs: `folder_monitor.log`
+- Monitor logs: `logs/folder_monitor.log`
 - Service logs: Console output (captured when using service runner)
 
 ### Dependencies
 - Python 3.7+
 - watchdog 3.0.0 (for filesystem monitoring)
+- psycopg2-binary (for PostgreSQL connectivity)
 
 ## Troubleshooting
 
@@ -119,7 +147,7 @@ Can be changed using the `--path` argument.
 - Try `python3` instead of `python` on some systems
 
 **"Module not found" errors**
-- Run `python src/main.py setup` to install dependencies
+- Run `python -m src.data_manipulation.file_monitoring.main setup` to install dependencies
 - Ensure you're running from the project root directory
 
 **"iDrive folder not found"**
