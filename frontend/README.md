@@ -1,19 +1,69 @@
-# MPC-Plus-Frontend
+# MPC Plus - Frontend
 
-This is the Frontend repo for TCU CS Senior Design Project with The CenterTX institute. We are working on MPC Plus.
+The web interface for **MPC Plus**, a Machine Performance Check system designed for radiation therapy quality assurance. This project is an open-source initiative by **TCU Computer Science** students in collaboration with **The Center for Cancer and Blood Disorders**.
 
-Instructions for first clone of project:
+## Overview
 
- 1. Make a new folder with any name (ex: SeniorDesign)
- 2. Go into the new folder and create two folders called frontend and backend.
- 3. Go into frontend and clone this repo [(Frontend)](https://github.com/sameep-git/MPC-Plus-Frontend)
- 4. Go into backend and clone this repo [(Backend)](https://github.com/sameep-git/MPC-Plus)
- 
-Make a Pull Request:
+MPC Plus provides a modern, intuitive dashboard for medical physicists to monitor the performance of linear accelerators. It visualizes daily check results, highlights anomalies, and generates compliance reports.
 
- 1. git switch -c "branch-name"
- 2. git add *files*
- 3. git commit -m "commit message"
- 4. git push
- 5. copy the git push line in the output, run it
- 6. make a new pull request from github repo page
+## 🚀 Key Features
+
+*   **Dashboard**: At-a-glance view of machine status and latest updates.
+*   **Visual Analytics**: Interactive graphs and charts (powered by **Recharts**) to track performance trends over time.
+*   **Machine Management**: Configure machine details and settings.
+*   **Detailed Results**: Drill down into specific beam metrics (Output, Uniformity, Symmetry).
+*   **Report Generation**: Request and download PDF compliance reports.
+
+## 🛠️ Technology Stack
+
+*   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+*   **Language**: TypeScript
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **UI Components**: [Radix UI](https://www.radix-ui.com/) / [Lucide React](https://lucide.dev/)
+*   **Charts**: [Recharts](https://recharts.org/)
+
+## � Database Schema
+
+For detailed database schema documentation, see the [Backend Schema](../../backend/MPC-Plus/DATABASE_SCHEMA.md).
+
+## �📦 Getting Started
+
+For full local deployment instructions, please refer to the [DEPLOYMENT.md](../../DEPLOYMENT.md) guide in the root directory.
+
+### Prerequisites
+
+*   Node.js 18+
+*   npm / yarn / pnpm
+
+### Configuration
+
+Copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+### Running Locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## 👥 Contributors
+
+**Frontend / Full Stack Team:**
+*   **Sameep Shah**
+*   **Alex Morales**
+
+**Backend Team:**
+*   **Brae Ogle**
+*   **Alex Lee**
+*   **Madhavam Shahi**
+*   **Tristan Gonzales**
+
+## 📄 License
+
+This project is open source.
