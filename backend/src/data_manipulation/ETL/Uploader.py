@@ -97,7 +97,7 @@ class PostgresAdapter(DatabaseAdapter):
         # Assumes running from src/data_manipulation/ETL
         self.storage_root = os.path.abspath(os.path.join(
             os.path.dirname(__file__), 
-            "../../../api/wwwroot/images"
+            "../../api/wwwroot/images"
         ))
         
         # Base URL for accessing images via the API (should match static file serving)

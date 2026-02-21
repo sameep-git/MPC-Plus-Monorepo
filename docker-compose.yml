@@ -19,7 +19,7 @@ services:
   # ── Backend (.NET API) ────────────────────────────────────
   backend:
     build:
-      context: ./backend/MPC-Plus/src/api
+      context: ./backend/src/api
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
@@ -31,12 +31,12 @@ services:
       - db
     volumes:
        # Persist uploaded images
-      - ./backend/MPC-Plus/src/api/wwwroot/images:/app/wwwroot/images
+      - ./backend/src/api/wwwroot/images:/app/wwwroot/images
 
   # ── Frontend (Next.js) ────────────────────────────────────
   frontend:
     build:
-      context: ./frontend/mpc-plus
+      context: ./frontend
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

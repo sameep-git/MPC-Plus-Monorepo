@@ -6,8 +6,8 @@ echo ========================================
 
 REM --- Configuration ---
 SETPROJECT_ROOT=%~dp0
-SETDOTNET_PROJECT=%PROJECT_ROOT%backend\MPC-Plus\src\api
-SETFRONTEND_DIR=%PROJECT_ROOT%frontend\mpc-plus
+SETDOTNET_PROJECT=%PROJECT_ROOT%backend\src\api
+SETFRONTEND_DIR=%PROJECT_ROOT%frontend
 
 REM --- 1. Check if PostgreSQL is running ---
 echo [1/3] Checking PostgreSQL...
