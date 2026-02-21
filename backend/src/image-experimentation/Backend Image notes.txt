@@ -1,0 +1,71 @@
+Need:
+
+data:
+--------------
+Vertical symmetry: -1.786%
+Horizontal symmetry: 3.521%
+
+Vertical flatness: 5.625%
+Horizontal flatness: 5.439%
+--> Has threshold values (tbd on them)
+
+Need Graph - Symettry Profile
+
+
+MPC Output:
+Always "Relative to the baseline"
+Need DOC - Dose output Correction
+If you do baseline, you must tell it absolute dose at that point in time (At that point relative will be 0, duh)
+Need Settings: Absolute output input, & History Of
+1 month leway 
+
+
+Baseline:
+Done at the machine level
+No fucntionality needed
+Down steream proces 
+Get isBaseline from XML
+
+
+Monday:
+Need graphs from Field Analysis
+   --> (Points, Matrix, Picture?)
+   USE A picture
+Database set up --> Uploader
+
+Change:: Symm and Flat be apart of beam models
+        Images NEED TO BE PNG
+
+Change uploader so checks if isbaseline
+
+Need DOC - Dose output Correction
+
+Chance naming convention of images
+-->beamtype/machineID/dateTime
+Change to this:
+machine_id/date/beam_type/time/ beamImage
+machine_id/date/beam_type/time/ F&SGraph
+machine_id/date/GEO/time/ All
+
+Thursday - F & S to beam model:
+- Images must be PNG 
+-Commit
+-Getters and Setters in beam model
+-Beam processor/Data processor call image processor
+-Commit
+-Uploader to adopt F & S  
+
+
+Friday Meeting Notes:
+
+Change all prints to loggers
+Verify connection works
+Look at Geo Checkks in Uploader.py
+Line 150-187 Dataprocessor, need more error handling
+Fix relative imports
+Recognize 2.5x
+
+Get mini graphs to DB
+Uploader to adopt F & S
+Upload Images
+Recognize 2.5x adn 10xFFF beam (need 10xFFF data)

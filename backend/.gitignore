@@ -1,0 +1,117 @@
+# C# / .NET ignores (user-provided base)
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.pdb
+*.suo
+*.user
+*.log
+*.bak
+*.cache
+*.vspscc
+*.vssscc
+
+# Visual Studio files
+.vs/
+*.sln.docstates
+*.vsp
+*.vspx
+*.webtest
+*.testsettings
+*.trx
+
+# Package files
+packages/
+*.nupkg
+
+# Resharper files
+.idea/
+*.resharper
+
+# Rider files
+.idea/
+
+# DotNet tools
+.config/dotnet-tools.json
+
+# Other
+Thumbs.db
+
+# Explicitly ignore local Supabase secrets file
+# (relative to repo root)
+src/api/Constants/SupabaseSecrets.Local.cs
+
+# Beam check images (served locally from wwwroot)
+src/api/wwwroot/images/
+
+# --- Python ignores ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+share/python-wheels/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Pyenv
+.python-version
+
+# pyenv-virtualenv
+.python-version
+
+# Testing
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+.cache
+
+# MyPy
+.mypy_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code workspace settings
+.vscode/
+
+# IDE settings
+.idea/
+
+# dotenv
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Additional common Python artifacts
+*.egg
+*.whl
+*.manifest
+
+# End of file

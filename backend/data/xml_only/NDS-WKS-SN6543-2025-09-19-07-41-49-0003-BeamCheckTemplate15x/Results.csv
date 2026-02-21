@@ -1,0 +1,4 @@
+Name [Unit], Value, Threshold, Evaluation Result
+BeamGroup/BeamOutputChange [%], -0.82, 2, Pass
+BeamGroup/BeamUniformityChange [%], 0.22, 2, Pass
+BeamGroup/BeamCenterShift [mm], 0.11, 0.5, Pass

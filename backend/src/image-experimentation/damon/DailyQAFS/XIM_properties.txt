@@ -1,0 +1,159 @@
+SequenceNumber: 0
+AcquisitionId: 868813446
+AcquisitionMode: 
+AcquisitionModeId: Highres
+AcquisitionNotes: Mode Type : Single
+Offset Corr. : false
+Gain Corr. : false
+Pixel Corr. : false
+Averaging : true
+Integration : false
+Reset Frames : 4
+AEC : false
+AcquisitionSystem: 1
+AcquisitionSystemVersion: 5.0.2.109
+BeamState: 3
+CalibrationSetId: DefaultCalibrationSetId
+ControlPoint: 6.865909090909093
+CouchLat: 99.94944900546302
+CouchLng: 20.00061771796004
+CouchPit: -1.0728804078406068e-05
+CouchRol: 1.072884317365741e-05
+CouchRtn: 180.0
+CouchVrt: 112.38935727421915
+DataGain: 1.0
+DataOffset: 0
+DataRescaleType: 0
+DataShift: 0
+DoseConversionFactor: 0.0
+ExposurePulseType: 2147483647
+ExternalBeam: 0
+ExternalTrigger: 0
+FirmwareTimestampNSec: 652828672
+FirmwareTimestampSec: 846971
+FrameRate: 10.172526041666666
+GantryRtn: 180.00663261082082
+HistogramBinSize: 2147483647
+HistogramRoi: [2147483647 2147483647 2147483647 2147483647]
+ImageFlipped: 0
+ImageMedian: 1040
+ImageMode: <ImageMode><acquisitionModeId>Highres</acquisitionModeId><modeType>Single</modeType><publicMode>true</publicMode><gatedMode>false</gatedMode><handshake>true</handshake><numberOfFrames>13</numberOfFrames><numberOfFramesExemptions>None</numberOfFramesExemptions><alternatingDarkfield>false</alternatingDarkfield><startDelay>0</startDelay><stopDelay>0</stopDelay><AcquisitionBehavior><waitForExposure>false</waitForExposure><acceptNoExposure>true</acceptNoExposure><acceptValidExposure>true</acceptValidExposure><acceptInvalidExposure>true</acceptInvalidExposure><abortOnNoExposure>false</abortOnNoExposure><abortOnValidExposure>false</abortOnValidExposure><abortOnInvalidExposure>false</abortOnInvalidExposure></AcquisitionBehavior><PostProcessing><hardwareProcessing>true</hardwareProcessing><gainProcessingBits>16</gainProcessingBits><offsetCorrection>false</offsetCorrection><gainCorrection>false</gainCorrection><psmCorrection>false</psmCorrection><profileCorrection>false</profileCorrection><pixelCorrection>false</pixelCorrection><Averaging><enable>true</enable><hardwareAveraging>false</hardwareAveraging><method>equalWeighted</method><weight>0.8</weight></Averaging><histogram>false</histogram></PostProcessing><Test><idlePeriod>0</idlePeriod><changing>true</changing></Test><resetFrames>4</resetFrames><MVImageModeSettings><dosePerFrame>1.5</dosePerFrame><dosePerFrameExemptions>2.5x=0.75</dosePerFrameExemptions><nodeControlledRadShot>false</nodeControlledRadShot><radShot>true</radShot><frameRate>10</frameRate><doseServoFreeze>false</doseServoFreeze><BeamPulseSimulation><operatingMode>Disabled</operatingMode><numberOfFrames>0</numberOfFrames><pulseDelay>0</pulseDelay><pulseWidth>0</pulseWidth><beamDeliveryTime>50</beamDeliveryTime></BeamPulseSimulation></MVImageModeSettings></ImageMode>
+ImageModeId: AdHoc
+ImagePropertyVersionMajor: 2
+ImagePropertyVersionMinor: 1
+ImageSourceId: OMVModule
+ImageSourceIndex: 0
+ImageSourceType: 1
+KVAirKermaStart: 0.0
+KVAirKermaStop: 0.0
+KVAutoBrightnessControl: 0
+KVBeamHold: 0
+KVBeamOn: 0
+KVBeamPulseCounter: 731
+KVCollimatorFoil: Titanium V1
+KVCollimatorShape: None
+KVCollimatorX1: 13.799788016156558
+KVCollimatorX2: 13.799585661148642
+KVCollimatorY1: 10.499960075998327
+KVCollimatorY2: 10.499894385556459
+KVDetectorLat: 8.546913057291827e-05
+KVDetectorLng: -0.0012106805932763642
+KVDetectorPitch: 0.003436239468546953
+KVDetectorRtn: -0.03139
+KVDetectorVrt: -50.0016903357495
+KVDoseAreaProductStart: 0.0
+KVDoseAreaProductStop: 0.0
+KVFluoroLevelControl: None
+KVFocalSpot: 
+KVHardwareState: 18284580
+KVKiloVolts: 0.0
+KVMilliAmperes: 0.0
+KVMilliSeconds: 0.0
+KVNormChamber: 120795351
+KVSourceLat: 0.0
+KVSourceLng: -4.5448655453403375e-05
+KVSourcePitch: 0.0009834109470981817
+KVSourceRtn: 270.0066326108208
+KVSourceVrt: 100.00002973660389
+LastImage: 0
+LineReadoutTimeSec: 3.4028234663852886e+38
+MLCCarriageA: 14.152383263674672
+MLCCarriageB: 14.153393783401526
+MLCLeafsA: (13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.998944254874605, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999318871908919, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.999159594850973, 13.99915959485097, 13.99915959485097, 13.999159594850973, 13.99915959485097, 13.999159594850973, 13.999159594850973)
+MLCLeafsB: (14.000213431857944, 14.000213431857942, 14.000213431857942, 14.000213431857944, 14.000213431857944, 14.000213431857942, 14.000213431857944, 14.000213431857942, 14.000213431857942, 14.000213431857944, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999609915295922, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 13.999984532330236, 14.000213431857944, 14.000213431857942, 14.000213431857942, 14.000213431857944, 14.000213431857944, 14.000213431857944, 14.000213431857944, 14.000213431857942, 14.000213431857944, 14.000213431857942)
+MLCModel: 2
+MMActionWindows: 0
+MMAmplitude0: 3.4028234663852886e+38
+MMAmplitude1: 3.4028234663852886e+38
+MMAmplitude2: 3.4028234663852886e+38
+MMConformityIndexOverArea: 0.0
+MMConformityIndexOverAreaDoserate: 0.0
+MMConformityIndexOverAreaDoserateRelative: 0.0
+MMConformityIndexOverAreaRelative: 0.0
+MMConformityIndexUnderArea: 0.0
+MMConformityIndexUnderAreaDoserate: 0.0
+MMConformityIndexUnderAreaDoserateRelative: 0.0
+MMConformityIndexUnderAreaRelative: 0.0
+MMExtrapolationStartTime0: 0
+MMExtrapolationStartTime0Remainder: 0
+MMExtrapolationStartTime1: 0
+MMExtrapolationStartTime1Remainder: 0
+MMExtrapolationStartTime2: 0
+MMExtrapolationStartTime2Remainder: 0
+MMMotionModelResultType0: 0
+MMMotionModelResultType1: 0
+MMMotionModelResultType2: 0
+MMPhase0: 3.4028234663852886e+38
+MMPhase1: 3.4028234663852886e+38
+MMPhase2: 3.4028234663852886e+38
+MMPhaseTarget: 3.4028234663852886e+38
+MMQuality0: 0.0
+MMQuality1: 0.0
+MMQuality2: 0.0
+MMQualityAmp0: 3.4028234663852886e+38
+MMQualityAmp1: 3.4028234663852886e+38
+MMQualityAmp2: 3.4028234663852886e+38
+MMSegmentalAction: 0
+MMSurrogateModelResultType0: 0
+MMSurrogateModelResultType1: 0
+MMSurrogateModelResultType2: 0
+MMTrackingRemainderX: 0.0
+MMTrackingRemainderY: 0.0
+MMTrackingRemainderZ: 0.0
+MMTrackingSourceId0: 
+MMTrackingSourceId1: 
+MMTrackingSourceId2: 
+MVBeamHold: 0
+MVBeamOn: 1
+MVBeamStateChange: 1
+MVCollimatorRtn: 269.999999289003
+MVCollimatorRtnSecondary: 3.4028234663852886e+38
+MVCollimatorX1: 9.000005305196787
+MVCollimatorX2: 9.000001273626552
+MVCollimatorY1: 8.99999927831004
+MVCollimatorY2: 8.999999976139874
+MVDetectorLat: -3.6756548237815156e-05
+MVDetectorLng: 0.00038769374751213004
+MVDetectorPitch: 0.0007083790199909659
+MVDetectorRtn: 0.00792
+MVDetectorVrt: -50.00075682888618
+MVDoseDelivered: 0.0
+MVDoseRate: 10.0
+MVDoseStart: 16.9985593263686
+MVDoseStop: 36.50208757637948
+MVEnergy: 10x
+MVSourceVrt: 100.0
+MotionCompensationHold: 0
+NDIToolId: 
+NDIToolState: 1
+NumberOfFrames: 13
+PixelHeight: 0.0336
+PixelNormalizationFactor: 0.0
+PixelWidth: 0.0336
+StartTime: 1738419160
+StartTimeRemainder: 808435340
+StopTime: 1738419165
+StopTimeRemainder: 379604500
+UndefinedDouble: 3.4028234663852886e+38
+Valid: 1
+AcquisitionTag: BeamProfileCheck

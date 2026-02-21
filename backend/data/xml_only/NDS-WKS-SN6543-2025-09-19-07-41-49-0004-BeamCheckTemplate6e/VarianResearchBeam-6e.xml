@@ -1,0 +1,269 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VarianResearchBeam SchemaVersion="1.0">
+  <SetBeam>
+    <Id>1</Id>
+    <TreatmentMode>MPC</TreatmentMode>
+    <MLCModel>NDS120</MLCModel>
+    <Accs>
+      <Acc1>0</Acc1>
+      <Acc2>0</Acc2>
+      <Acc3>0</Acc3>
+      <Acc4>0</Acc4>
+    </Accs>
+    <ControlPoints>
+      <!-- START Procedure ToHomeProcedure 6e -->
+      <Cp>
+        <WorkObjectID>Linac</WorkObjectID>
+        <SubBeam>
+          <Seq>0</Seq>
+        </SubBeam>
+        <Energy>6e</Energy>
+        <Mu>0</Mu>
+        <DRate>1000</DRate>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>20</CouchLngISO>
+        <CouchRtnISO>180</CouchRtnISO>
+        <Y1>13.3</Y1>
+        <Y2>13.3</Y2>
+        <X1>10</X1>
+        <X2>10</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <!-- END Procedure ToHomeProcedure 6e -->
+      <!-- START Procedure Beam Check Procedure 6e -->
+      <Cp>
+        <Mu>0</Mu>
+        <Y1>14</Y1>
+        <Y2>14</Y2>
+        <X1>14</X1>
+        <X2>14</X2>
+      </Cp>
+      <Cp>
+        <Mu>0</Mu>
+      </Cp>
+      <Cp>
+        <Mu>10</Mu>
+      </Cp>
+      <Cp>
+        <Mu>10</Mu>
+      </Cp>
+      <Cp>
+        <Mu>17</Mu>
+        <Y1>9</Y1>
+        <Y2>9</Y2>
+        <X1>9</X1>
+        <X2>9</X2>
+      </Cp>
+      <Cp>
+        <Mu>17</Mu>
+      </Cp>
+      <Cp>
+        <Mu>39</Mu>
+      </Cp>
+      <!-- END Procedure Beam Check Procedure 6e -->
+      <!-- START Procedure ToHomeProcedure 6e -->
+      <Cp>
+        <SubBeam>
+          <Seq>1</Seq>
+        </SubBeam>
+        <Mu>39</Mu>
+      </Cp>
+      <Cp>
+        <WorkObjectID>Linac</WorkObjectID>
+        <Energy>6e</Energy>
+        <Mu>39</Mu>
+        <DRate>1000</DRate>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>20</CouchLngISO>
+        <CouchRtnISO>180</CouchRtnISO>
+        <Y1>13.3</Y1>
+        <Y2>13.3</Y2>
+        <X1>10</X1>
+        <X2>10</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <!-- END Procedure ToHomeProcedure 6e -->
+      <Cp>
+        <Mu>39</Mu>
+      </Cp>
+    </ControlPoints>
+    <ImagingParameters>
+      <DuringTreatment />
+      <ImagingPoints>
+        <ImagingPoint>
+          <Cp>0</Cp>
+          <KvFilters>
+            <Shape>0</Shape>
+            <Foil>1</Foil>
+          </KvFilters>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+          <Mvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Mvd>
+          <Kvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvd>
+          <Kvs>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>100</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvs>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>2</Cp>
+          <Acquisition>
+            <AcquisitionId>1</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>50</KiloVolts>
+                <MilliAmperes>20</MilliAmperes>
+                <MilliSeconds>20</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>Floodfield-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>4</Cp>
+          <Acquisition>
+            <AcquisitionId>2</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">2</Overwrite>
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>Floodfield-Raw</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>6</Cp>
+          <Acquisition>
+            <AcquisitionId>3</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">4</Overwrite>
+                <Overwrite parameter="numberOfFrames">10</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">2</Overwrite>
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>BeamProfileCheck</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>9</Cp>
+          <KvFilters>
+            <Shape>0</Shape>
+            <Foil>1</Foil>
+          </KvFilters>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+          <Mvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Mvd>
+          <Kvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvd>
+          <Kvs>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>100</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvs>
+        </ImagingPoint>
+      </ImagingPoints>
+      <ImagingTolerances />
+    </ImagingParameters>
+    <!--<PhantomType>NoneOrIsoCal</PhantomType>-->
+    <!--<TemplateId>BeamCheckTemplate6e</TemplateId>-->
+  </SetBeam>
+</VarianResearchBeam>

@@ -1,0 +1,41 @@
+File: <pylinac.core.image.XIM object at 0x0000028B9F3FC1A0>
+Protocol: VARIAN
+Centering method: Beam center
+Normalization method: Beam center
+Interpolation: Linear
+Edge detection method: Inflection Derivative
+
+Penumbra width (20/80):
+Left: 6.0mm
+Right: 154.7mm
+Top: 5.0mm
+Bottom: 5.1mm
+
+Field Size:
+Horizontal: 269.1mm
+Vertical: 271.1mm
+
+CAX to edge distances:
+CAX -> Top edge: 135.3mm
+CAX -> Bottom edge: 135.8mm
+CAX -> Left edge: 134.8mm
+CAX -> Right edge: 134.3mm
+
+Central ROI stats:
+Mean: 5717.25
+Max: 5816.0
+Min: 5631.0
+Standard deviation: 77.08234233597211
+
+Top slope: -0.069%/mm
+Bottom slope: 0.017%/mm
+Left slope: -0.029%/mm
+Right slope: 0.050%/mm
+
+Protocol data:
+--------------
+Vertical symmetry: 6.996%
+Horizontal symmetry: 7.543%
+
+Vertical flatness: 3.870%
+Horizontal flatness: 4.813%

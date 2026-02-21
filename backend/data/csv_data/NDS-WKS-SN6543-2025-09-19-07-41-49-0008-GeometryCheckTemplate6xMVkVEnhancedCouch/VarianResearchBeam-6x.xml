@@ -1,0 +1,2142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VarianResearchBeam SchemaVersion="1.0">
+  <SetBeam>
+    <Id>1</Id>
+    <TreatmentMode>MPC</TreatmentMode>
+    <MLCModel>NDS120</MLCModel>
+    <Accs>
+      <Acc1>0</Acc1>
+      <Acc2>0</Acc2>
+      <Acc3>0</Acc3>
+      <Acc4>0</Acc4>
+    </Accs>
+    <ControlPoints>
+      <!-- START Procedure ToHomeProcedure 6x -->
+      <Cp>
+        <WorkObjectID>Linac</WorkObjectID>
+        <SubBeam>
+          <Seq>0</Seq>
+        </SubBeam>
+        <Energy>6x</Energy>
+        <Mu>0</Mu>
+        <DRate>600</DRate>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>20</CouchLngISO>
+        <CouchRtnISO>180</CouchRtnISO>
+        <Y1>13.3</Y1>
+        <Y2>13.3</Y2>
+        <X1>10</X1>
+        <X2>10</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <!-- END Procedure ToHomeProcedure 6x -->
+      <!-- START Procedure Beam Check Procedure 6x -->
+      <Cp>
+        <Mu>0</Mu>
+        <Y1>14</Y1>
+        <Y2>14</Y2>
+        <X1>14</X1>
+        <X2>14</X2>
+      </Cp>
+      <Cp>
+        <Mu>0</Mu>
+      </Cp>
+      <Cp>
+        <Mu>10</Mu>
+      </Cp>
+      <Cp>
+        <Mu>10</Mu>
+      </Cp>
+      <Cp>
+        <Mu>17</Mu>
+        <Y1>9</Y1>
+        <Y2>9</Y2>
+        <X1>9</X1>
+        <X2>9</X2>
+      </Cp>
+      <Cp>
+        <Mu>17</Mu>
+      </Cp>
+      <Cp>
+        <Mu>39</Mu>
+      </Cp>
+      <!-- END Procedure Beam Check Procedure 6x -->
+      <!-- START Procedure MLC Check Procedure 6x -->
+      <Cp>
+        <Mu>39</Mu>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <Y1>10.9</Y1>
+        <Y2>10.9</Y2>
+        <X1>6</X1>
+        <X2>6</X2>
+      </Cp>
+      <!-- First approach position from outside -->
+      <Cp>
+        <Mu>39</Mu>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>39</Mu>
+        <Mlc>
+          <ID>1</ID>
+          <B>4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5</B>
+          <A>1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>39</Mu>
+      </Cp>
+      <Cp>
+        <Mu>46</Mu>
+      </Cp>
+      <!-- Then approach position from inside -->
+      <Cp>
+        <Mu>46</Mu>
+        <Mlc>
+          <ID>1</ID>
+          <B>0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1</B>
+          <A>0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>46</Mu>
+        <Mlc>
+          <ID>1</ID>
+          <B>4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5</B>
+          <A>1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5 1.5 4.5</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>46</Mu>
+      </Cp>
+      <Cp>
+        <Mu>53</Mu>
+      </Cp>
+      <!-- END Procedure MLC Check Procedure 6x -->
+      <!-- START Procedure Collimation Check Procedure 6x -->
+      <Cp>
+        <Mu>53</Mu>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <Y1>8</Y1>
+        <Y2>8</Y2>
+        <X1>8</X1>
+        <X2>8</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</B>
+          <A>7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 4 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>53</Mu>
+      </Cp>
+      <Cp>
+        <Mu>60</Mu>
+      </Cp>
+      <Cp>
+        <Mu>60</Mu>
+        <CollRtn>225</CollRtn>
+      </Cp>
+      <Cp>
+        <Mu>60</Mu>
+      </Cp>
+      <Cp>
+        <Mu>67</Mu>
+      </Cp>
+      <Cp>
+        <Mu>67</Mu>
+        <CollRtn>180</CollRtn>
+      </Cp>
+      <Cp>
+        <Mu>67</Mu>
+      </Cp>
+      <Cp>
+        <Mu>74</Mu>
+      </Cp>
+      <Cp>
+        <Mu>74</Mu>
+        <CollRtn>135</CollRtn>
+      </Cp>
+      <Cp>
+        <Mu>74</Mu>
+      </Cp>
+      <Cp>
+        <Mu>81</Mu>
+      </Cp>
+      <Cp>
+        <Mu>81</Mu>
+        <CollRtn>90</CollRtn>
+      </Cp>
+      <Cp>
+        <Mu>81</Mu>
+      </Cp>
+      <Cp>
+        <Mu>88</Mu>
+      </Cp>
+      <!-- END Procedure Collimation Check Procedure 6x -->
+      <!-- START Procedure IsoCal Procedure 6x -->
+      <Cp>
+        <SubBeam>
+          <Seq>1</Seq>
+        </SubBeam>
+        <Mu>88</Mu>
+      </Cp>
+      <Cp>
+        <Mu>88</Mu>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>180</CollRtn>
+        <CouchLngISO>91.89</CouchLngISO>
+        <Y1>10.5</Y1>
+        <Y2>10.5</Y2>
+        <X1>13.8</X1>
+        <X2>13.8</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>88</Mu>
+      </Cp>
+      <Cp>
+        <Mu>95</Mu>
+      </Cp>
+      <Cp>
+        <Mu>95</Mu>
+        <GantryRtn>135</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>95</Mu>
+      </Cp>
+      <Cp>
+        <Mu>102</Mu>
+      </Cp>
+      <Cp>
+        <Mu>102</Mu>
+        <GantryRtn>90</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>102</Mu>
+      </Cp>
+      <Cp>
+        <Mu>109</Mu>
+      </Cp>
+      <Cp>
+        <Mu>109</Mu>
+        <GantryRtn>45</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>109</Mu>
+      </Cp>
+      <Cp>
+        <Mu>116</Mu>
+      </Cp>
+      <Cp>
+        <Mu>116</Mu>
+        <GantryRtn>0</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>116</Mu>
+      </Cp>
+      <Cp>
+        <Mu>123</Mu>
+      </Cp>
+      <Cp>
+        <Mu>123</Mu>
+        <GantryRtn>0</GantryRtn>
+        <CollRtn>90</CollRtn>
+        <Y1>13.8</Y1>
+        <Y2>13.8</Y2>
+        <X1>10.5</X1>
+        <X2>10.5</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11</B>
+          <A>11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 8 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>123</Mu>
+      </Cp>
+      <Cp>
+        <Mu>123</Mu>
+      </Cp>
+      <Cp>
+        <Mu>130</Mu>
+      </Cp>
+      <Cp>
+        <Mu>130</Mu>
+        <GantryRtn>45</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>130</Mu>
+      </Cp>
+      <Cp>
+        <Mu>130</Mu>
+      </Cp>
+      <Cp>
+        <Mu>137</Mu>
+      </Cp>
+      <Cp>
+        <Mu>137</Mu>
+        <GantryRtn>90</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>137</Mu>
+      </Cp>
+      <Cp>
+        <Mu>137</Mu>
+      </Cp>
+      <Cp>
+        <Mu>144</Mu>
+      </Cp>
+      <Cp>
+        <Mu>144</Mu>
+        <GantryRtn>135</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>144</Mu>
+      </Cp>
+      <Cp>
+        <Mu>144</Mu>
+      </Cp>
+      <Cp>
+        <Mu>151</Mu>
+      </Cp>
+      <Cp>
+        <Mu>151</Mu>
+        <GantryRtn>180</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>151</Mu>
+      </Cp>
+      <Cp>
+        <Mu>151</Mu>
+      </Cp>
+      <Cp>
+        <Mu>158</Mu>
+      </Cp>
+      <Cp>
+        <Mu>158</Mu>
+        <GantryRtn>225</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>158</Mu>
+      </Cp>
+      <Cp>
+        <Mu>158</Mu>
+      </Cp>
+      <Cp>
+        <Mu>165</Mu>
+      </Cp>
+      <Cp>
+        <Mu>165</Mu>
+        <GantryRtn>270</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>165</Mu>
+      </Cp>
+      <Cp>
+        <Mu>165</Mu>
+      </Cp>
+      <Cp>
+        <Mu>172</Mu>
+      </Cp>
+      <Cp>
+        <Mu>172</Mu>
+        <GantryRtn>315</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>172</Mu>
+      </Cp>
+      <Cp>
+        <Mu>172</Mu>
+      </Cp>
+      <Cp>
+        <Mu>179</Mu>
+      </Cp>
+      <Cp>
+        <Mu>179</Mu>
+        <GantryRtn>315</GantryRtn>
+        <CollRtn>180</CollRtn>
+        <Y1>10.5</Y1>
+        <Y2>10.5</Y2>
+        <X1>13.8</X1>
+        <X2>13.8</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 11.5 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>179</Mu>
+      </Cp>
+      <Cp>
+        <Mu>186</Mu>
+      </Cp>
+      <Cp>
+        <Mu>186</Mu>
+        <GantryRtn>270</GantryRtn>
+      </Cp>
+      <Cp>
+        <Mu>186</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+        <GantryRtn>225</GantryRtn>
+      </Cp>
+      <!-- Piggy-back onto IsoCal sequence: Strong kV pulse with warm tube to probe norm chamber saturation level, weak pulse to probe DNC dark offset threshold -->
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>193</Mu>
+      </Cp>
+      <Cp>
+        <Mu>200</Mu>
+      </Cp>
+      <!-- END Procedure IsoCal Procedure 6x -->
+      <!-- START Procedure Enhanced Couch Procedure 6x -->
+      <!-- Reference Position and Linear Axes -->
+      <Cp>
+        <Mu>200</Mu>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>180</CollRtn>
+        <Y1>10.5</Y1>
+        <Y2>10.5</Y2>
+        <X1>13.8</X1>
+        <X2>13.8</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <Cp>
+        <Mu>200</Mu>
+      </Cp>
+      <Cp>
+        <Mu>200</Mu>
+      </Cp>
+      <Cp>
+        <Mu>207</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>2</Seq>
+        </SubBeam>
+        <Mu>207</Mu>
+      </Cp>
+      <Cp>
+        <Mu>207</Mu>
+        <CouchVrtISO>96.77</CouchVrtISO>
+      </Cp>
+      <Cp>
+        <Mu>207</Mu>
+      </Cp>
+      <Cp>
+        <Mu>207</Mu>
+      </Cp>
+      <Cp>
+        <Mu>214</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>3</Seq>
+        </SubBeam>
+        <Mu>214</Mu>
+      </Cp>
+      <Cp>
+        <Mu>214</Mu>
+        <CouchVrtISO>106.77</CouchVrtISO>
+      </Cp>
+      <Cp>
+        <Mu>214</Mu>
+      </Cp>
+      <Cp>
+        <Mu>214</Mu>
+      </Cp>
+      <Cp>
+        <Mu>221</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>4</Seq>
+        </SubBeam>
+        <Mu>221</Mu>
+      </Cp>
+      <Cp>
+        <Mu>221</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>104.84</CouchLatISO>
+        <CouchLngISO>91.89</CouchLngISO>
+      </Cp>
+      <Cp>
+        <Mu>221</Mu>
+      </Cp>
+      <Cp>
+        <Mu>221</Mu>
+      </Cp>
+      <Cp>
+        <Mu>228</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>5</Seq>
+        </SubBeam>
+        <Mu>228</Mu>
+      </Cp>
+      <Cp>
+        <Mu>228</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>96.89</CouchLngISO>
+      </Cp>
+      <Cp>
+        <Mu>228</Mu>
+      </Cp>
+      <Cp>
+        <Mu>228</Mu>
+      </Cp>
+      <Cp>
+        <Mu>235</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>6</Seq>
+        </SubBeam>
+        <Mu>235</Mu>
+      </Cp>
+      <Cp>
+        <Mu>235</Mu>
+        <CouchVrtISO>116.77</CouchVrtISO>
+        <CouchLatISO>94.84</CouchLatISO>
+        <CouchLngISO>96.89</CouchLngISO>
+      </Cp>
+      <Cp>
+        <Mu>235</Mu>
+      </Cp>
+      <Cp>
+        <Mu>235</Mu>
+      </Cp>
+      <Cp>
+        <Mu>242</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>7</Seq>
+        </SubBeam>
+        <Mu>242</Mu>
+      </Cp>
+      <Cp>
+        <Mu>242</Mu>
+        <CouchVrtISO>106.77</CouchVrtISO>
+        <CouchLatISO>104.84</CouchLatISO>
+        <CouchLngISO>86.89</CouchLngISO>
+      </Cp>
+      <Cp>
+        <Mu>242</Mu>
+      </Cp>
+      <Cp>
+        <Mu>242</Mu>
+      </Cp>
+      <Cp>
+        <Mu>249</Mu>
+      </Cp>
+      <!-- Rotational Axes, Fine Positioning -->
+      <Cp>
+        <SubBeam>
+          <Seq>8</Seq>
+        </SubBeam>
+        <Mu>249</Mu>
+      </Cp>
+      <Cp>
+        <Mu>249</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>91.89</CouchLngISO>
+      </Cp>
+      <Cp>
+        <Mu>249</Mu>
+      </Cp>
+      <Cp>
+        <Mu>249</Mu>
+      </Cp>
+      <Cp>
+        <Mu>256</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>9</Seq>
+        </SubBeam>
+        <Mu>256</Mu>
+      </Cp>
+      <Cp>
+        <Mu>256</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>91.89</CouchLngISO>
+        <CouchRtnISO>186</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>256</Mu>
+      </Cp>
+      <Cp>
+        <Mu>256</Mu>
+      </Cp>
+      <Cp>
+        <Mu>263</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>10</Seq>
+        </SubBeam>
+        <Mu>263</Mu>
+      </Cp>
+      <Cp>
+        <Mu>263</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>91.89</CouchLngISO>
+        <CouchRtnISO>174</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>263</Mu>
+      </Cp>
+      <Cp>
+        <Mu>263</Mu>
+      </Cp>
+      <Cp>
+        <Mu>270</Mu>
+      </Cp>
+      <!-- Restore pitch & roll before proceeding -->
+      <Cp>
+        <SubBeam>
+          <Seq>11</Seq>
+        </SubBeam>
+        <Mu>270</Mu>
+      </Cp>
+      <Cp>
+        <Mu>270</Mu>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>91.89</CouchLngISO>
+        <CouchRtnISO>174</CouchRtnISO>
+      </Cp>
+      <!-- Patient Support Angle, Large Rotation -->
+      <Cp>
+        <SubBeam>
+          <Seq>12</Seq>
+        </SubBeam>
+        <Mu>270</Mu>
+      </Cp>
+      <Cp>
+        <Mu>270</Mu>
+        <CouchRtnISO>135</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>270</Mu>
+      </Cp>
+      <Cp>
+        <Mu>277</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>13</Seq>
+        </SubBeam>
+        <Mu>277</Mu>
+      </Cp>
+      <Cp>
+        <Mu>277</Mu>
+        <CouchRtnISO>90</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>277</Mu>
+      </Cp>
+      <Cp>
+        <Mu>284</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>14</Seq>
+        </SubBeam>
+        <Mu>284</Mu>
+      </Cp>
+      <Cp>
+        <Mu>284</Mu>
+        <CouchRtnISO>225</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>284</Mu>
+      </Cp>
+      <Cp>
+        <Mu>291</Mu>
+      </Cp>
+      <Cp>
+        <SubBeam>
+          <Seq>15</Seq>
+        </SubBeam>
+        <Mu>291</Mu>
+      </Cp>
+      <Cp>
+        <Mu>291</Mu>
+        <CouchRtnISO>270</CouchRtnISO>
+      </Cp>
+      <Cp>
+        <Mu>291</Mu>
+      </Cp>
+      <Cp>
+        <Mu>298</Mu>
+      </Cp>
+      <!-- END Procedure Enhanced Couch Procedure 6x -->
+      <!-- START Procedure ToHomeProcedure 6x -->
+      <Cp>
+        <SubBeam>
+          <Seq>16</Seq>
+        </SubBeam>
+        <Mu>298</Mu>
+      </Cp>
+      <Cp>
+        <WorkObjectID>Linac</WorkObjectID>
+        <Energy>6x</Energy>
+        <Mu>298</Mu>
+        <DRate>600</DRate>
+        <GantryRtn>180</GantryRtn>
+        <CollRtn>270</CollRtn>
+        <CouchVrtISO>111.77</CouchVrtISO>
+        <CouchLatISO>99.84</CouchLatISO>
+        <CouchLngISO>20</CouchLngISO>
+        <CouchRtnISO>180</CouchRtnISO>
+        <Y1>13.3</Y1>
+        <Y2>13.3</Y2>
+        <X1>10</X1>
+        <X2>10</X2>
+        <Mlc>
+          <ID>1</ID>
+          <B>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</B>
+          <A>14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14 14</A>
+        </Mlc>
+      </Cp>
+      <!-- END Procedure ToHomeProcedure 6x -->
+      <Cp>
+        <Mu>298</Mu>
+      </Cp>
+    </ControlPoints>
+    <ImagingParameters>
+      <DuringTreatment />
+      <ImagingPoints>
+        <ImagingPoint>
+          <Cp>0</Cp>
+          <KvFilters>
+            <Shape>0</Shape>
+            <Foil>1</Foil>
+          </KvFilters>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+          <Mvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Mvd>
+          <Kvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvd>
+          <Kvs>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>100</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Kvs>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>2</Cp>
+          <Acquisition>
+            <AcquisitionId>1</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>50</KiloVolts>
+                <MilliAmperes>20</MilliAmperes>
+                <MilliSeconds>20</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>Floodfield-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>4</Cp>
+          <Acquisition>
+            <AcquisitionId>2</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>Floodfield-Raw</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>6</Cp>
+          <Acquisition>
+            <AcquisitionId>3</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">4</Overwrite>
+                <Overwrite parameter="numberOfFrames">20</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>BeamProfileCheck</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>11</Cp>
+          <Acquisition>
+            <AcquisitionId>4</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>MLCCheck</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>15</Cp>
+          <Acquisition>
+            <AcquisitionId>5</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>MLCCheck-01</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>18</Cp>
+          <Acquisition>
+            <AcquisitionId>6</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-BeamCenterCheck-01</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>21</Cp>
+          <Acquisition>
+            <AcquisitionId>7</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-BeamCenterCheck-02</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>24</Cp>
+          <Acquisition>
+            <AcquisitionId>8</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-BeamCenterCheck-03</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>27</Cp>
+          <Acquisition>
+            <AcquisitionId>9</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-BeamCenterCheck-04</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>30</Cp>
+          <Acquisition>
+            <AcquisitionId>10</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-BeamCenterCheck-05</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>34</Cp>
+          <Acquisition>
+            <AcquisitionId>11</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-01b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>37</Cp>
+          <Acquisition>
+            <AcquisitionId>12</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-02b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>40</Cp>
+          <Acquisition>
+            <AcquisitionId>13</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-03b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>43</Cp>
+          <Acquisition>
+            <AcquisitionId>14</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-04b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>46</Cp>
+          <Acquisition>
+            <AcquisitionId>15</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-05b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>49</Cp>
+          <Acquisition>
+            <AcquisitionId>16</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-05</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>50</Cp>
+          <Acquisition>
+            <AcquisitionId>17</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-05a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>53</Cp>
+          <Acquisition>
+            <AcquisitionId>18</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-04</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>54</Cp>
+          <Acquisition>
+            <AcquisitionId>19</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-04a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>57</Cp>
+          <Acquisition>
+            <AcquisitionId>20</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-03</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>58</Cp>
+          <Acquisition>
+            <AcquisitionId>21</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-03a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>61</Cp>
+          <Acquisition>
+            <AcquisitionId>22</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-02</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>62</Cp>
+          <Acquisition>
+            <AcquisitionId>23</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-02a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>65</Cp>
+          <Acquisition>
+            <AcquisitionId>24</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-01</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>66</Cp>
+          <Acquisition>
+            <AcquisitionId>25</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-01a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>69</Cp>
+          <Acquisition>
+            <AcquisitionId>26</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-06</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>70</Cp>
+          <Acquisition>
+            <AcquisitionId>27</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-06a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>73</Cp>
+          <Acquisition>
+            <AcquisitionId>28</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-07</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>74</Cp>
+          <Acquisition>
+            <AcquisitionId>29</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-07a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>77</Cp>
+          <Acquisition>
+            <AcquisitionId>30</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>IsoCal-kV-08</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>78</Cp>
+          <Acquisition>
+            <AcquisitionId>31</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-08a</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>81</Cp>
+          <Acquisition>
+            <AcquisitionId>32</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-08b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>84</Cp>
+          <Acquisition>
+            <AcquisitionId>33</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-07b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>87</Cp>
+          <Acquisition>
+            <AcquisitionId>34</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>80</KiloVolts>
+                <MilliAmperes>40</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>NormChamber-Low1-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>88</Cp>
+          <Acquisition>
+            <AcquisitionId>35</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>80</KiloVolts>
+                <MilliAmperes>100</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>NormChamber-Low2-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>89</Cp>
+          <Acquisition>
+            <AcquisitionId>36</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>140</KiloVolts>
+                <MilliAmperes>10</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>NormChamber-High1-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>90</Cp>
+          <Acquisition>
+            <AcquisitionId>37</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain">
+                <Overwrite parameter="PostProcessing/offsetCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/gainCorrection">false</Overwrite>
+                <Overwrite parameter="PostProcessing/pixelCorrection">false</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>140</KiloVolts>
+                <MilliAmperes>20</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>NormChamber-High2-RawKV</AcquisitionTag>-->
+          </Acquisition>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>91</Cp>
+          <Acquisition>
+            <AcquisitionId>38</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>6x-IsoCal-MV-06b</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>94</Cp>
+          <Acquisition>
+            <AcquisitionId>39</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-RefLin-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>95</Cp>
+          <Acquisition>
+            <AcquisitionId>40</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-RefLin-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>99</Cp>
+          <Acquisition>
+            <AcquisitionId>41</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-VrtLarge-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>100</Cp>
+          <Acquisition>
+            <AcquisitionId>42</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-VrtLarge-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>104</Cp>
+          <Acquisition>
+            <AcquisitionId>43</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Vrt-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>105</Cp>
+          <Acquisition>
+            <AcquisitionId>44</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Vrt-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>109</Cp>
+          <Acquisition>
+            <AcquisitionId>45</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Lat-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>110</Cp>
+          <Acquisition>
+            <AcquisitionId>46</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Lat-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>114</Cp>
+          <Acquisition>
+            <AcquisitionId>47</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Lng-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>115</Cp>
+          <Acquisition>
+            <AcquisitionId>48</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_Lng-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>119</Cp>
+          <Acquisition>
+            <AcquisitionId>49</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_VrtLatLng1-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>120</Cp>
+          <Acquisition>
+            <AcquisitionId>50</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_VrtLatLng1-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>124</Cp>
+          <Acquisition>
+            <AcquisitionId>51</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_VrtLatLng2-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>125</Cp>
+          <Acquisition>
+            <AcquisitionId>52</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Lin_VrtLatLng2-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>129</Cp>
+          <Acquisition>
+            <AcquisitionId>53</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-RefRtn-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>130</Cp>
+          <Acquisition>
+            <AcquisitionId>54</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-RefRtn-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>134</Cp>
+          <Acquisition>
+            <AcquisitionId>55</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Fine1-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>135</Cp>
+          <Acquisition>
+            <AcquisitionId>56</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Fine1-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>139</Cp>
+          <Acquisition>
+            <AcquisitionId>57</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+              <KV>true</KV>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Bin2x2HighGain" />
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <KV>
+                <KiloVolts>75</KiloVolts>
+                <MilliAmperes>50</MilliAmperes>
+                <MilliSeconds>10</MilliSeconds>
+                <FocalSpot>Large</FocalSpot>
+                <FluoroLevelControl>None</FluoroLevelControl>
+              </KV>
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Fine2-kV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>140</Cp>
+          <Acquisition>
+            <AcquisitionId>58</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Fine2-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>143</Cp>
+          <KvFilters>
+            <Shape>0</Shape>
+            <Foil>1</Foil>
+          </KvFilters>
+          <KvBlades>
+            <Positions>
+              <KVX1>13.8</KVX1>
+              <KVX2>13.8</KVX2>
+              <KVY1>10.5</KVY1>
+              <KVY2>10.5</KVY2>
+            </Positions>
+          </KvBlades>
+          <Mvd>
+            <Positions>
+              <Lat>0</Lat>
+              <Lng>0</Lng>
+              <Vrt>-50</Vrt>
+              <Pitch>0</Pitch>
+            </Positions>
+          </Mvd>
+          <Kvd>
+            <SpecialPosition>retracted</SpecialPosition>
+          </Kvd>
+          <Kvs>
+            <SpecialPosition>retracted</SpecialPosition>
+          </Kvs>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>146</Cp>
+          <Acquisition>
+            <AcquisitionId>59</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Large135-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>150</Cp>
+          <Acquisition>
+            <AcquisitionId>60</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Large090-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>154</Cp>
+          <Acquisition>
+            <AcquisitionId>61</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Large225-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+        <ImagingPoint>
+          <Cp>158</Cp>
+          <Acquisition>
+            <AcquisitionId>62</AcquisitionId>
+            <AcquisitionSpecs>
+              <Handshake>true</Handshake>
+            </AcquisitionSpecs>
+            <AcquisitionParameters>
+              <ImageMode id="Highres">
+                <Overwrite parameter="resetFrames">3</Overwrite>
+                <Overwrite parameter="numberOfFrames">2</Overwrite>
+                <Overwrite parameter="MVImageModeSettings/dosePerFrame">1</Overwrite>
+              </ImageMode>
+              <CalibrationSet>DefaultCalibrationSetId</CalibrationSet>
+              <MV />
+            </AcquisitionParameters>
+            <!--<AcquisitionTag>EnhancedCouch-Rtn_Large270-MV</AcquisitionTag>-->
+          </Acquisition>
+        </ImagingPoint>
+      </ImagingPoints>
+      <ImagingTolerances />
+    </ImagingParameters>
+    <!--<PhantomType>IsoCal</PhantomType>-->
+    <!--<TemplateId>GeometryCheckTemplate6xMVkVEnhancedCouch</TemplateId>-->
+  </SetBeam>
+</VarianResearchBeam>
