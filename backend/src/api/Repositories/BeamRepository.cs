@@ -144,4 +144,14 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
             .AsReadOnly();
         return types;
     }
+
+    public async Task<IReadOnlyList<BeamVariantDto>> GetBeamVariantsWithIdsAsync(CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var variants = (await connection.QueryAsync<BeamVariantDto>(
+            "SELECT id::text AS Id, variant AS Variant FROM beam_variants ORDER BY variant"))
+            .ToList()
+            .AsReadOnly();
+        return variants;
+    }
 }

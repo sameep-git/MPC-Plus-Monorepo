@@ -153,6 +153,13 @@ public class BeamsController : ControllerBase
         return Ok(types);
     }
 
+    [HttpGet("variants")]
+    public async Task<ActionResult<IEnumerable<BeamVariantDto>>> GetBeamVariants(CancellationToken cancellationToken)
+    {
+        var variants = await _repository.GetBeamVariantsWithIdsAsync(cancellationToken);
+        return Ok(variants);
+    }
+
     /// <summary>
     /// Get beam checks for a specific date/machine/type for DOC factor selection.
     /// Returns beam id, timestamp, and relOutput for user selection.

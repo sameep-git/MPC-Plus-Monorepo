@@ -42,4 +42,14 @@ public interface IBeamRepository
     /// Gets all available beam types.
     /// </summary>
     Task<IReadOnlyList<string>> GetBeamTypesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all beam variants with their IDs.
+    /// </summary>
+    Task<IReadOnlyList<BeamVariantDto>> GetBeamVariantsWithIdsAsync(CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Represents a beam variant with its ID.
+/// </summary>
+public record BeamVariantDto(string Id, string Variant);
