@@ -1,6 +1,7 @@
 # === Monorepo Overrides & Root Files ===
 .env
 .env.*
+!.env.example
 .agent/
 backups/
 *.patch
