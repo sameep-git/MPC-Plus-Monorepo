@@ -42,7 +42,7 @@ The `docker-compose.yml` mounts this file to `/docker-entrypoint-initdb.d/backup
 ### 2. Start Postgres
 
 ```bash
-cd /path/to/SeniorDesign
+cd /path/to/project-root
 docker-compose up -d db
 ```
 
@@ -55,7 +55,7 @@ docker-compose logs db
 ### 3. Configure the Backend
 
 ```bash
-cd backend/MPC-Plus/src/api
+cd backend/src/api
 cp appsettings.json appsettings.Development.json
 ```
 
@@ -63,14 +63,14 @@ Ensure `appsettings.Development.json` has the correct connection string (default
 
 ```json
 "Database": {
-  "ConnectionString": "Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=postgres"
+  "ConnectionString": "Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=your_password_here"
 }
 ```
 
 ### 4. Run the Backend
 
 ```bash
-cd backend/MPC-Plus/src/api
+cd backend/src/api
 dotnet run
 ```
 
@@ -79,21 +79,21 @@ The API should start on `http://localhost:5000`.
 ### 5. Configure the Frontend
 
 ```bash
-cd frontend/mpc-plus
-cp .env.local.example .env.local
+cd frontend
+# Configuration is handled via the root .env file
 ```
 
-Edit the `SeniorDesign/.env` file directly. You no longer need separate configuration files for the frontend or backend! 
+Edit the `.env` file in the project root directly. You no longer need separate configuration files for the frontend or backend! 
 Ensure the root `.env` has:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
-Database__ConnectionString=Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=your_secure_password
+Database__ConnectionString=Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=your_password_here
 ```
 
 ### 6. Run the Frontend
 
 ```bash
-cd frontend/mpc-plus
+cd frontend
 npm install
 npm run dev
 ```
@@ -121,7 +121,7 @@ docker-compose up --build
 |---------|-------|-----|
 | `connection refused :5432` | Postgres not running | `docker-compose up -d db` |
 | `relation "X" does not exist` | Backup not restored | Delete volume `docker-compose down -v` and restart |
-| `Cannot connect to database` | Password mismatch | Check `SeniorDesign/.env` vs `docker-compose.yml` |
+| `Cannot connect to database` | Password mismatch | Check root `.env` vs `docker-compose.yml` |
 
 ---
 
@@ -131,16 +131,16 @@ If your production database uses a password different from `postgres`, follow th
 
 ### Using Docker Compose OR Bare Metal
 
-MPC+ uses a single unified `.env` file in the project root (`SeniorDesign/.env`).
+MPC+ uses a single unified `.env` file in the project root.
 
 ```env
 # Database Initialization (Used by docker-compose)
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password
+POSTGRES_PASSWORD=your_password_here
 POSTGRES_DB=mpc_plus
 
 # Backend Connection String
-Database__ConnectionString=Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=your_secure_password
+Database__ConnectionString=Host=localhost;Port=5432;Database=mpc_plus;Username=postgres;Password=your_password_here
 
 # Optional Customizations
 CORS_ORIGINS=http://localhost:3000

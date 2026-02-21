@@ -12,7 +12,7 @@ The easiest way to run the full stack (Database + Backend + Frontend) is with Do
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
 
 ### 1. Configuration
-Create a `.env` file in the project root (`SeniorDesign/.env`) based on the example:
+Create a `.env` file in the project root based on the example:
 
 ```bash
 # Copy the example env to a real .env file
@@ -44,7 +44,7 @@ The application requires a `.env` file at the root. See `.env.example` for the f
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `POSTGRES_USER` | Database username | `postgres` |
-| `POSTGRES_PASSWORD` | Database password | `postgres` |
+| `POSTGRES_PASSWORD` | Database password | `your_password_here` |
 | `POSTGRES_DB` | Database name | `mpc_plus` |
 | `Database__ConnectionString` | Connection string for the .NET API | `Host=db;...` (Docker) |
 | `NEXT_PUBLIC_API_URL` | API URL for the Frontend | `http://localhost:5000` |
@@ -59,7 +59,7 @@ If you want to run services individually without Docker:
 Ensure you have a `.env` file in the root directory.
 
 ### 2. Backend (.NET API)
-1. Ensure **PostgreSQL** is running locally (User: `postgres`, Pass: `postgres`, DB: `mpc_plus`).
+1. Ensure **PostgreSQL** is running locally (User: `postgres`, Pass: `your_password_here`, DB: `mpc_plus`).
 2. Run:
    ```bash
    cd backend/src/api

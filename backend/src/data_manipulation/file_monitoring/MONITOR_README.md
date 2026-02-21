@@ -117,12 +117,12 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=your_database_name
 POSTGRES_USER=your_username
-POSTGRES_PASSWORD=your_password
+POSTGRES_PASSWORD=your_password_here
 ```
 
 Alternatively, you can use a connection string:
 ```
-POSTGRES_CONNECTION_STRING=postgresql://user:password@host:port/database
+POSTGRES_CONNECTION_STRING=postgresql://your_username:your_password_here@localhost:5432/your_database_name
 ```
 
 ### Monitored Folder
