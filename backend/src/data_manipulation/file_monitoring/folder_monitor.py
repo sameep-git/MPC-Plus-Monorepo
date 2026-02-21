@@ -13,14 +13,14 @@ import sys
 import time
 import logging
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from src.data_manipulation.ETL.DataProcessor import DataProcessor
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(find_dotenv())
 
 # Configure logging
 # Ensure logs directory exists

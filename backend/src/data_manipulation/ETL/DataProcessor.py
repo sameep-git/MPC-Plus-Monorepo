@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load environment variables from .env file in project root
-project_root = Path(__file__).parent.parent.parent.parent
+project_root = Path(__file__).parent.parent.parent.parent.parent
 env_path = project_root / '.env'
 load_dotenv(env_path)
 

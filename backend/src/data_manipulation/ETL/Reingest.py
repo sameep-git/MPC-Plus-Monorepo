@@ -23,7 +23,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 
 def main():
@@ -54,7 +54,7 @@ def main():
     args = parser.parse_args()
     
     # Load environment variables
-    load_dotenv()
+    load_dotenv(find_dotenv())
     
     # Validate and resolve the folder path
     folder_path = Path(args.folder_path).resolve()

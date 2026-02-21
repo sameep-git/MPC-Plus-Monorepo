@@ -476,9 +476,19 @@ export interface ReportRequest {
   endDate: string;   // YYYY-MM-DD
   machineId: string;
   selectedChecks: string[];
+  timeZone?: string;
 }
 
 export const generateReport = async (payload: ReportRequest): Promise<Blob> => {
+  // Inject client's timezone if not provided
+  if (!payload.timeZone) {
+    try {
+      payload.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (e) {
+      // ignore
+    }
+  }
+
   try {
     if (API_BASE) {
       const url = `${API_BASE.replace(/\/$/, '')}/reports/generate`;

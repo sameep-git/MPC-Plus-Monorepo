@@ -65,6 +65,7 @@ public class GeoCheckController : ControllerBase
             date: dateDt,
             startDate: startDateDt,
             endDate: endDateDt,
+            includeDetails: true, // Frontend expects full details in list view
             cancellationToken: cancellationToken);
 
         return Ok(geoChecks);

@@ -12,10 +12,10 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(find_dotenv())
 
 # Add the project root to the Python path
 # This file is at: MPC-Plus/src/data_manipulation/file_monitoring/main.py

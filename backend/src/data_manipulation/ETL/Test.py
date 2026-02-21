@@ -39,7 +39,7 @@ import os
 import argparse
 import logging
 import sys
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from src.data_manipulation.ETL.DataProcessor import DataProcessor
 # =============================================================================
 # DATA PATH CONFIGURATION
@@ -128,7 +128,7 @@ def main():
         parser.print_help()
         sys.exit(1)
         
-    load_dotenv()
+    load_dotenv(find_dotenv())
     # Determine which beams to run
     beam_flags_set = (
         args.xbeams or args.ebeams or args.geo or 

@@ -118,7 +118,11 @@ function ResultDetailPageContent() {
     // allBeams is CheckGroup[] from the updated API/Hook pipe
     const groups = allBeams as unknown as CheckGroupModel[];
 
-    const isoDate = selectedDate.toISOString().split('T')[0];
+    const isoDate = [
+      selectedDate.getFullYear(),
+      String(selectedDate.getMonth() + 1).padStart(2, '0'),
+      String(selectedDate.getDate()).padStart(2, '0')
+    ].join('-');
     // Filter by timestamp matching the date
     return groups
       .filter(g => g.timestamp.startsWith(isoDate))
@@ -194,7 +198,11 @@ function ResultDetailPageContent() {
 
   const dayGeoChecks = useMemo(() => {
     if (!allGeoChecks || allGeoChecks.length === 0) return [];
-    const targetDateStr = selectedDate.toISOString().split('T')[0];
+    const targetDateStr = [
+      selectedDate.getFullYear(),
+      String(selectedDate.getMonth() + 1).padStart(2, '0'),
+      String(selectedDate.getDate()).padStart(2, '0')
+    ].join('-');
     return allGeoChecks.filter(g =>
       (g.date && g.date.startsWith(targetDateStr)) ||
       (g.timestamp && g.timestamp.startsWith(targetDateStr))

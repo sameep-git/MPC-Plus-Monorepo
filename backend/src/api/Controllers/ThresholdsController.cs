@@ -1,5 +1,5 @@
 using Api.Models;
-using Api.Repositories;
+using Api.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;

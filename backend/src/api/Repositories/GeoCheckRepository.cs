@@ -21,27 +21,25 @@ public class GeoCheckRepository : IGeoCheckRepository
         DateTime? date = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        bool includeDetails = false,
         CancellationToken cancellationToken = default)
     {
         using var connection = _connectionFactory.CreateConnection();
         
-        var sql = @"
-            SELECT g.id, g.machine_id, g.type, g.date, g.timestamp, g.path,
-                   g.iso_center_size, g.iso_center_mv_offset, g.iso_center_kv_offset,
-                   g.relative_output, g.relative_uniformity, g.center_shift,
-                   g.collimation_rotation_offset, g.gantry_absolute, g.gantry_relative,
-                   g.couch_max_position_error, g.couch_lat, g.couch_lng, g.couch_vrt,
-                   g.couch_rtn_fine, g.couch_rtn_large, g.rotation_induced_couch_shift_full_range,
-                   g.max_offset_a, g.max_offset_b, g.mean_offset_a, g.mean_offset_b,
-                   g.mlc_backlash_max_a, g.mlc_backlash_max_b, g.mlc_backlash_mean_a, g.mlc_backlash_mean_b,
-                   (SELECT json_object_agg('Leaf' || leaf_number, leaf_value) FROM geocheck_mlc_leaves_a WHERE geocheck_id = g.id)::text AS mlc_leaves_a_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, leaf_value) FROM geocheck_mlc_leaves_b WHERE geocheck_id = g.id)::text AS mlc_leaves_b_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, backlash_value) FROM geocheck_mlc_backlash_a WHERE geocheck_id = g.id)::text AS mlc_backlash_a_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, backlash_value) FROM geocheck_mlc_backlash_b WHERE geocheck_id = g.id)::text AS mlc_backlash_b_json,
-                   g.jaw_x1, g.jaw_x2, g.jaw_y1, g.jaw_y2,
-                   g.jaw_parallelism_x1, g.jaw_parallelism_x2, g.jaw_parallelism_y1, g.jaw_parallelism_y2,
-                   g.approved_by, g.approved_date, g.note, g.beam_variant_id
-            FROM geochecks g
+        var sql = includeDetails 
+            ? "SELECT * FROM geochecks_full WHERE 1=1" 
+            : @"SELECT id, machine_id, type, date, timestamp, path,
+                   iso_center_size, iso_center_mv_offset, iso_center_kv_offset,
+                   relative_output, relative_uniformity, center_shift,
+                   collimation_rotation_offset, gantry_absolute, gantry_relative,
+                   couch_max_position_error, couch_lat, couch_lng, couch_vrt,
+                   couch_rtn_fine, couch_rtn_large, rotation_induced_couch_shift_full_range,
+                   max_offset_a, max_offset_b, mean_offset_a, mean_offset_b,
+                   mlc_backlash_max_a, mlc_backlash_max_b, mlc_backlash_mean_a, mlc_backlash_mean_b,
+                   jaw_x1, jaw_x2, jaw_y1, jaw_y2,
+                   jaw_parallelism_x1, jaw_parallelism_x2, jaw_parallelism_y1, jaw_parallelism_y2,
+                   approved_by, approved_date, note, beam_variant_id
+            FROM geochecks
             WHERE 1=1";
 
         var parameters = new DynamicParameters();
@@ -60,34 +58,26 @@ public class GeoCheckRepository : IGeoCheckRepository
 
         if (date.HasValue)
         {
-            // Filter by specific date (entire day)
-            sql += " AND timestamp >= @DateStart AND timestamp < @DateEnd";
-            parameters.Add("DateStart", date.Value.Date);
-            parameters.Add("DateEnd", date.Value.Date.AddDays(1));
+            sql += " AND date = @Date";
+            parameters.Add("Date", date.Value.Date);
         }
         else 
         {
-             // Range logic if date is not provided
              if (startDate.HasValue)
              {
-                 sql += " AND timestamp >= @StartDate";
-                 parameters.Add("StartDate", startDate.Value);
+                 sql += " AND date >= @StartDate";
+                 parameters.Add("StartDate", startDate.Value.Date);
              }
              
              if (endDate.HasValue)
              {
-                 sql += " AND timestamp <= @EndDate";
-                 parameters.Add("EndDate", endDate.Value);
+                 sql += " AND date <= @EndDate";
+                 parameters.Add("EndDate", endDate.Value.Date);
              }
         }
 
         sql += " ORDER BY timestamp DESC";
         
-        // Ensure some limit to avoid fetching too much if no filters
-        // Interface doesn't have limit param, so maybe just hardcode or leave it
-        // The interface seems to imply getting all matching.
-        // I will trust the caller or rely on date ranges.
-
         var geoChecks = await connection.QueryAsync<GeoCheck>(sql, parameters);
         return geoChecks.AsList();
     }
@@ -97,24 +87,7 @@ public class GeoCheckRepository : IGeoCheckRepository
         using var connection = _connectionFactory.CreateConnection();
         if (!Guid.TryParse(id, out var guidId)) return null;
 
-        var sql = @"
-            SELECT id, machine_id, type, date, timestamp, path,
-                   iso_center_size, iso_center_mv_offset, iso_center_kv_offset,
-                   relative_output, relative_uniformity, center_shift,
-                   collimation_rotation_offset, gantry_absolute, gantry_relative,
-                   couch_max_position_error, couch_lat, couch_lng, couch_vrt,
-                   couch_rtn_fine, couch_rtn_large, rotation_induced_couch_shift_full_range,
-                   max_offset_a, max_offset_b, mean_offset_a, mean_offset_b,
-                   mlc_backlash_max_a, mlc_backlash_max_b, mlc_backlash_mean_a, mlc_backlash_mean_b,
-                   jaw_x1, jaw_x2, jaw_y1, jaw_y2,
-                   jaw_parallelism_x1, jaw_parallelism_x2, jaw_parallelism_y1, jaw_parallelism_y2,
-                   approved_by, approved_date, note, beam_variant_id,
-                   (SELECT json_object_agg('Leaf' || leaf_number, leaf_value) FROM geocheck_mlc_leaves_a WHERE geocheck_id = g.id)::text AS mlc_leaves_a_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, leaf_value) FROM geocheck_mlc_leaves_b WHERE geocheck_id = g.id)::text AS mlc_leaves_b_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, backlash_value) FROM geocheck_mlc_backlash_a WHERE geocheck_id = g.id)::text AS mlc_backlash_a_json,
-                   (SELECT json_object_agg('Leaf' || leaf_number, backlash_value) FROM geocheck_mlc_backlash_b WHERE geocheck_id = g.id)::text AS mlc_backlash_b_json
-            FROM geochecks g
-            WHERE g.id = @Id";
+        var sql = @"SELECT * FROM geochecks_full WHERE id = @Id";
 
         return await connection.QuerySingleOrDefaultAsync<GeoCheck>(sql, new { Id = guidId });
     }
@@ -192,10 +165,10 @@ public class GeoCheckRepository : IGeoCheckRepository
             transaction.Commit();
              
              // Copy leaf data to the returned object so it has all the data
-            created.MLCLeavesAJson = geoCheck.MLCLeavesAJson;
-            created.MLCLeavesBJson = geoCheck.MLCLeavesBJson;
-            created.MLCBacklashAJson = geoCheck.MLCBacklashAJson;
-            created.MLCBacklashBJson = geoCheck.MLCBacklashBJson;
+            created.MLCLeavesA = geoCheck.MLCLeavesA;
+            created.MLCLeavesB = geoCheck.MLCLeavesB;
+            created.MLCBacklashA = geoCheck.MLCBacklashA;
+            created.MLCBacklashB = geoCheck.MLCBacklashB;
 
             return created;
         }

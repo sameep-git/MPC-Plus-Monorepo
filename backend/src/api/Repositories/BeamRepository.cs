@@ -21,7 +21,6 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
             SELECT id, type, date, timestamp, path, 
                    rel_uniformity, rel_output, center_shift, 
                    machine_id, note, approved_by, approved_date,
-                   hori_flatness, vert_flatness, hori_symmetry, vert_symmetry,
                    image_paths::text as image_paths_json,
                    ""typeID""
             FROM beams 
@@ -42,24 +41,22 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
             parameters.Add("Type", type);
         }
 
-        // Logic from Supabase repository: filtering by 'date' uses 'timestamp' for the whole day
         if (date.HasValue)
         {
-            sql += " AND timestamp >= @DateDayStart AND timestamp <= @DateDayEnd";
-            parameters.Add("DateDayStart", date.Value.Date); // Midnight
-            parameters.Add("DateDayEnd", date.Value.Date.AddDays(1).AddTicks(-1)); // End of day
+            sql += " AND date = @Date";
+            parameters.Add("Date", date.Value.Date);
         }
 
         if (startDate.HasValue)
         {
-            sql += " AND timestamp >= @StartDate";
-            parameters.Add("StartDate", startDate.Value.Date); // Midnight
+            sql += " AND date >= @StartDate";
+            parameters.Add("StartDate", startDate.Value.Date);
         }
 
         if (endDate.HasValue)
         {
-            sql += " AND timestamp <= @EndDate";
-            parameters.Add("EndDate", endDate.Value.Date.AddDays(1).AddTicks(-1)); // End of day
+            sql += " AND date <= @EndDate";
+            parameters.Add("EndDate", endDate.Value.Date);
         }
 
         sql += " ORDER BY timestamp DESC";
@@ -70,12 +67,12 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
 
     public async Task<Beam?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
+        if (!Guid.TryParse(id, out _)) return null;
         using var connection = connectionFactory.CreateConnection();
         var sql = @"
             SELECT id, type, date, timestamp, path,
                    rel_uniformity, rel_output, center_shift,
                    machine_id, note, approved_by, approved_date,
-                   hori_flatness, vert_flatness, hori_symmetry, vert_symmetry,
                    image_paths::text as image_paths_json,
                    ""typeID""
             FROM beams WHERE id = @Id::uuid";
@@ -100,7 +97,6 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
             ) RETURNING id, type, date, timestamp, path,
                        rel_uniformity, rel_output, center_shift,
                        machine_id, note, approved_by, approved_date,
-                       hori_flatness, vert_flatness, hori_symmetry, vert_symmetry,
                        image_paths::text as image_paths_json,
                        ""typeID""";
             
@@ -109,6 +105,7 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
 
     public async Task<bool> UpdateAsync(Beam beam, CancellationToken cancellationToken = default)
     {
+        if (!Guid.TryParse(beam.Id, out _)) return false;
         using var connection = connectionFactory.CreateConnection();
         var sql = @"
             UPDATE beams SET
@@ -132,6 +129,7 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
+        if (!Guid.TryParse(id, out _)) return false;
         using var connection = connectionFactory.CreateConnection();
         var rows = await connection.ExecuteAsync("DELETE FROM beams WHERE id = @Id::uuid", new { Id = id });
         return rows > 0;

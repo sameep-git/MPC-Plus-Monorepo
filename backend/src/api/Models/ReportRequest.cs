@@ -31,4 +31,9 @@ public class ReportRequest
     /// </summary>
     [Required]
     public List<string> SelectedChecks { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Client timezone (e.g. "America/Chicago" or "-06:00")
+    /// </summary>
+    public string? TimeZone { get; set; }
 }
