@@ -71,7 +71,14 @@ const safeFetch = async (input: RequestInfo, init?: RequestInit) => {
     headers.set('apikey', supabaseKey);
   }
 
-  const res = await fetch(input, { ...(init || {}), headers });
+  // Prevent aggressive caching of dashboard data
+  const mergedInit: RequestInit = {
+    cache: 'no-store',
+    ...init,
+    headers
+  };
+
+  const res = await fetch(input, mergedInit);
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`${res.status} ${res.statusText}: ${text}`);

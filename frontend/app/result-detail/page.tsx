@@ -20,6 +20,7 @@ import { UI_CONSTANTS } from '../../constants';
 // Hooks
 import { useResultDetailData } from '../../hooks/useResultDetailData';
 import { useGraphData } from '../../hooks/useGraphData';
+import { useDailyChecks } from '../../hooks/useDailyChecks';
 import { mapBeamsToResults, mapGeoCheckToResults } from '../../lib/transformers/resultTransformers';
 // Components
 import { DateRangePicker } from '../../components/ui/date-range-picker';
@@ -87,7 +88,7 @@ function ResultDetailPageContent() {
     loading: dataLoading,
     error: dataError,
     refresh
-  } = useGraphData(selectedDate, selectedDate, machineId);
+  } = useDailyChecks(selectedDate, machineId);
 
   // Fetch DOC factors for this machine
   useEffect(() => {
@@ -118,16 +119,10 @@ function ResultDetailPageContent() {
     // allBeams is CheckGroup[] from the updated API/Hook pipe
     const groups = allBeams as unknown as CheckGroupModel[];
 
-    const isoDate = [
-      selectedDate.getFullYear(),
-      String(selectedDate.getMonth() + 1).padStart(2, '0'),
-      String(selectedDate.getDate()).padStart(2, '0')
-    ].join('-');
-    // Filter by timestamp matching the date
-    return groups
-      .filter(g => g.timestamp.startsWith(isoDate))
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  }, [allBeams, selectedDate]);
+    // Since useDailyChecks only fetches for the exact selectedDate,
+    // we just need to sort them by timestamp
+    return [...groups].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }, [allBeams]);
 
   // Collect images from the current check group's beams
   const currentImages: BeamImage[] = useMemo(() => {
@@ -198,20 +193,15 @@ function ResultDetailPageContent() {
 
   const dayGeoChecks = useMemo(() => {
     if (!allGeoChecks || allGeoChecks.length === 0) return [];
-    const targetDateStr = [
-      selectedDate.getFullYear(),
-      String(selectedDate.getMonth() + 1).padStart(2, '0'),
-      String(selectedDate.getDate()).padStart(2, '0')
-    ].join('-');
-    return allGeoChecks.filter(g =>
-      (g.date && g.date.startsWith(targetDateStr)) ||
-      (g.timestamp && g.timestamp.startsWith(targetDateStr))
-    ).sort((a, b) => {
+    
+    // Since useDailyChecks only fetches for the exact selectedDate,
+    // we just need to sort them by timestamp
+    return [...allGeoChecks].sort((a, b) => {
       const timeA = new Date(a.timestamp || a.date).getTime();
       const timeB = new Date(b.timestamp || b.date).getTime();
       return timeA - timeB;
     });
-  }, [allGeoChecks, selectedDate]);
+  }, [allGeoChecks]);
 
   const geoResults = useMemo(() => {
     if (dayGeoChecks.length === 0) return [];
