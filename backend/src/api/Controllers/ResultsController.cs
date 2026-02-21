@@ -93,7 +93,7 @@ public class ResultsController : ControllerBase
         {
             var date = DateOnly.FromDateTime(check.Date);
             var status = DetermineGeoCheckStatus(check);
-            double? value = check.IsoCenterSize ?? check.RelativeOutput ?? check.RelativeUniformity; // Prioritize IsoCenterSize for GeoCheck display
+            double? value = check.IsoCenterSize ?? check.IsoCenterMVOffset ?? check.GantryAbsolute; // Prioritize IsoCenterSize, then geo-specific metrics as fallbacks
             bool isApproved = !string.IsNullOrEmpty(check.ApprovedBy);
 
             if (dailyChecks.ContainsKey(date))

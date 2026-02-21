@@ -24,7 +24,7 @@ public class DictionaryDoubleJsonTypeHandler : SqlMapper.TypeHandler<Dictionary<
              if (json.TrimStart().StartsWith("["))
              {
                  var list = JsonSerializer.Deserialize<List<LeafItem>>(json);
-                 return list?.ToDictionary(x => $"Leaf{x.leaf_number}", x => x.value);
+                 return list?.ToDictionary(x => $"Leaf{x.LeafNumber}", x => x.Value);
              }
 
              // Handle double-serialized JSONB (string within string)
@@ -44,7 +44,10 @@ public class DictionaryDoubleJsonTypeHandler : SqlMapper.TypeHandler<Dictionary<
     
     private class LeafItem 
     { 
-        public int leaf_number { get; set; } 
-        public double value { get; set; } 
+        [System.Text.Json.Serialization.JsonPropertyName("leaf_number")]
+        public int LeafNumber { get; set; } 
+
+        [System.Text.Json.Serialization.JsonPropertyName("value")]
+        public double Value { get; set; } 
     }
 }

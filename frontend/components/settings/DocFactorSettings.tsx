@@ -345,8 +345,15 @@ export default function DocFactorSettings() {
     // Format date for display
     const formatDate = (dateStr: string | null | undefined) => {
         if (!dateStr) return 'Current';
-        const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
-        return new Date(year, month - 1, day).toLocaleDateString();
+        try {
+            const parts = dateStr.split('T')[0].split('-');
+            if (parts.length !== 3) return 'Invalid Date';
+            const [year, month, day] = parts.map(Number);
+            if (isNaN(year) || isNaN(month) || isNaN(day)) return 'Invalid Date';
+            return new Date(year, month - 1, day).toLocaleDateString();
+        } catch {
+            return 'Invalid Date';
+        }
     };
 
     // Get beam variant name by ID

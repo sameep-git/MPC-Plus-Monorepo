@@ -6,8 +6,8 @@ using QuestPDF.Infrastructure;
 // Enable legacy timestamp behavior for PostgreSQL (fixes strict Utc mapping issues)
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// Load environment variables dynamically by searching upwards for .env files
-// We load them from the top-down (root to local) so local files override root ones
+// Load environment variables dynamically by searching upwards for .env files.
+// Files are loaded from root → local so that local (closer) .env files override root ones.
 var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
 var envFiles = new List<string>();
 while (currentDir != null)

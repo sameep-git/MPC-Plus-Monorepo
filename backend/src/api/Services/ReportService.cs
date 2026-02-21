@@ -44,7 +44,7 @@ public class ReportService : IReportService
         // 1. Fetch Machine Details
         var machine = await _machineRepository.GetByIdAsync(request.MachineId, cancellationToken);
         var machineName = machine?.Name ?? "Unknown Machine";
-        var safeMachineName = string.Join("_", machineName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+        var safeMachineName = System.Text.RegularExpressions.Regex.Replace(machineName, @"[^a-zA-Z0-9_\-]", "_");
 
         // 2. Parse SelectedChecks
         Console.WriteLine($"[ReportService] SelectedChecks: [{string.Join(", ", request.SelectedChecks)}]");

@@ -93,9 +93,10 @@ class PostgresAdapter(DatabaseAdapter):
     def __init__(self):
         self.conn = None
         self.connected = False
-        # Default local storage path matching the ASP.NET Core wwwroot/images structure
-        # Assumes running from src/data_manipulation/ETL
-        self.storage_root = os.path.abspath(os.path.join(
+        # Local storage path for saved images.
+        # STORAGE_ROOT env var overrides the default relative path.
+        # Default assumes running from src/data_manipulation/ETL → ../../api/wwwroot/images
+        self.storage_root = os.environ.get("STORAGE_ROOT") or os.path.abspath(os.path.join(
             os.path.dirname(__file__), 
             "../../api/wwwroot/images"
         ))
