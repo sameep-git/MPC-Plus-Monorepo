@@ -100,6 +100,8 @@ public class ReportService : IReportService
         var filteredGeoChecks = allGeoChecks.OrderBy(g => g.Date).ToList();
         var showGeoChecks = selectedGeoTypes.Count > 0;
 
+
+
         // 5. Group data by CALENDAR DAY (strip time component)
         var beamsByDay = filteredBeams
             .GroupBy(b => b.Date.Date)
@@ -108,6 +110,8 @@ public class ReportService : IReportService
         var geoByDay = filteredGeoChecks
             .GroupBy(g => g.Date.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
+
+
 
         // Collect all unique days that have data, filtered to the requested range
         IEnumerable<DateTime> geoDays = showGeoChecks ? geoByDay.Keys : Enumerable.Empty<DateTime>();
@@ -152,6 +156,8 @@ public class ReportService : IReportService
             {
                 var dayBeams = beamsByDay.GetValueOrDefault(day, new List<Beam>());
                 var dayGeo = geoByDay.GetValueOrDefault(day, new List<GeoCheck>());
+
+
 
                 var pdfBytes = GenerateSingleDayPdf(machineName, day, day,
                     dayBeams, dayGeo, selectedGeoTypes, showGeoChecks, tz);
@@ -223,40 +229,60 @@ public class ReportService : IReportService
     private void ComposeContent(IContainer container, List<Beam> beams, List<GeoCheck> geoChecks,
         HashSet<string> selectedGeoTypes, bool showGeoChecks, TimeZoneInfo tz)
     {
+        // Group beams into check runs (2-minute proximity, same as BeamsController)
+        var checkRuns = GroupBeamsByRun(beams);
+        // Sort geo checks by timestamp for index-based pairing with check runs
+        var sortedGeoChecks = geoChecks.OrderBy(g => g.Timestamp ?? g.Date).ToList();
+        var totalRuns = Math.Max(checkRuns.Count, showGeoChecks ? sortedGeoChecks.Count : 0);
+
         container.PaddingVertical(0.5f, Unit.Centimetre).Column(column =>
         {
             // Overview Section
-            column.Item().Element(c => ComposeOverview(c, beams, geoChecks, showGeoChecks));
+            column.Item().Element(c => ComposeOverview(c, beams, geoChecks, showGeoChecks, totalRuns));
 
             column.Item().PaddingVertical(0.3f, Unit.Centimetre).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-            // Beam Checks Section
-            if (beams.Count > 0)
+            // Render each check run as a distinct section
+            for (int i = 0; i < totalRuns; i++)
             {
-                column.Item().PaddingTop(0.5f, Unit.Centimetre).Text("Beam Checks").FontSize(16).SemiBold();
-                
-                foreach (var beam in beams)
+                // Run header (only when multiple runs exist)
+                if (totalRuns > 1)
                 {
-                    column.Item().Element(c => ComposeBeamSection(c, beam, tz));
+                    column.Item().PaddingTop(0.5f, Unit.Centimetre)
+                        .Background(Colors.Grey.Lighten4)
+                        .Padding(8)
+                        .Text($"Check Run {i + 1} of {totalRuns}")
+                        .FontSize(14).SemiBold().FontColor(Colors.Purple.Medium);
                 }
-            }
 
-            // Geometry Checks Section
-            if (showGeoChecks && geoChecks.Count > 0)
-            {
-                column.Item().PaddingTop(0.5f, Unit.Centimetre).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                column.Item().PaddingTop(0.5f, Unit.Centimetre).Text("Geometry Checks").FontSize(16).SemiBold();
-                
-                foreach (var geo in geoChecks)
+                // Beam checks for this run
+                if (i < checkRuns.Count && checkRuns[i].Beams.Count > 0)
                 {
-                    column.Item().Element(c => ComposeGeoSection(c, geo, selectedGeoTypes, tz));
+                    column.Item().PaddingTop(0.3f, Unit.Centimetre).Text("Beam Checks").FontSize(13).SemiBold();
+                    foreach (var beam in checkRuns[i].Beams)
+                    {
+                        column.Item().Element(c => ComposeBeamSection(c, beam, tz));
+                    }
+                }
+
+                // Paired geometry check for this run (index-based, matching frontend)
+                if (showGeoChecks && i < sortedGeoChecks.Count)
+                {
+                    column.Item().PaddingTop(0.3f, Unit.Centimetre).Text("Geometry Check").FontSize(13).SemiBold();
+                    column.Item().Element(c => ComposeGeoSection(c, sortedGeoChecks[i], selectedGeoTypes, tz));
+                }
+
+                // Separator between runs
+                if (totalRuns > 1 && i < totalRuns - 1)
+                {
+                    column.Item().PaddingVertical(0.4f, Unit.Centimetre).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                 }
             }
         });
     }
 
     private void ComposeOverview(IContainer container, List<Beam> beams, List<GeoCheck> geoChecks,
-        bool showGeoChecks)
+        bool showGeoChecks, int totalRuns = 1)
     {
         // Placeholder pass logic until thresholds are reworked
         var passedBeams = beams.Count; // Assume all pass for now
@@ -273,6 +299,7 @@ public class ReportService : IReportService
             {
                 row.RelativeItem().Column(col =>
                 {
+                    if (totalRuns > 1) col.Item().Text($"Check Runs: {totalRuns}");
                     col.Item().Text($"Total Checks: {totalChecks}");
                     col.Item().Text($"Beam Checks: {totalBeams}");
                     if (showGeoChecks) col.Item().Text($"Geometry Checks: {geoCount}");
@@ -307,6 +334,19 @@ public class ReportService : IReportService
                 row.ConstantItem(60).AlignRight().Text(statusText).FontSize(11).SemiBold().FontColor(statusColor);
             });
             column.Item().Text($"Date: {displayTime:MM/dd/yyyy h:mm tt}").FontSize(9).FontColor(Colors.Grey.Medium);
+
+            // Approval status
+            if (!string.IsNullOrWhiteSpace(beam.ApprovedBy))
+            {
+                var approvalDisplayDate = beam.ApprovedDate.HasValue
+                    ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(beam.ApprovedDate.Value, DateTimeKind.Utc), tz).ToString("MM/dd/yyyy h:mm tt")
+                    : "";
+                column.Item().Text($"Approved by {beam.ApprovedBy} on {approvalDisplayDate}").FontSize(8).FontColor(Colors.Green.Medium);
+            }
+            else
+            {
+                column.Item().Text("Not Approved").FontSize(8).FontColor(Colors.Orange.Medium);
+            }
 
             // Metrics Table
             column.Item().PaddingTop(0.2f, Unit.Centimetre).Table(table =>
@@ -414,6 +454,19 @@ public class ReportService : IReportService
                 row.ConstantItem(60).AlignRight().Text(overallStatusText).FontSize(11).SemiBold().FontColor(overallStatusColor);
             });
             column.Item().Text($"Date: {geoDisplayTime:MM/dd/yyyy h:mm tt}").FontSize(9).FontColor(Colors.Grey.Medium);
+
+            // Approval status
+            if (!string.IsNullOrWhiteSpace(geo.ApprovedBy))
+            {
+                var approvalDisplayDate = geo.ApprovedDate.HasValue
+                    ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(geo.ApprovedDate.Value, DateTimeKind.Utc), tz).ToString("MM/dd/yyyy h:mm tt")
+                    : "";
+                column.Item().Text($"Approved by {geo.ApprovedBy} on {approvalDisplayDate}").FontSize(8).FontColor(Colors.Green.Medium);
+            }
+            else
+            {
+                column.Item().Text("Not Approved").FontSize(8).FontColor(Colors.Orange.Medium);
+            }
 
             // IsoCenter
             if (selectedGeoTypes.Contains("isocenter") || selectedGeoTypes.Count == 0)
@@ -659,5 +712,34 @@ public class ReportService : IReportService
             x.Span(" of ");
             x.TotalPages();
         });
+    }
+
+    /// <summary>
+    /// Groups beams into check runs using 2-minute timestamp proximity,
+    /// matching the same logic used in BeamsController.
+    /// </summary>
+    private static List<(DateTime Timestamp, List<Beam> Beams)> GroupBeamsByRun(List<Beam> beams)
+    {
+        var groups = new List<(DateTime Timestamp, List<Beam> Beams)>();
+        if (beams.Count == 0) return groups;
+
+        var sorted = beams.OrderBy(b => b.Timestamp ?? b.Date).ToList();
+        var currentGroup = new List<Beam>();
+        var referenceTime = sorted[0].Timestamp ?? sorted[0].Date;
+
+        foreach (var beam in sorted)
+        {
+            var time = beam.Timestamp ?? beam.Date;
+            if ((time - referenceTime).Duration() > TimeSpan.FromMinutes(2))
+            {
+                groups.Add((referenceTime, currentGroup));
+                currentGroup = new List<Beam>();
+                referenceTime = time;
+            }
+            currentGroup.Add(beam);
+        }
+        groups.Add((referenceTime, currentGroup));
+
+        return groups.OrderBy(g => g.Timestamp).ToList();
     }
 }

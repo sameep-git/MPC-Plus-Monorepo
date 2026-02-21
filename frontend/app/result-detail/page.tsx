@@ -193,7 +193,7 @@ function ResultDetailPageContent() {
 
   const dayGeoChecks = useMemo(() => {
     if (!allGeoChecks || allGeoChecks.length === 0) return [];
-    
+
     // Since useDailyChecks only fetches for the exact selectedDate,
     // we just need to sort them by timestamp
     return [...allGeoChecks].sort((a, b) => {
@@ -401,12 +401,10 @@ function ResultDetailPageContent() {
         await approveBeams(beamsToApprove, user.name || user.id);
       }
 
-      // 2. Approve ALL Geo Checks for the current day
-      const geoIdsToApprove = dayGeoChecks
-        .filter(gc => !gc.approvedBy)
-        .map(gc => gc.id);
-      if (geoIdsToApprove.length > 0) {
-        await approveGeoChecks(geoIdsToApprove, user.name || user.id);
+      // 2. Approve the geo check for the current run only (index-matched with beam group)
+      const currentGeoCheck = dayGeoChecks[activeCheckIndex];
+      if (currentGeoCheck && !currentGeoCheck.approvedBy) {
+        await approveGeoChecks([currentGeoCheck.id], user.name || user.id);
       }
 
       setIsSignOffModalOpen(false);
