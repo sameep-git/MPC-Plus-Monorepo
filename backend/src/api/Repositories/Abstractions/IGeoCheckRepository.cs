@@ -16,6 +16,7 @@ public interface IGeoCheckRepository
         DateTime? date = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        bool includeDetails = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>

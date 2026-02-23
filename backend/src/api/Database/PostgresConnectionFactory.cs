@@ -7,10 +7,15 @@ namespace Api.Database;
 
 public class PostgresConnectionFactory(IOptions<DatabaseOptions> options)
 {
-    private readonly string _connectionString = options.Value.ConnectionString;
-
     public IDbConnection CreateConnection()
     {
-        return new NpgsqlConnection(_connectionString);
+        var connectionString = options.Value.ConnectionString;
+        
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("The database connection string is not initialized. Please ensure POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB are set in your .env file or environment.");
+        }
+        
+        return new NpgsqlConnection(connectionString);
     }
 }

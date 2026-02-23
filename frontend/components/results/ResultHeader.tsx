@@ -81,8 +81,15 @@ export const ResultHeader: React.FC<ResultHeaderProps> = ({
                         const firstAccepted = beamResults[0];
                         const formatTime = (d?: string) => {
                             if (!d) return '';
-                            const utc = d.endsWith('Z') ? d : `${d}Z`;
-                            return new Date(utc).toLocaleString();
+                            // Only append Z if there is no timezone offset or Z already
+                            const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/i.test(d);
+                            const utc = hasTimezone ? d : `${d}Z`;
+                            try {
+                                const dateObj = new Date(utc);
+                                return isNaN(dateObj.getTime()) ? d : dateObj.toLocaleString();
+                            } catch {
+                                return d;
+                            }
                         };
                         const timestamp = formatTime(firstAccepted?.approvedDate);
                         return (
@@ -147,8 +154,11 @@ export const ResultHeader: React.FC<ResultHeaderProps> = ({
                             {currentCheckTimestamp && (
                                 <span className="text-[10px] text-muted-foreground">
                                     {(() => {
-                                        const utc = currentCheckTimestamp.endsWith('Z') ? currentCheckTimestamp : `${currentCheckTimestamp}Z`;
-                                        return new Date(utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                        // Only append Z if there is no timezone offset or Z already
+                                        const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/i.test(currentCheckTimestamp);
+                                        const utc = hasTimezone ? currentCheckTimestamp : `${currentCheckTimestamp}Z`;
+                                        const d = new Date(utc);
+                                        return isNaN(d.getTime()) ? 'Invalid date' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                     })()}
                                 </span>
                             )}

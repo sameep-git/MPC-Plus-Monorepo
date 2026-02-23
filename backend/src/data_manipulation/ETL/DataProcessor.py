@@ -18,7 +18,17 @@ logger = logging.getLogger(__name__)
 
 
 # Load environment variables from .env file in project root
-project_root = Path(__file__).parent.parent.parent.parent
+# Search upwards from this file's directory for a .env file
+def _find_project_root():
+    current = Path(__file__).resolve().parent
+    while current != current.parent:
+        if (current / '.env').exists():
+            return current
+        current = current.parent
+    # Fallback to 5-level parent if no .env found
+    return Path(__file__).parent.parent.parent.parent.parent
+
+project_root = _find_project_root()
 env_path = project_root / '.env'
 load_dotenv(env_path)
 

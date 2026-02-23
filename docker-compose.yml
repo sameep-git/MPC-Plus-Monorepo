@@ -9,7 +9,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_password_here}
       POSTGRES_DB: ${POSTGRES_DB:-mpc_plus}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -19,24 +19,24 @@ services:
   # ── Backend (.NET API) ────────────────────────────────────
   backend:
     build:
-      context: ./backend/MPC-Plus/src/api
+      context: ./backend/src/api
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "5000:8080"
     environment:
-      - ConnectionStrings__Database=Host=db;Port=5432;Database=${POSTGRES_DB:-mpc_plus};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - ConnectionStrings__Database=Host=db;Port=5432;Database=${POSTGRES_DB:-mpc_plus};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-your_password_here}
       - CORS_ORIGINS=http://localhost:3000
     depends_on:
       - db
     volumes:
        # Persist uploaded images
-      - ./backend/MPC-Plus/src/api/wwwroot/images:/app/wwwroot/images
+      - ./backend/src/api/wwwroot/images:/app/wwwroot/images
 
   # ── Frontend (Next.js) ────────────────────────────────────
   frontend:
     build:
-      context: ./frontend/mpc-plus
+      context: ./frontend
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

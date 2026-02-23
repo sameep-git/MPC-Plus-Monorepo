@@ -220,7 +220,13 @@ export default function SettingsPage() {
     updateGraphThresholds(topPercent, bottomPercent, color);
   };
 
-  const ensureIsoDate = (date: Date) => date.toISOString().split('T')[0];
+  const ensureIsoDate = (date: Date) => {
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0')
+    ].join('-');
+  };
 
   const handleBaselineModeChange = (mode: BaselineMode) => {
     const nextDate = settings.baseline.date ?? ensureIsoDate(new Date());
@@ -836,12 +842,19 @@ export default function SettingsPage() {
                 </label>
                 <div className="flex flex-row flex-wrap gap-3 items-center">
                   <DatePicker
-                    date={settings.baseline.date ? new Date(settings.baseline.date) : undefined}
+                    date={settings.baseline.date ? new Date(
+                      Number(settings.baseline.date.split('-')[0]),
+                      Number(settings.baseline.date.split('-')[1]) - 1,
+                      Number(settings.baseline.date.split('-')[2])
+                    ) : undefined}
                     setDate={(date) => {
                       if (date) {
-                        const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-                        const isoDate = offsetDate.toISOString().split('T')[0];
-                        handleBaselineDateChange(isoDate);
+                        const localDateStr = [
+                          date.getFullYear(),
+                          String(date.getMonth() + 1).padStart(2, '0'),
+                          String(date.getDate()).padStart(2, '0')
+                        ].join('-');
+                        handleBaselineDateChange(localDateStr);
                       }
                     }}
                     className="w-64"

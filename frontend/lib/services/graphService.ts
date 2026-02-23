@@ -48,7 +48,11 @@ export const generateGraphData = (startDate: Date, endDate: Date, _metrics: Set<
     end.setHours(0, 0, 0, 0);
 
     while (iterDate <= end) {
-        const isoDate = iterDate.toISOString().split('T')[0];
+        const isoDate = [
+            iterDate.getFullYear(),
+            String(iterDate.getMonth() + 1).padStart(2, '0'),
+            String(iterDate.getDate()).padStart(2, '0')
+        ].join('-');
         const displayDate = iterDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
         const point: GraphDataPoint = {
@@ -92,7 +96,11 @@ export const fetchGraphData = async (startDate: Date, endDate: Date, machineId: 
         const currentDate = new Date(startDate);
 
         while (currentDate <= endDate) {
-            const isoDate = currentDate.toISOString().split('T')[0];
+            const isoDate = [
+                currentDate.getFullYear(),
+                String(currentDate.getMonth() + 1).padStart(2, '0'),
+                String(currentDate.getDate()).padStart(2, '0')
+            ].join('-');
             const displayDate = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
             const dataPoint: GraphDataPoint = {

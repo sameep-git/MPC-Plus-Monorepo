@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
         
         // Register TypeHandlers for JSON columns
         SqlMapper.AddTypeHandler(new JsonTypeHandler<List<string>>());
-        SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<string, double>>());
+        SqlMapper.AddTypeHandler(new DictionaryDoubleJsonTypeHandler()); // Replaces JsonTypeHandler<Dictionary<string, double>>
         SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<string, string>>());
         SqlMapper.AddTypeHandler(new StringTypeHandler());
         SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());

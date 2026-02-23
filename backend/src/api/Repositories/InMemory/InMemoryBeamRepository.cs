@@ -132,6 +132,13 @@ public class InMemoryBeamRepository : IBeamRepository
         return Task.FromResult<IReadOnlyList<string>>(BeamTypes);
     }
 
+    public Task<IReadOnlyList<BeamVariantDto>> GetBeamVariantsWithIdsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var variants = BeamTypes.Select((t, i) => new BeamVariantDto(Guid.NewGuid().ToString(), t)).ToList().AsReadOnly();
+        return Task.FromResult<IReadOnlyList<BeamVariantDto>>(variants);
+    }
+
     private static Beam Clone(Beam beam) =>
         new()
         {

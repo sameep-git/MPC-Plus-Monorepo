@@ -25,6 +25,8 @@ public class UpdateRepository : IUpdateRepository
     public async Task<Update?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         using var connection = _connectionFactory.CreateConnection();
+        if (!Guid.TryParse(id, out _)) return null;
+        
         return await connection.QuerySingleOrDefaultAsync<Update>(
             "SELECT * FROM updates WHERE id = @Id::uuid", 
             new { Id = id });
@@ -60,6 +62,7 @@ public class UpdateRepository : IUpdateRepository
     public async Task<bool> UpdateAsync(Update update, CancellationToken cancellationToken = default)
     {
         using var connection = _connectionFactory.CreateConnection();
+        if (!Guid.TryParse(update.Id, out _)) return false;
         
         var sql = @"
             UPDATE updates 
@@ -73,6 +76,8 @@ public class UpdateRepository : IUpdateRepository
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         using var connection = _connectionFactory.CreateConnection();
+        if (!Guid.TryParse(id, out _)) return false;
+        
         var affected = await connection.ExecuteAsync("DELETE FROM updates WHERE id = @Id::uuid", new { Id = id });
         return affected > 0;
     }
