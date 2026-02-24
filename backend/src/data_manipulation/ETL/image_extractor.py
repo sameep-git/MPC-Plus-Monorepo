@@ -1,227 +1,210 @@
 """
-Image Extractor Module
-----------------
-This module defines the `image_extractor` class, responsible create an 
-image object from the given image path.
+Image Extractor Module (EPID Gain Map Corrected Version)
+---------------------------------------------------------
+Implements proper EPID gain-map pipeline:
 
-Supported Image Types:
-    - BeamProfileCheck.xim
+Offline-style gain map build (using provided flood(s))
+Daily correction:
+    - Dark subtract
+    - Gain correction
+    - 1D profile smoothing
+    - FieldAnalysis
+
+Follows MPC EPID Gain Map Pipeline specification.
 """
 
 import logging
-
 import numpy as np
 import matplotlib.pyplot as plt
+
+from scipy.ndimage import median_filter, generic_filter
+from scipy.signal import savgol_filter
 
 from pylinac.field_analysis import FieldAnalysis, Protocol
 from pylinac.core.image import XIM, ArrayImage
 
-# Set up logger for this module
 logger = logging.getLogger(__name__)
 
+
 class image_extractor:
-    def process_image(self,imageModel, is_test=False):
-        # Load images 
-        clinicalPath = imageModel.get_path()
-        darkPath = imageModel.get_dark_image_path()
-        floodPath = imageModel.get_flood_image_path()
-        #Load images as numpy arrays
-        clinical = np.array(XIM(clinicalPath))
-        dark = np.array(XIM(darkPath))
-        flood = np.array(XIM(floodPath))
-        self.show_all_images( clinical, dark, flood)
-        if is_test:
-            logger.info("Clinical Path: %s", clinicalPath)
-            logger.info("Dark Path: %s", darkPath)
-            logger.info("Flood Path: %s", floodPath)
-            self.show_all_images(clinical, dark, flood)
-        
-        # Apply corrections
-        #corrected_flood = flood - dark
-        corrected_flood = (flood - dark) 
-        #/ dark
-        #Replce / dark with middle average of clinical 
-        #h, w = clinical.shape
-        #center_pixel = clinical[h//2, w//2]  # Simple center (what you probably want)
-        # h, w = clinical.shape
-        # if h % 2 == 0 and w % 2 == 0:
-        #     # Average of 4 center pixels
-        #     center_pixel = np.mean(clinical[h//2-1:h//2+1, w//2-1:w//2+1])
-        # else:
-        #     center_pixel = clinical[h//2, w//2]
-        # corrected_flood = (flood - dark ) / center_pixel
-        corrected_clinical = clinical - dark
-        
-        # Avoid division by zero
-        threshold = 1e-6
-        corrected_flood[corrected_flood < threshold] = threshold
-        #corrected_clinical[corrected_flood < threshold] = threshold
-        
-        # Normalize
-        #normalized = corrected_clinical / corrected_flood
-        normalized = np.divide(
-        corrected_clinical,
-        corrected_flood,
-        out=np.zeros_like(corrected_clinical, dtype=np.float32),
-        where=corrected_flood > threshold
+
+    # ==========================================================
+    # MAIN ENTRY
+    # ==========================================================
+    def process_image(self, imageModel, is_test=False):
+
+        clinical_path = imageModel.get_path()
+        dark_path = imageModel.get_dark_image_path()
+        flood_path = imageModel.get_flood_image_path()
+
+        # ------------------------------------------------------
+        # Load images
+        # ------------------------------------------------------
+        clinical_raw = np.array(XIM(clinical_path), dtype=np.float64)
+        dark = np.array(XIM(dark_path), dtype=np.float64)
+        flood_raw = np.array(XIM(flood_path), dtype=np.float64)
+
+        # ------------------------------------------------------
+        # Build Gain Map (single-flood version)
+        # ------------------------------------------------------
+        gain_map, bad_pixel_mask = self.build_gain_map(
+            flood_raw=flood_raw,
+            dark=dark,
+            kernel_size=75,
+            clip_low=0.7,
+            clip_high=1.3,
+            field_fraction=0.8
         )
-        #normalized = corrected_clinical
 
-        # Create ArrayImage from normalized data
-        img = ArrayImage(normalized, dpi=280)
+        # ------------------------------------------------------
+        # Correct Clinical Image
+        # ------------------------------------------------------
+        corrected = self.correct_clinical_image(
+            clinical_raw,
+            dark,
+            gain_map,
+            bad_pixel_mask
+        )
 
-        # Create FieldAnalysis with the image
+        # ------------------------------------------------------
+        # Create ArrayImage for pylinac
+        # ------------------------------------------------------
+        img = ArrayImage(corrected.astype(np.float32), dpi=280)
+
+        # ------------------------------------------------------
+        # Run FieldAnalysis
+        # ------------------------------------------------------
         analysis = FieldAnalysis(img)
 
-        # Define the sequence of analysis attempts
-        attempts = [
-            {"protocol": Protocol.VARIAN, "in_field_ratio": 0.8, "edge_detection_method": "FWHM"},
-            {"protocol": Protocol.VARIAN, "in_field_ratio": 0.5, "edge_detection_method": "FWHM"},
-            {}  # Generic call with no parameters
-        ]
+        analysis.analyze(
+            protocol=Protocol.VARIAN,
+            in_field_ratio=0.8,
+            edge_detection_method="FWHM"
+        )
 
-        analysis_successful = False
+        r = analysis.results_data()
 
-        for i, params in enumerate(attempts, start=1):
-            try:
-                logger.info(f"Attempt {i}: Running FieldAnalysis")
-                analysis.analyze(**params)
-                r = analysis.results_data()
+        imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
+        imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
+        imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
+        imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
 
-                # Extract and store horizontal and vertical flatness graphs
-                self.create_graphs(analysis, imageModel)
+        # ------------------------------------------------------
+        # Generate smoothed profile graphs
+        # ------------------------------------------------------
+        self.create_smoothed_profile_graphs(corrected, imageModel)
 
-                # Set flatness and symmetry values from analysis results
-                imageModel.set_symmetry_horizontal(r.protocol_results['symmetry_horizontal'])
-                imageModel.set_symmetry_vertical(r.protocol_results['symmetry_vertical'])
-                imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
-                imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
+        if is_test:
+            logger.info("Flatness H: %s", imageModel.get_flatness_horizontal())
+            logger.info("Flatness V: %s", imageModel.get_flatness_vertical())
+            logger.info("Symmetry H: %s", imageModel.get_symmetry_horizontal())
+            logger.info("Symmetry V: %s", imageModel.get_symmetry_vertical())
 
-                analysis_successful = True
-                logger.info("FieldAnalysis completed successfully")
-                if is_test:
-                    logger.info(f"Flatness (Horizontal): {imageModel.get_flatness_horizontal()}")
-                    logger.info(f"Flatness (Vertical):   {imageModel.get_flatness_vertical()}")
-                    logger.info(f"Symmetry (Horizontal): {imageModel.get_symmetry_horizontal()}")
-                    logger.info(f"Symmetry (Vertical):   {imageModel.get_symmetry_vertical()}")
-                    # Display Flatness and Symmetry Profiles
-                    fig = imageModel.get_horizontal_profile_graph()
-                    fig.savefig("horizontal_profile.png") 
-                    fig = imageModel.get_vertical_profile_graph()
-                    fig.savefig("vertical_profile.png") 
-                break
+    # ==========================================================
+    # GAIN MAP BUILD
+    # ==========================================================
+    def build_gain_map(
+        self,
+        flood_raw,
+        dark,
+        kernel_size=75,
+        clip_low=0.7,
+        clip_high=1.3,
+        field_fraction=0.8
+    ):
 
-            except Exception as e:
-                logger.error(f"Attempt {i} failed: {e}")
-                if i < len(attempts):
-                    logger.warning("Trying next analysis attempt...")
-                else:
-                    logger.error("All FieldAnalysis attempts failed, falling back to basic graph extraction")
-                    try:
-                        self.create_basic_graphs(img, imageModel)
-                        imageModel.set_symmetry_horizontal(None)
-                        imageModel.set_symmetry_vertical(None)
-                        imageModel.set_flatness_horizontal(None)
-                        imageModel.set_flatness_vertical(None)
-                    except Exception as e2:
-                        logger.error(f"Failed to create basic graphs: {e2}")
-                        raise
+        # Step 1: Dark subtract flood
+        flood_net = flood_raw - dark
 
+        # Step 2: Beam shape estimate via large-kernel median filter
+        beam_shape = median_filter(flood_net, size=kernel_size)
 
-    
-    def create_graphs(self, analysis, imageModel):
-        """
-        Create profile graphs from pylinac FieldAnalysis results.
-        
-        Args:
-            analysis: FieldAnalysis object that has been analyzed
-            imageModel: ImageModel to store the graphs in
-        """
-        # Horizontal profile
-        # Get horizontal profile data from pylinac FieldAnalysis
-        # This is calculated from the normalized beam image
-        h = analysis.horiz_profile
-        fig_h, ax_h = plt.subplots()  # Create Figure and Axes
-        ax_h.plot(h.values)  # Plot the intensity values across horizontal axis
-        ax_h.set_title("Horizontal Profile")
-        ax_h.set_xlabel("Pixel")
-        ax_h.set_ylabel("Intensity")
-        ax_h.grid(True)
-        imageModel.set_horizontal_profile_graph(fig_h)  # store the Figure
-        # Note: Not closing figure here - it needs to remain open for later PNG conversion
-        # The figure will be garbage collected when no longer referenced
+        # Avoid divide-by-zero
+        beam_shape_safe = np.where(
+            beam_shape > 0.01 * np.max(beam_shape),
+            beam_shape,
+            1.0
+        )
 
-        # Vertical profile
-        # Get vertical profile data from pylinac FieldAnalysis
-        # This is calculated from the normalized beam image
-        v = analysis.vert_profile
-        fig_v, ax_v = plt.subplots()
-        ax_v.plot(v.values)  # Plot the intensity values across vertical axis
-        ax_v.set_title("Vertical Profile")
-        ax_v.set_xlabel("Pixel")
-        ax_v.set_ylabel("Intensity")
-        ax_v.grid(True)
-        imageModel.set_vertical_profile_graph(fig_v)
-        plt.close(fig_v)
-    
-    def show_all_images(self, clinical, dark, flood):
-        plt.figure(figsize=(9, 3))
+        # Step 3: Isolate detector sensitivity
+        gain_map = flood_net / beam_shape_safe
 
-        plt.subplot(1, 3, 1)
-        plt.imshow(clinical, cmap='gray')
-        plt.title("Clinical")
-        plt.axis('off')
+        # Step 4: Normalize over in-field ROI (80%)
+        rows, cols = gain_map.shape
+        margin = int((1 - field_fraction) / 2 * min(rows, cols))
+        roi = gain_map[margin:rows - margin, margin:cols - margin]
+        gain_map /= np.mean(roi)
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(dark, cmap='gray')
-        plt.title("Dark")
-        plt.axis('off')
+        # Step 5: Flag + clip dead/hot pixels
+        bad_pixel_mask = (gain_map < clip_low) | (gain_map > clip_high)
+        gain_map = np.clip(gain_map, clip_low, clip_high)
 
-        plt.subplot(1, 3, 3)
-        plt.imshow(flood, cmap='gray')
-        plt.title("Flood")
-        plt.axis('off')
-        #plt.show()
-        # Note: Not closing figure here - it needs to remain open for later PNG conversion
-        # The figure will be garbage collected when no longer referenced
+        logger.info("Gain map built successfully")
 
-    def create_basic_graphs(self, image, imageModel):
-        """
-        Create basic profile graphs directly from image data when FieldAnalysis fails.
-        This is a fallback method that extracts profiles from the center of the image.
-        
-        Args:
-            image: ArrayImage object
-            imageModel: ImageModel to store the graphs in
-        """
-        # Get image array
-        img_array = image.array
-        
-        # Get center row (horizontal profile) and center column (vertical profile)
-        center_row = img_array.shape[0] // 2
-        center_col = img_array.shape[1] // 2
-        
-        # Horizontal profile (across columns at center row)
-        horiz_values = img_array[center_row, :]
+        return gain_map, bad_pixel_mask
+
+    # ==========================================================
+    # CLINICAL CORRECTION
+    # ==========================================================
+    def correct_clinical_image(
+        self,
+        clinical_raw,
+        dark,
+        gain_map,
+        bad_pixel_mask
+    ):
+
+        # Step 1: Dark subtract
+        c_net = clinical_raw - dark
+
+        # Step 2: Apply gain correction
+        corrected = c_net / gain_map
+
+        # Step 3: Replace bad pixels with local median
+        if np.any(bad_pixel_mask):
+            local_med = generic_filter(corrected, np.nanmedian, size=5)
+            corrected[bad_pixel_mask] = local_med[bad_pixel_mask]
+
+        return corrected
+
+    # ==========================================================
+    # PROFILE EXTRACTION + SMOOTHING
+    # ==========================================================
+    def smooth_profile(self, profile, window=15, poly=3):
+        if window >= len(profile):
+            window = len(profile) - 1
+        if window % 2 == 0:
+            window += 1
+        return savgol_filter(profile, window, poly)
+
+    def create_smoothed_profile_graphs(self, corrected, imageModel):
+
+        rows, cols = corrected.shape
+        center_row = rows // 2
+        center_col = cols // 2
+
+        crossline_raw = corrected[center_row, :]
+        inline_raw = corrected[:, center_col]
+
+        crossline = self.smooth_profile(crossline_raw)
+        inline = self.smooth_profile(inline_raw)
+
+        # Horizontal
         fig_h, ax_h = plt.subplots()
-        ax_h.plot(horiz_values)
-        ax_h.set_title("Horizontal Profile (Center Row)")
-        ax_h.set_xlabel("Pixel")
-        ax_h.set_ylabel("Intensity")
+        ax_h.plot(crossline_raw, alpha=0.4, label="Raw")
+        ax_h.plot(crossline, label="Smoothed")
+        ax_h.set_title("Crossline Profile")
+        ax_h.legend()
         ax_h.grid(True)
         imageModel.set_horizontal_profile_graph(fig_h)
-        
-        # Vertical profile (across rows at center column)
-        vert_values = img_array[:, center_col]
+
+        # Vertical
         fig_v, ax_v = plt.subplots()
-        ax_v.plot(vert_values)
-        ax_v.set_title("Vertical Profile (Center Column)")
-        ax_v.set_xlabel("Pixel")
-        ax_v.set_ylabel("Intensity")
+        ax_v.plot(inline_raw, alpha=0.4, label="Raw")
+        ax_v.plot(inline, label="Smoothed")
+        ax_v.set_title("Inline Profile")
+        ax_v.legend()
         ax_v.grid(True)
         imageModel.set_vertical_profile_graph(fig_v)
-        
-        logger.info("Created basic profile graphs from image center (FieldAnalysis failed)")
 
-        plt.tight_layout()
-        #plt.show()
+        logger.info("Smoothed profiles generated")
