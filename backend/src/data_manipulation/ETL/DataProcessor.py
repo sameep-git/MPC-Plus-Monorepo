@@ -171,7 +171,7 @@ class DataProcessor:
         Extract the beam type from the path.
         """
         # Matches 6x, 6xFFF, 6xMVkVEnhancedCouch, 9x, 10x, etc.
-        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9]+)', path)
+        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9.]+)', path)
         if m:
             return m.group(1)
         return None
@@ -223,14 +223,9 @@ class DataProcessor:
         if not beam_map:
             return
 
-        # for key, (model_class, beam_type) in beam_map.items():
-        #     if key in self.data_path:
-        #         # Special handling for 6x: use "6xFFF" only for BeamCheckTemplate6xFFF
-        #         if key == "6x":
-        #             if "BeamCheckTemplate6xFFF" in self.data_path:
-        #                 beam_type = "6xFFF"
-        #             # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
         beam_token = self.extract_beam_type(self.data_path)
+        print(beam_token)
+
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
                 #return model_class(beam_type=beam_type)
