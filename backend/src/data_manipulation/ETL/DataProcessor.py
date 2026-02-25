@@ -124,10 +124,11 @@ class DataProcessor:
             
             # Map database variant string to Model Class
             # Heuristic based on ending char
-            if variant == "6xMVkVEnhancedCouch":
-                # Special case for 6x geometry check
-                #beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
-                beam_map[variant] = (XBeamModel, "6x", typeID)
+            if variant == "6x":
+                # Special case for 6x geometry check from path name mapped to 6x in database
+                beam_map["6xMVkVEnhancedCouch"] = (GeoModel, "6x", typeID)
+                # Normal 6x beam check
+                beam_map["6x"] = (XBeamModel, "6x", typeID)
             elif variant == "6xFFF":
                 # Special case for 6xFFF check
                 beam_map[variant] = (XBeamModel, "6xFFF", typeID)
@@ -155,7 +156,7 @@ class DataProcessor:
         ffda6e9f-8f4d-48c3-8270-621d4a99db51,6xFFF
         """
         return {
-            "6xMVkVEnhancedCouch": (GeoModel, "6xMVkVEnhancedCouch", "253c1694-12d0-4497-9bd0-8487ee7c6f6f"),
+            "6xMVkVEnhancedCouch": (GeoModel, "6x", "253c1694-12d0-4497-9bd0-8487ee7c6f6f"),
             "6xFFF": (XBeamModel, "6xFFF", "ffda6e9f-8f4d-48c3-8270-621d4a99db51"),
             "6e": (EBeamModel, "6e", "e6763342-a180-444a-a869-ce57d1b086b1"),
             "9e": (EBeamModel, "9e", "a285aac2-1b63-4cd1-b7c5-76fcb4d95b84"),
@@ -224,7 +225,6 @@ class DataProcessor:
             return
 
         beam_token = self.extract_beam_type(self.data_path)
-        print(beam_token)
 
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
