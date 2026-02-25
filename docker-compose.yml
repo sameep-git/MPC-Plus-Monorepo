@@ -47,5 +47,26 @@ services:
     depends_on:
       - backend
 
+  # ── Python ETL Watchdog ───────────────────────────────────
+  etl:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["start"]
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your_password_here}
+      - POSTGRES_DATABASE=${POSTGRES_DB:-mpc_plus}
+    depends_on:
+      - db
+    volumes:
+      # Mount the iDrive folder so the container can watch for new files
+      - ./iDrive:/app/iDrive
+      # Optional: Mount the Lexar drive if needed
+      # - /Volumes/Lexar/MPC Data:/Volumes/Lexar/MPC Data
+
 volumes:
   pgdata:
