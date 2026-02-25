@@ -27,11 +27,12 @@
  ```python
  # ... inside _get_dynamic_beam_map loop ...
 
- if variant == "6xMVkVEnhancedCouch":
-     beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch")
+ if variant == "6x":
+     beam_map["6xMVkVEnhancedCouch"] = (GeoModel, "6x", typeID)
+     beam_map["6x"] = (XBeamModel, "6x", typeID)
  # ADD THIS:
  elif variant == "10xGeo":
-     beam_map[variant] = (GeoModel, "10xGeo") 
+     beam_map["10xGeo"] = (GeoModel, "10xGeo", typeID) 
  # ...
  ```
 
@@ -59,19 +60,22 @@
  See `src/data_manipulation/ETL/DataProcessor.py` around line 123:
 
  ```python
- 123:        for variant in variants:
- 124:            # Map database variant string to Model Class
- 125:            # Heuristic based on ending char
- 126:            if variant == "6xMVkVEnhancedCouch":
- 127:                # Special case for 6x geometry check
- 128:                beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch")
- 129:            elif variant == "6xFFF":
- 130:                # Special case for 6xFFF check
- 131:                beam_map[variant] = (XBeamModel, "6xFFF")
- 132:            elif variant.endswith("x"):
- 133:                beam_map[variant] = (XBeamModel, variant)
- 134:            elif variant.endswith("e"):
- 135:                beam_map[variant] = (EBeamModel, variant)
- 136:            else:
- 137:                logger.warning(f"Unknown variant format from DB: {variant}. Skipping.")
+ 123:        for item in variants:
+ 124:            variant = item['variant']
+ 125:            typeID = item['id']
+ 126:            # Map database variant string to Model Class
+ 127:            # Heuristic based on ending char
+ 128:            if variant == "6x":
+ 129:                # Special case for 6x geometry check
+ 130:                beam_map["6xMVkVEnhancedCouch"] = (GeoModel, "6x", typeID)
+ 131:                beam_map["6x"] = (XBeamModel, "6x", typeID)
+ 132:            elif variant == "6xFFF":
+ 133:                # Special case for 6xFFF check
+ 134:                beam_map[variant] = (XBeamModel, "6xFFF", typeID)
+ 135:            elif variant.endswith("x"):
+ 136:                beam_map[variant] = (XBeamModel, variant, typeID)
+ 137:            elif variant.endswith("e"):
+ 138:                beam_map[variant] = (EBeamModel, variant, typeID)
+ 139:            else:
+ 140:                logger.warning(f"Unknown variant format from DB: {variant}. Skipping.")
  ```

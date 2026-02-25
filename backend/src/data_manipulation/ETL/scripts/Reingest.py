@@ -24,7 +24,7 @@ Options:
                                 are ingested regardless of beam type.
 
 Valid beam variants:
-    10x, 16e, 6xMVkVEnhancedCouch, 12e, 15x, 9e, 2.5x, 6e, 6xFFF
+    10x, 16e, 6x, 12e, 15x, 9e, 2.5x, 6e, 6xFFF
 """
 
 from src.data_manipulation.ETL.DataProcessor import DataProcessor
@@ -63,7 +63,7 @@ def main():
     
     # Valid beam variants that can be specified for filtering.
     VALID_BEAM_TYPES = [
-        "10x", "16e", "6xMVkVEnhancedCouch", "12e",
+        "10x", "16e", "6x", "12e",
         "15x", "9e", "2.5x", "6e", "6xFFF"
     ]
     
