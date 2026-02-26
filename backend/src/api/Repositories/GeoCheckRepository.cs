@@ -28,7 +28,7 @@ public class GeoCheckRepository : IGeoCheckRepository
         
         var sql = includeDetails 
             ? "SELECT * FROM geochecks_full WHERE 1=1" 
-            : @"SELECT id, machine_id, type, date, timestamp, path,
+            : @"SELECT id, machine_id, type, timestamp, path,
                    iso_center_size, iso_center_mv_offset, iso_center_kv_offset,
                    relative_output, relative_uniformity, center_shift,
                    collimation_rotation_offset, gantry_absolute, gantry_relative,
@@ -58,20 +58,20 @@ public class GeoCheckRepository : IGeoCheckRepository
 
         if (date.HasValue)
         {
-            sql += " AND date = @Date";
+            sql += " AND timestamp::date = @Date";
             parameters.Add("Date", date.Value.Date);
         }
         else 
         {
              if (startDate.HasValue)
              {
-                 sql += " AND date >= @StartDate";
+                 sql += " AND timestamp::date >= @StartDate";
                  parameters.Add("StartDate", startDate.Value.Date);
              }
              
              if (endDate.HasValue)
              {
-                 sql += " AND date <= @EndDate";
+                 sql += " AND timestamp::date <= @EndDate";
                  parameters.Add("EndDate", endDate.Value.Date);
              }
         }
@@ -102,7 +102,7 @@ public class GeoCheckRepository : IGeoCheckRepository
         {
             var sql = @"
                 INSERT INTO geochecks (
-                    machine_id, date, timestamp, 
+                    machine_id, timestamp, 
                     iso_center_size, iso_center_mv_offset, iso_center_kv_offset,
                     relative_output, relative_uniformity, center_shift,
                     collimation_rotation_offset, gantry_absolute, gantry_relative,
@@ -114,7 +114,7 @@ public class GeoCheckRepository : IGeoCheckRepository
                     jaw_parallelism_x1, jaw_parallelism_x2, jaw_parallelism_y1, jaw_parallelism_y2,
                     path, approved_by, approved_date, note, type, beam_variant_id
                 ) VALUES (
-                    @MachineId, @Date, @Timestamp,
+                    @MachineId, @Timestamp,
                     @IsoCenterSize, @IsoCenterMvOffset, @IsoCenterKvOffset,
                     @RelativeOutput, @RelativeUniformity, @CenterShift,
                     @CollimationRotationOffset, @GantryAbsolute, @GantryRelative,
@@ -126,7 +126,7 @@ public class GeoCheckRepository : IGeoCheckRepository
                     @JawParallelismX1, @JawParallelismX2, @JawParallelismY1, @JawParallelismY2,
                     @Path, @ApprovedBy, @ApprovedDate, @Note, @Type, @BeamVariantId
                 )
-                RETURNING id, machine_id, type, date, timestamp, path,
+                RETURNING id, machine_id, type, timestamp, path,
                     iso_center_size, iso_center_mv_offset, iso_center_kv_offset,
                     relative_output, relative_uniformity, center_shift,
                     collimation_rotation_offset, gantry_absolute, gantry_relative,
@@ -194,7 +194,7 @@ public class GeoCheckRepository : IGeoCheckRepository
 
             var sql = @"
                 UPDATE geochecks SET
-                    machine_id = @MachineId, date = @Date, timestamp = @Timestamp,
+                    machine_id = @MachineId, timestamp = @Timestamp,
                     iso_center_size = @IsoCenterSize, iso_center_mv_offset = @IsoCenterMvOffset, iso_center_kv_offset = @IsoCenterKvOffset,
                     relative_output = @RelativeOutput, relative_uniformity = @RelativeUniformity, center_shift = @CenterShift,
                     collimation_rotation_offset = @CollimationRotationOffset, gantry_absolute = @GantryAbsolute, gantry_relative = @GantryRelative,
@@ -251,6 +251,21 @@ public class GeoCheckRepository : IGeoCheckRepository
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task<bool> ApproveAsync(string id, string approvedBy, DateTime approvedDate, CancellationToken cancellationToken = default)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        if (!Guid.TryParse(id, out var guidId)) return false;
+
+        var sql = @"
+            UPDATE geochecks SET
+                approved_by = @ApprovedBy,
+                approved_date = @ApprovedDate
+            WHERE id = @Id";
+
+        var rows = await connection.ExecuteAsync(sql, new { Id = guidId, ApprovedBy = approvedBy, ApprovedDate = approvedDate });
+        return rows > 0;
     }
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)

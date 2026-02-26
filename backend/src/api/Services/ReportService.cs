@@ -6,6 +6,8 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using TimeZoneConverter;
+using Dapper;
+using Api.Database;
 
 namespace Api.Services;
 
@@ -14,15 +16,18 @@ public class ReportService : IReportService
     private readonly IBeamRepository _beamRepository;
     private readonly IGeoCheckRepository _geoCheckRepository;
     private readonly IMachineRepository _machineRepository;
+    private readonly PostgresConnectionFactory _connectionFactory;
 
     public ReportService(
         IBeamRepository beamRepository,
         IGeoCheckRepository geoCheckRepository,
-        IMachineRepository machineRepository)
+        IMachineRepository machineRepository,
+        PostgresConnectionFactory connectionFactory)
     {
         _beamRepository = beamRepository;
         _geoCheckRepository = geoCheckRepository;
         _machineRepository = machineRepository;
+        _connectionFactory = connectionFactory;
     }
 
     private static TimeZoneInfo GetTimeZone(string? timeZoneId)
@@ -38,9 +43,22 @@ public class ReportService : IReportService
         }
     }
 
+    private static DateTime ConvertToTz(DateTime dt, TimeZoneInfo tz)
+    {
+        var utcDt = dt.Kind == DateTimeKind.Unspecified 
+            ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) 
+            : dt.ToUniversalTime();
+
+        return TimeZoneInfo.ConvertTimeFromUtc(utcDt, tz);
+    }
+
     public async Task<(byte[] Data, string ContentType, string FileName)> GenerateReportAsync(ReportRequest request, CancellationToken cancellationToken = default)
     {
-        var tz = GetTimeZone(request.TimeZone);
+        using var connection = _connectionFactory.CreateConnection();
+        var dbTzValue = await connection.QueryFirstOrDefaultAsync<string>(
+            "SELECT value FROM app_settings WHERE key = 'timezone'");
+
+        var tz = GetTimeZone(dbTzValue ?? request.TimeZone);
         // 1. Fetch Machine Details
         var machine = await _machineRepository.GetByIdAsync(request.MachineId, cancellationToken);
         var machineName = machine?.Name ?? "Unknown Machine";
@@ -86,29 +104,29 @@ public class ReportService : IReportService
         List<Beam> filteredBeams;
         if (selectedBeamTypes.Count == 0)
         {
-            filteredBeams = allBeams.OrderBy(b => b.Date).ThenBy(b => b.Type).ToList();
+            filteredBeams = allBeams.OrderBy(b => b.Timestamp).ThenBy(b => b.Type).ToList();
         }
         else
         {
             filteredBeams = allBeams
                 .Where(b => selectedBeamTypes.Contains(b.Type ?? ""))
-                .OrderBy(b => b.Date)
+                .OrderBy(b => b.Timestamp)
                 .ThenBy(b => b.Type)
                 .ToList();
         }
 
-        var filteredGeoChecks = allGeoChecks.OrderBy(g => g.Date).ToList();
+        var filteredGeoChecks = allGeoChecks.OrderBy(g => g.Timestamp).ToList();
         var showGeoChecks = selectedGeoTypes.Count > 0;
 
 
 
         // 5. Group data by CALENDAR DAY (strip time component)
         var beamsByDay = filteredBeams
-            .GroupBy(b => b.Date.Date)
+            .GroupBy(b => b.Timestamp.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var geoByDay = filteredGeoChecks
-            .GroupBy(g => g.Date.Date)
+            .GroupBy(g => g.Timestamp.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
 
@@ -232,7 +250,7 @@ public class ReportService : IReportService
         // Group beams into check runs (2-minute proximity, same as BeamsController)
         var checkRuns = GroupBeamsByRun(beams);
         // Sort geo checks by timestamp for index-based pairing with check runs
-        var sortedGeoChecks = geoChecks.OrderBy(g => g.Timestamp ?? g.Date).ToList();
+        var sortedGeoChecks = geoChecks.OrderBy(g => g.Timestamp).ToList();
         var totalRuns = Math.Max(checkRuns.Count, showGeoChecks ? sortedGeoChecks.Count : 0);
 
         container.PaddingVertical(0.5f, Unit.Centimetre).Column(column =>
@@ -320,10 +338,8 @@ public class ReportService : IReportService
         var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
         var statusText = isPass ? "PASS" : "FAIL";
         
-        // Use Timestamp if available, otherwise fall back to Date (no tz shift for pure dates)
-        var displayTime = beam.Timestamp.HasValue 
-            ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(beam.Timestamp.Value, DateTimeKind.Utc), tz) 
-            : beam.Date;
+        // Timestamps are stored as UTC — convert to display timezone safely
+        var displayTime = ConvertToTz(beam.Timestamp, tz);
 
         container.PaddingTop(0.4f, Unit.Centimetre).Column(column =>
         {
@@ -339,7 +355,7 @@ public class ReportService : IReportService
             if (!string.IsNullOrWhiteSpace(beam.ApprovedBy))
             {
                 var approvalDisplayDate = beam.ApprovedDate.HasValue
-                    ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(beam.ApprovedDate.Value, DateTimeKind.Utc), tz).ToString("MM/dd/yyyy h:mm tt")
+                    ? ConvertToTz(beam.ApprovedDate.Value, tz).ToString("MM/dd/yyyy h:mm tt")
                     : "";
                 column.Item().Text($"Approved by {beam.ApprovedBy} on {approvalDisplayDate}").FontSize(8).FontColor(Colors.Green.Medium);
             }
@@ -442,10 +458,8 @@ public class ReportService : IReportService
 
         container.PaddingTop(0.4f, Unit.Centimetre).Column(column =>
         {
-            // Use Timestamp if available, otherwise fall back to Date (no tz shift for pure dates)
-            var geoDisplayTime = geo.Timestamp.HasValue 
-                ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(geo.Timestamp.Value, DateTimeKind.Utc), tz) 
-                : geo.Date;
+            // Timestamps are stored as UTC — convert to display timezone safely
+            var geoDisplayTime = ConvertToTz(geo.Timestamp, tz);
             
             // Header with overall status (no N/A for type)
             column.Item().Row(row =>
@@ -459,7 +473,7 @@ public class ReportService : IReportService
             if (!string.IsNullOrWhiteSpace(geo.ApprovedBy))
             {
                 var approvalDisplayDate = geo.ApprovedDate.HasValue
-                    ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(geo.ApprovedDate.Value, DateTimeKind.Utc), tz).ToString("MM/dd/yyyy h:mm tt")
+                    ? ConvertToTz(geo.ApprovedDate.Value, tz).ToString("MM/dd/yyyy h:mm tt")
                     : "";
                 column.Item().Text($"Approved by {geo.ApprovedBy} on {approvalDisplayDate}").FontSize(8).FontColor(Colors.Green.Medium);
             }
@@ -723,13 +737,13 @@ public class ReportService : IReportService
         var groups = new List<(DateTime Timestamp, List<Beam> Beams)>();
         if (beams.Count == 0) return groups;
 
-        var sorted = beams.OrderBy(b => b.Timestamp ?? b.Date).ToList();
+        var sorted = beams.OrderBy(b => b.Timestamp).ToList();
         var currentGroup = new List<Beam>();
-        var referenceTime = sorted[0].Timestamp ?? sorted[0].Date;
+        var referenceTime = sorted[0].Timestamp;
 
         foreach (var beam in sorted)
         {
-            var time = beam.Timestamp ?? beam.Date;
+            var time = beam.Timestamp;
             if ((time - referenceTime).Duration() > TimeSpan.FromMinutes(2))
             {
                 groups.Add((referenceTime, currentGroup));

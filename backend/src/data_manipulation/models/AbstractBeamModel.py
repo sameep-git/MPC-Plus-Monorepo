@@ -1,5 +1,6 @@
 from abc import ABC
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import re
 import xml.etree.ElementTree as ET
 import os
@@ -101,21 +102,36 @@ class AbstractBeamModel(ABC):
         self._vertical_profile_graph = value
 
     # --- Concrete utility methods shared by subclasses ---
-    def _getDateFromPathName(self, path: str) -> datetime:
+    def _getDateFromPathName(self, path: str, tz_name: str = None) -> datetime:
         """
-        Extracts a datetime from the given path.
+        Extracts a datetime from the given path and converts it to UTC.
+
+        The folder-name timestamp is in the machine's local time.
+        If *tz_name* is provided (e.g. "America/Chicago"), the parsed
+        time is interpreted in that zone and then converted to UTC.
+        If *tz_name* is ``None``, the returned datetime is **naive**
+        (no timezone) — this should only happen in test/legacy paths.
+
         Example:
             '...NDS-WKS-SN6543-2025-09-19-07-41-49-0008-GeometryCheckTemplate6xMVkVEnhancedCouch'
-            → datetime(2025, 9, 19, 7, 41, 49)
+            with tz_name='America/Chicago'
+            → datetime(2025, 9, 19, 12, 41, 49, tzinfo=UTC)
         Raises:
             ValueError: if no valid date pattern is found in the path.
         """
         match = re.search(r'(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})', path)
         if not match:
             raise ValueError(f"Could not extract date from path: {path}")
-        
+
         date_str = match.group(1)
-        return datetime.strptime(date_str, "%Y-%m-%d-%H-%M-%S")
+        naive_dt = datetime.strptime(date_str, "%Y-%m-%d-%H-%M-%S")
+
+        if tz_name:
+            local_tz = ZoneInfo(tz_name)
+            local_dt = naive_dt.replace(tzinfo=local_tz)
+            return local_dt.astimezone(timezone.utc)
+
+        return naive_dt
 
     def _getSNFromPathName(self, path: str) -> str:
         """

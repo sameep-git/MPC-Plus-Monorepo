@@ -95,11 +95,14 @@ class PostgresAdapter(DatabaseAdapter):
         self.connected = False
         # Local storage path for saved images.
         # STORAGE_ROOT env var overrides the default relative path.
-        # Default assumes running from src/data_manipulation/ETL → ../../api/wwwroot/images
-        self.storage_root = os.environ.get("STORAGE_ROOT") or os.path.abspath(os.path.join(
-            os.path.dirname(__file__), 
-            "../../api/wwwroot/images"
-        ))
+        # Default: src/api/wwwroot/images (relative to the backend root).
+        # __file__ is at backend/src/data_manipulation/ETL/Uploader.py
+        #   → dirname four levels up = backend/
+        _etl_dir = os.path.dirname(os.path.abspath(__file__))
+        _backend_root = os.path.dirname(os.path.dirname(os.path.dirname(_etl_dir)))
+        self.storage_root = os.environ.get("STORAGE_ROOT") or os.path.join(
+            _backend_root, "src", "api", "wwwroot", "images"
+        )
         
         # Base URL for accessing images via the API (should match static file serving)
         self.base_url = "/images"
@@ -120,7 +123,7 @@ class PostgresAdapter(DatabaseAdapter):
                 # Fallback to building from individual params
                 host = connection_params.get('host', 'localhost')
                 port = connection_params.get('port', 5432)
-                dbname = connection_params.get('dbname', 'mpc_plus_db')
+                dbname = connection_params.get('dbname', 'mpc_plus')
                 user = connection_params.get('user', 'postgres')
                 password = connection_params.get('password', os.environ.get('PGPASSWORD', ''))
                 conn_str = f"host={host} port={port} dbname={dbname} user={user} password={password}"
@@ -175,6 +178,24 @@ class PostgresAdapter(DatabaseAdapter):
             self.conn.rollback()
             return False
 
+    def get_app_timezone(self) -> str | None:
+        """
+        Look up the configured timezone from the app_settings table.
+        Returns the IANA timezone name (e.g. 'America/Chicago') or None.
+        """
+        if not self.connected or not self.conn:
+            return None
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    "SELECT value FROM app_settings WHERE key = 'timezone'"
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+        except Exception as e:
+            logger.error(f"Error fetching timezone from app_settings: {e}")
+            return None
+
     def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> Dict[str, Any]:
         """
         Upload beam data to PostgreSQL table.
@@ -197,15 +218,40 @@ class PostgresAdapter(DatabaseAdapter):
             # Special handling for JSON fields (image_paths)
             # data has 'image_paths' as string json dump?
             
-            columns = data.keys()
-            values = [data[k] for k in columns]
+            columns = list(data.keys())
             
-            query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
-                sql.Identifier(table_name),
-                sql.SQL(', ').join(map(sql.Identifier, columns)),
-                sql.SQL(', ').join(sql.Placeholder() * len(columns))
-            )
-            
+            # Determine conflict target for UPSERT functionality
+            if table_name in ['beams', 'geochecks']:
+                conflict_target = sql.SQL("(path)")
+            elif table_name == 'baselines':
+                conflict_target = sql.SQL("(machine_id, check_type, beam_variant, metric_type)")
+            else:
+                conflict_target = None
+
+            if conflict_target:
+                set_clauses = sql.SQL(', ').join(
+                    sql.SQL("{} = EXCLUDED.{}").format(sql.Identifier(col), sql.Identifier(col))
+                    for col in columns
+                )
+                query = sql.SQL(
+                    "INSERT INTO {} ({}) VALUES ({}) "
+                    "ON CONFLICT {} DO UPDATE SET {} "
+                    "RETURNING *"
+                ).format(
+                    sql.Identifier(table_name),
+                    sql.SQL(', ').join(map(sql.Identifier, columns)),
+                    sql.SQL(', ').join(sql.Placeholder() * len(columns)),
+                    conflict_target,
+                    set_clauses
+                )
+            else:
+                query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
+                    sql.Identifier(table_name),
+                    sql.SQL(', ').join(map(sql.Identifier, columns)),
+                    sql.SQL(', ').join(sql.Placeholder() * len(columns))
+                )
+                
+            values = tuple(float(data[k]) if isinstance(data[k], np.floating) else data[k] for k in columns)
             with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(query, values)
                 inserted = cur.fetchone()
@@ -258,7 +304,8 @@ class PostgresAdapter(DatabaseAdapter):
             with self.conn.cursor() as cur:
                 extras.execute_values(
                     cur,
-                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, leaf_value) VALUES %s",
+                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, leaf_value) VALUES %s "
+                    "ON CONFLICT (geocheck_id, leaf_number) DO UPDATE SET leaf_value = EXCLUDED.leaf_value",
                     records
                 )
                 self.conn.commit()
@@ -287,7 +334,8 @@ class PostgresAdapter(DatabaseAdapter):
             with self.conn.cursor() as cur:
                 extras.execute_values(
                     cur,
-                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, backlash_value) VALUES %s",
+                    f"INSERT INTO {table_name} (geocheck_id, leaf_number, backlash_value) VALUES %s "
+                    "ON CONFLICT (geocheck_id, leaf_number) DO UPDATE SET backlash_value = EXCLUDED.backlash_value",
                     records
                 )
                 self.conn.commit()
@@ -420,6 +468,14 @@ class Uploader:
             self.db_adapter.close()
         self.connected = False
 
+    def get_app_timezone(self) -> Optional[str]:
+        """
+        Retrieve the configured timezone from app_settings via the adapter.
+        """
+        if hasattr(self.db_adapter, 'get_app_timezone'):
+            return self.db_adapter.get_app_timezone()
+        return None
+
     def upload(self, model):
         """
         Automatically calls the correct upload method
@@ -485,7 +541,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'rel_uniformity',
-                    'date': date,
+                    'timestamp': date,
                     'value': rel_uniformity
                 })
             
@@ -498,7 +554,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'rel_output',
-                    'date': date,
+                    'timestamp': date,
                     'value': rel_output
                 })
             
@@ -512,7 +568,7 @@ class Uploader:
                         'beam_variant': beam_variant,
                         'typeID': typeID,
                         'metric_type': 'center_shift',
-                        'date': date,
+                        'timestamp': date,
                         'value': center_shift
                     })
 
@@ -528,7 +584,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'vert_flatness',
-                    'date': date,
+                    'timestamp': date,
                     'value': flat_vert
                 })
 
@@ -541,7 +597,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'hori_flatness',
-                    'date': date,
+                    'timestamp': date,
                     'value': flat_hori
                 })
 
@@ -554,7 +610,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'vert_symmetry',
-                    'date': date,
+                    'timestamp': date,
                     'value': sym_vert
                 })
 
@@ -567,7 +623,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'hori_symmetry',
-                    'date': date,
+                    'timestamp': date,
                     'value': sym_hori
                 })
             
@@ -678,7 +734,7 @@ class Uploader:
                 data = {
                     'typeID': eBeam.get_typeID(),
                     'type': eBeam.get_type(),
-                    'date': eBeam.get_date(),
+                    'timestamp': eBeam.get_date(),
                     'path': eBeam.get_path(),
                     'rel_uniformity': eBeam.get_relative_uniformity(),
                     'rel_output': eBeam.get_relative_output(),
@@ -734,7 +790,7 @@ class Uploader:
                 data = {
                     'typeID': xBeam.get_typeID(),
                     'type': xBeam.get_type(),
-                    'date': xBeam.get_date(),
+                    'timestamp': xBeam.get_date(),
                     'path': xBeam.get_path(),
                     'rel_uniformity': xBeam.get_relative_uniformity(),
                     'rel_output': xBeam.get_relative_output(),
@@ -770,7 +826,7 @@ class Uploader:
             # ---- Build single geochecks row with ALL geometry fields ----
             geocheck_data = {
                 'machine_id': geoModel.get_machine_SN(),
-                'date': geoModel.get_date(),
+                'timestamp': geoModel.get_date(),
                 'path': geoModel.get_path(),
                 'type': geoModel.get_type(),
                 'note': None,
@@ -847,6 +903,52 @@ class Uploader:
             ]
             self.db_adapter.upload_mlc_backlash(geocheck_id, backlash_a_list, bank='a')
             self.db_adapter.upload_mlc_backlash(geocheck_id, backlash_b_list, bank='b')
+            
+            # ---- Also upload beam-group metrics to the beams table ----
+            # The 6xMVkVEnhancedCouch CSV contains beam data (output, uniformity,
+            # center shift) that should also live in the beams table so the
+            # frontend, DOC factor logic, and reporting can find it alongside
+            # regular beam checks.
+            # Flatness and symmetry are computed from image analysis and already
+            # populated on the model via set_flat_and_sym_vals_from_image().
+            
+            # Upload images (same logic as xModelUpload / eModelUpload)
+            image_urls = None
+            image_model = geoModel.get_image_model()
+            if image_model:
+                base_folder_path = self._generate_image_folder_path(geoModel)
+                beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                horizontal_profile = geoModel.get_horizontal_profile_graph() if hasattr(geoModel, 'get_horizontal_profile_graph') else None
+                vertical_profile = geoModel.get_vertical_profile_graph() if hasattr(geoModel, 'get_vertical_profile_graph') else None
+                image_urls = self.db_adapter.upload_beam_images(
+                    bucket_name="beam-images",
+                    base_folder_path=base_folder_path,
+                    beam_image=beam_image,
+                    horizontal_profile=horizontal_profile,
+                    vertical_profile=vertical_profile
+                )
+
+            beam_data = {
+                'typeID': geoModel.get_typeID(),
+                'type': geoModel.get_type(),
+                'timestamp': geoModel.get_date(),
+                'path': geoModel.get_path(),
+                'rel_uniformity': geoModel.get_relative_uniformity(),
+                'rel_output': geoModel.get_relative_output(),
+                'center_shift': geoModel.get_center_shift(),
+                'vert_flatness': geoModel.get_flatness_vertical(),
+                'hori_flatness': geoModel.get_flatness_horizontal(),
+                'vert_symmetry': geoModel.get_symmetry_vertical(),
+                'hori_symmetry': geoModel.get_symmetry_horizontal(),
+                'machine_id': geoModel.get_machine_SN(),
+                'note': None,
+                'image_paths': json.dumps(image_urls) if image_urls else None,
+            }
+            beam_result = self.db_adapter.upload_beam_data('beams', beam_data)
+            if beam_result:
+                logger.info(f"Also uploaded beam-group metrics to beams table for 6x geo check")
+            else:
+                logger.warning(f"Failed to upload beam-group metrics to beams table")
             
             logger.info(f"Successfully uploaded geometry check with geocheck_id: {geocheck_id}")
             return geocheck_id

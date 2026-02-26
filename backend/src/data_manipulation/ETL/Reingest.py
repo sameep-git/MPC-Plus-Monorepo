@@ -3,18 +3,28 @@ Overview:
     This script processes all folders within a given directory location,
     invoking DataProcessor on each folder to reingest data into the database.
     It is designed for batch processing of multiple beam test result directories.
+    Optionally, ingestion can be restricted to specific beam type(s) by passing
+    one or more beam variant names via --beam-types.
     
 Usage:
-    python -m src.data_manipulation.ETL.Reingest <folder_path>
+    python -m src.data_manipulation.ETL.Reingest <folder_path> [options]
     
     Examples:
         python -m src.data_manipulation.ETL.Reingest data/csv_data
         python -m src.data_manipulation.ETL.Reingest /path/to/beam/data
         python -m src.data_manipulation.ETL.Reingest data/csv_data --test
+        python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 6xFFF 10x
+        python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 2.5x --test
     
 Options:
-    -h, --help      Show this help message and exit
-    --test          Run in test mode (RunTest()) instead of upload mode (Run())
+    -h, --help                  Show this help message and exit
+    --test                      Run in test mode (RunTest()) instead of upload mode (Run())
+    --beam-types <type> [...]   Only ingest folders whose name contains one of the
+                                specified beam type strings. If omitted, all folders
+                                are ingested regardless of beam type.
+
+Valid beam variants:
+    10x, 16e, 6x, 12e, 15x, 9e, 2.5x, 6e, 6xFFF
 """
 
 from src.data_manipulation.ETL.DataProcessor import DataProcessor
@@ -51,6 +61,25 @@ def main():
         help="Run in test mode (RunTest()) instead of upload mode (Run())"
     )
     
+    # Valid beam variants that can be specified for filtering.
+    VALID_BEAM_TYPES = [
+        "10x", "16e", "6x", "12e",
+        "15x", "9e", "2.5x", "6e", "6xFFF"
+    ]
+    
+    parser.add_argument(
+        '--beam-types',
+        nargs='+',
+        metavar='BEAM_TYPE',
+        default=None,
+        help=(
+            "Only ingest folders whose name contains one of the given beam type strings. "
+            "Multiple types may be space-separated (e.g. --beam-types 6xFFF 10x). "
+            f"Valid variants: {', '.join(VALID_BEAM_TYPES)}. "
+            "If omitted, all folders are ingested."
+        )
+    )
+    
     args = parser.parse_args()
     
     # Load environment variables
@@ -69,6 +98,10 @@ def main():
     
     logger.info(f"Processing all folders in: {folder_path}")
     logger.info(f"Mode: {'TEST' if args.test else 'UPLOAD'}")
+    if args.beam_types:
+        logger.info(f"Beam type filter active — only ingesting: {', '.join(args.beam_types)}")
+    else:
+        logger.info("Beam type filter: none (all beam types will be ingested)")
     
     # Get all subdirectories
     subfolders = [d for d in folder_path.iterdir() if d.is_dir()]
@@ -85,8 +118,22 @@ def main():
     failed = 0
     skipped = 0
     
-    
     sorted_folders = sorted(subfolders)
+    
+    # When --beam-types is provided, filter to only folders whose name contains
+    # at least one of the requested beam type strings (case-sensitive match).
+    # If --beam-types is omitted (None), all subfolders are processed.
+    if args.beam_types:
+        sorted_folders = [
+            f for f in sorted_folders
+            if any(bt in f.name for bt in args.beam_types)
+        ]
+        logger.info(
+            f"After beam-type filtering: {len(sorted_folders)} / {total_folders} "
+            f"folder(s) match the requested beam type(s)"
+        )
+        # Update total count to reflect the filtered set
+        total_folders = len(sorted_folders)
     start_processing = False
     
     # RESUME_FROM_FOLDER = Path(r"E:\MPC Data\Weatherford\NDS-WKS-SN6543-2025-10-07-07-14-25-0008-GeometryCheckTemplate6xMVkVEnhancedCouch").resolve()
@@ -96,7 +143,7 @@ def main():
     #         logger.info(f"Resuming from folder: {subfolder.name}")
     #     if not start_processing:
     #         continue
-    for idx, subfolder in enumerate(sorted(subfolders), start=1):
+    for idx, subfolder in enumerate(sorted_folders, start=1):
         subfolder_path = str(subfolder)
         logger.info(f"\n{'='*80}")
         logger.info(f"Processing folder {idx} out of {total_folders}: {subfolder.name}")

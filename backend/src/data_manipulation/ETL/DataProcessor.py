@@ -54,6 +54,9 @@ class DataProcessor:
         # Database Uploader
         self.up = Uploader()
 
+        # Timezone for converting local timestamps to UTC (fetched from DB)
+        self._timezone = None
+
     # -------------------------------------------------------------------------
     # Generic helper method for beams
     # -------------------------------------------------------------------------
@@ -61,12 +64,12 @@ class DataProcessor:
     def _init_beam_model(self, model_class, beam_type):
         """
         Generic initializer for any beam model.
-        Sets path, type, date, and machine SN automatically.
+        Sets path, type, date (UTC), and machine SN automatically.
         """
         model = model_class()
         model.set_path(self.folder_path)  # Use folder path instead of data_path for database
         model.set_type(beam_type)
-        model.set_date(model._getDateFromPathName(self.data_path))
+        model.set_date(model._getDateFromPathName(self.data_path, tz_name=self._timezone))
         model.set_machine_SN(model._getSNFromPathName(self.data_path))
         model.set_baseline(model._getIsBaselineFromPathName(self.data_path))
         return model
@@ -84,7 +87,7 @@ class DataProcessor:
         image = ImageModel()
         image.set_path(self.image_path) #Path to the BeamProfileCheck.xim file
         image.set_type(beam_type)
-        image.set_date(image._getDateFromPathName(self.image_path))
+        image.set_date(image._getDateFromPathName(self.image_path, tz_name=self._timezone))
         image.set_machine_SN(image._getSNFromPathName(self.image_path))
         image.set_image_name(image.generate_image_name())
         image.set_image(XIM(image.get_path()))
@@ -124,10 +127,11 @@ class DataProcessor:
             
             # Map database variant string to Model Class
             # Heuristic based on ending char
-            if variant == "6xMVkVEnhancedCouch":
-                # Special case for 6x geometry check
-                #beam_map[variant] = (GeoModel, "6xMVkVEnhancedCouch", typeID)
-                beam_map[variant] = (XBeamModel, "6x", typeID)
+            if variant == "6x":
+                # Special case for 6x geometry check from path name mapped to 6x in database
+                beam_map["6xMVkVEnhancedCouch"] = (GeoModel, "6x", typeID)
+                # Normal 6x beam check
+                beam_map["6x"] = (XBeamModel, "6x", typeID)
             elif variant == "6xFFF":
                 # Special case for 6xFFF check
                 beam_map[variant] = (XBeamModel, "6xFFF", typeID)
@@ -155,7 +159,7 @@ class DataProcessor:
         ffda6e9f-8f4d-48c3-8270-621d4a99db51,6xFFF
         """
         return {
-            "6xMVkVEnhancedCouch": (GeoModel, "6xMVkVEnhancedCouch", "253c1694-12d0-4497-9bd0-8487ee7c6f6f"),
+            "6xMVkVEnhancedCouch": (GeoModel, "6x", "253c1694-12d0-4497-9bd0-8487ee7c6f6f"),
             "6xFFF": (XBeamModel, "6xFFF", "ffda6e9f-8f4d-48c3-8270-621d4a99db51"),
             "6e": (EBeamModel, "6e", "e6763342-a180-444a-a869-ce57d1b086b1"),
             "9e": (EBeamModel, "9e", "a285aac2-1b63-4cd1-b7c5-76fcb4d95b84"),
@@ -171,7 +175,7 @@ class DataProcessor:
         Extract the beam type from the path.
         """
         # Matches 6x, 6xFFF, 6xMVkVEnhancedCouch, 9x, 10x, etc.
-        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9]+)', path)
+        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9.]+)', path)
         if m:
             return m.group(1)
         return None
@@ -198,7 +202,19 @@ class DataProcessor:
             return None
         else:
             logger.info("Connected to PostgreSQL.")
-            return self.up
+
+        # Fetch timezone from app_settings — abort if not configured
+        tz = self.up.get_app_timezone()
+        if not tz:
+            self.up.close()
+            raise RuntimeError(
+                "Timezone has not been configured. "
+                "Please set the timezone in the MPC Plus Settings page before ingesting data."
+            )
+        self._timezone = tz
+        logger.info(f"Using timezone: {self._timezone}")
+
+        return self.up
     
     
     # -------------------------------------------------------------------------
@@ -223,14 +239,8 @@ class DataProcessor:
         if not beam_map:
             return
 
-        # for key, (model_class, beam_type) in beam_map.items():
-        #     if key in self.data_path:
-        #         # Special handling for 6x: use "6xFFF" only for BeamCheckTemplate6xFFF
-        #         if key == "6x":
-        #             if "BeamCheckTemplate6xFFF" in self.data_path:
-        #                 beam_type = "6xFFF"
-        #             # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
         beam_token = self.extract_beam_type(self.data_path)
+
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
                 #return model_class(beam_type=beam_type)

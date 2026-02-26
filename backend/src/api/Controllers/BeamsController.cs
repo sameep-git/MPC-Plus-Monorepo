@@ -61,13 +61,13 @@ public class BeamsController : ControllerBase
             return Ok(groups);
         }
 
-        var sortedBeams = beams.OrderBy(b => b.Timestamp ?? b.Date).ToList();
+        var sortedBeams = beams.OrderBy(b => b.Timestamp).ToList();
         var currentGroupBeams = new List<Beam>();
-        var referenceTime = sortedBeams[0].Timestamp ?? sortedBeams[0].Date;
+        var referenceTime = sortedBeams[0].Timestamp;
 
         foreach (var beam in sortedBeams)
         {
-            var time = beam.Timestamp ?? beam.Date;
+            var time = beam.Timestamp;
             if ((time - referenceTime).Duration() > TimeSpan.FromMinutes(2))
             {
                 groups.Add(new CheckGroup(referenceTime, currentGroupBeams));
@@ -194,7 +194,7 @@ public class BeamsController : ControllerBase
 
         var options = beams.Select(b => new BeamCheckOption(
             b.Id,
-            b.Timestamp ?? b.Date,
+            b.Timestamp,
             b.RelOutput ?? 0,
             b.Type ?? beamType
         )).OrderBy(o => o.Timestamp);
@@ -210,41 +210,24 @@ public class BeamsController : ControllerBase
             return BadRequest("No beam IDs provided.");
         }
 
-        var results = new List<Beam>();
+        var approvedDate = DateTime.UtcNow;
+        var results = new List<string>();
         var errors = new List<string>();
 
         foreach (var id in request.BeamIds)
         {
-            var beam = await _repository.GetByIdAsync(id, cancellationToken);
-            if (beam is null)
-            {
-                errors.Add($"Beam with id '{id}' was not found.");
-                continue;
-            }
-
-            beam.ApprovedBy = request.ApprovedBy;
-            beam.ApprovedDate = DateTime.UtcNow;
-
-            var updated = await _repository.UpdateAsync(beam, cancellationToken);
+            var updated = await _repository.ApproveAsync(id, request.ApprovedBy, approvedDate, cancellationToken);
             if (!updated)
             {
-                errors.Add($"Failed to update beam '{id}'.");
+                errors.Add($"Beam with id '{id}' was not found or failed to update.");
             }
             else
             {
-                results.Add(beam);
+                results.Add(id);
             }
         }
 
-        if (errors.Any())
-        {
-            // If some failed, return 207 Multi-Status or just bad request with details?
-            // For simplicity, we'll return Ok with the successful ones and include errors in response if needed,
-            // or if all failed, 500.
-            // Let's just return Ok with results, client can check what was updated.
-        }
-
-        return Ok(results);
+        return Ok(new { approved = results, errors });
     }
 
     private void CalculateStatus(Beam beam, IReadOnlyList<Threshold> thresholds)

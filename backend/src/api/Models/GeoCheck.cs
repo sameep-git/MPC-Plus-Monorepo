@@ -11,11 +11,8 @@ public class GeoCheck
     /// <summary>Type of beam (e.g., 6xff).</summary>
     public required string Type { get; set; }
 
-    /// <summary>Date of the geometry check.</summary>
-    public required DateTime Date { get; set; }
-
-    /// <summary>High-precision timestamp of the geometry check.</summary>
-    public DateTime? Timestamp { get; set; }
+    /// <summary>UTC timestamp of the geometry check.</summary>
+    public required DateTime Timestamp { get; set; }
 
     /// <summary>Associated machine identifier.</summary>
     public required string MachineId { get; set; }

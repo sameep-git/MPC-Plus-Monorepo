@@ -17,8 +17,8 @@ public class Baseline
     /// <summary>Type of metric (e.g., all beam type metrics).</summary>
     public required string MetricType { get; set; }
 
-    /// <summary>Date of baseline.</summary>
-    public required DateOnly Date { get; set; }
+    /// <summary>Timestamp of baseline (UTC).</summary>
+    public required DateTime Date { get; set; }
 
     /// <summary>Baseline value.</summary>
     public double? Value { get; set; }

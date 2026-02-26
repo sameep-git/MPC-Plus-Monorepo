@@ -14,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Ensure your backup file is here!
-      - ./backups/mpc_full_backup.sql:/docker-entrypoint-initdb.d/backup.sql
+      - ./backups/mpc_plus_backup_20260226_152849.sql:/docker-entrypoint-initdb.d/backup.sql
 
   # ── Backend (.NET API) ────────────────────────────────────
   backend:
@@ -46,6 +46,27 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:5000
     depends_on:
       - backend
+
+  # ── Python ETL Watchdog ───────────────────────────────────
+  etl:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["start"]
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your_password_here}
+      - POSTGRES_DATABASE=${POSTGRES_DB:-mpc_plus}
+    depends_on:
+      - db
+    volumes:
+      # Mount the iDrive folder so the container can watch for new files
+      - ./iDrive:/app/iDrive
+      # Optional: Mount the Lexar drive if needed
+      # - /Volumes/Lexar/MPC Data:/Volumes/Lexar/MPC Data
 
 volumes:
   pgdata:

@@ -3,7 +3,7 @@ export interface Baseline {
   checkType: 'geometry' | 'beam';
   beamVariant?: string;
   metricType: string;
-  date: string; // ISO date
+  date: string; // ISO datetime (UTC)
   value?: number;
 }
 

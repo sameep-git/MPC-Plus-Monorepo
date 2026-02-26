@@ -169,7 +169,7 @@ export const fetchBeams = async (params: FetchBeamsParams): Promise<CheckGroup[]
   }
 };
 
-export const approveBeams = async (beamIds: string[], approvedBy: string): Promise<BeamType[]> => {
+export const approveBeams = async (beamIds: string[], approvedBy: string): Promise<{ approved: string[]; errors: string[] }> => {
   try {
     const url = `${API_BASE.replace(/\/$/, '')}/beams/accept`;
     const data = await safeFetch(url, {
@@ -184,7 +184,7 @@ export const approveBeams = async (beamIds: string[], approvedBy: string): Promi
   }
 };
 
-export const approveGeoChecks = async (geoCheckIds: string[], approvedBy: string): Promise<GeoCheckType[]> => {
+export const approveGeoChecks = async (geoCheckIds: string[], approvedBy: string): Promise<{ approved: string[]; errors: string[] }> => {
   try {
     const url = `${API_BASE.replace(/\/$/, '')}/geochecks/accept`;
     const data = await safeFetch(url, {
@@ -270,15 +270,6 @@ export interface ReportRequest {
 }
 
 export const generateReport = async (payload: ReportRequest): Promise<Blob> => {
-  // Inject client's timezone if not provided
-  if (!payload.timeZone) {
-    try {
-      payload.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch (e) {
-      // ignore
-    }
-  }
-
   try {
     const url = `${API_BASE.replace(/\/$/, '')}/reports/generate`;
 
@@ -508,4 +499,28 @@ export const fetchBeamVariantsWithIds = async (): Promise<BeamVariantWithId[]> =
     console.error('[fetchBeamVariantsWithIds] Error:', err);
     throw err;
   }
+};
+
+// ─── Timezone / App Settings ────────────────────────────────────────
+
+/**
+ * Fetch the configured IANA timezone (e.g. "America/Chicago").
+ * Returns null if not yet set.
+ */
+export const fetchTimezone = async (): Promise<string | null> => {
+  const url = `${API_BASE.replace(/\/$/, '')}/settings/timezone`;
+  const data = await safeFetch(url);
+  return data.timezone ?? null;
+};
+
+/**
+ * Set the global timezone for the application.
+ */
+export const setTimezone = async (timezone: string): Promise<void> => {
+  const url = `${API_BASE.replace(/\/$/, '')}/settings/timezone`;
+  await safeFetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ timezone }),
+  });
 };

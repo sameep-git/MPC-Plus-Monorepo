@@ -11,11 +11,8 @@ public class Beam
     /// <summary>Type of beam (e.g., 6e, 9e, 12e, 16e, 10x, 15x, 6xff).</summary>
     public required string Type { get; set; }
 
-    /// <summary>Date of the beam data.</summary>
-    public required DateTime Date { get; set; }
-
-    /// <summary>High-precision timestamp of the beam data.</summary>
-    public DateTime? Timestamp { get; set; }
+    /// <summary>UTC timestamp of the beam data.</summary>
+    public required DateTime Timestamp { get; set; }
 
     /// <summary>File path to the beam data.</summary>
     public string? Path { get; set; }
