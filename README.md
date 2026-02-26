@@ -88,3 +88,5 @@ Ensure you have a `.env` file in the root directory.
 - `backups/` — Database schemas and seed data
 - `scripts/` — Utility scripts for automation
 - `start_mpc.bat` — Windows shortcut to start the application
+## Docker Instructions
+Please refer to [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) for instructions on how to start, stop, and rebuild the application.
