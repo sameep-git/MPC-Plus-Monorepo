@@ -143,7 +143,7 @@ def main():
     #         logger.info(f"Resuming from folder: {subfolder.name}")
     #     if not start_processing:
     #         continue
-    for idx, subfolder in enumerate(sorted(subfolders), start=1):
+    for idx, subfolder in enumerate(sorted_folders, start=1):
         subfolder_path = str(subfolder)
         logger.info(f"\n{'='*80}")
         logger.info(f"Processing folder {idx} out of {total_folders}: {subfolder.name}")

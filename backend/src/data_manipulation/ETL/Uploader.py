@@ -95,11 +95,14 @@ class PostgresAdapter(DatabaseAdapter):
         self.connected = False
         # Local storage path for saved images.
         # STORAGE_ROOT env var overrides the default relative path.
-        # Default assumes running from src/data_manipulation/ETL → ../../api/wwwroot/images
-        self.storage_root = os.environ.get("STORAGE_ROOT") or os.path.abspath(os.path.join(
-            os.path.dirname(__file__), 
-            "../../api/wwwroot/images"
-        ))
+        # Default: src/api/wwwroot/images (relative to the backend root).
+        # __file__ is at backend/src/data_manipulation/ETL/Uploader.py
+        #   → dirname four levels up = backend/
+        _etl_dir = os.path.dirname(os.path.abspath(__file__))
+        _backend_root = os.path.dirname(os.path.dirname(os.path.dirname(_etl_dir)))
+        self.storage_root = os.environ.get("STORAGE_ROOT") or os.path.join(
+            _backend_root, "src", "api", "wwwroot", "images"
+        )
         
         # Base URL for accessing images via the API (should match static file serving)
         self.base_url = "/images"
