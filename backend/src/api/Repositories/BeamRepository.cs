@@ -18,7 +18,7 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
         using var connection = connectionFactory.CreateConnection();
         
         var sql = @"
-            SELECT id, type, date, timestamp, path, 
+            SELECT id, type, timestamp, path, 
                    rel_uniformity, rel_output, center_shift, 
                    machine_id, note, approved_by, approved_date,
                    image_paths::text as image_paths_json,
@@ -43,19 +43,19 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
 
         if (date.HasValue)
         {
-            sql += " AND date = @Date";
+            sql += " AND timestamp::date = @Date";
             parameters.Add("Date", date.Value.Date);
         }
 
         if (startDate.HasValue)
         {
-            sql += " AND date >= @StartDate";
+            sql += " AND timestamp::date >= @StartDate";
             parameters.Add("StartDate", startDate.Value.Date);
         }
 
         if (endDate.HasValue)
         {
-            sql += " AND date <= @EndDate";
+            sql += " AND timestamp::date <= @EndDate";
             parameters.Add("EndDate", endDate.Value.Date);
         }
 
@@ -70,7 +70,7 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
         if (!Guid.TryParse(id, out _)) return null;
         using var connection = connectionFactory.CreateConnection();
         var sql = @"
-            SELECT id, type, date, timestamp, path,
+            SELECT id, type, timestamp, path,
                    rel_uniformity, rel_output, center_shift,
                    machine_id, note, approved_by, approved_date,
                    image_paths::text as image_paths_json,
@@ -89,12 +89,12 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
         // We explicitly list columns to avoid inserting computed properties if Dapper tries to.
         var sql = @"
             INSERT INTO beams (
-                id, type, date, timestamp, path, rel_uniformity, rel_output, center_shift, 
+                id, type, timestamp, path, rel_uniformity, rel_output, center_shift, 
                 machine_id, note, approved_by, approved_date, image_paths
             ) VALUES (
-                @Id, @Type, @Date, @Timestamp, @Path, @RelUniformity, @RelOutput, @CenterShift, 
+                @Id, @Type, @Timestamp, @Path, @RelUniformity, @RelOutput, @CenterShift, 
                 @MachineId, @Note, @ApprovedBy, @ApprovedDate, @ImagePathsJson::jsonb
-            ) RETURNING id, type, date, timestamp, path,
+            ) RETURNING id, type, timestamp, path,
                        rel_uniformity, rel_output, center_shift,
                        machine_id, note, approved_by, approved_date,
                        image_paths::text as image_paths_json,
@@ -110,7 +110,6 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
         var sql = @"
             UPDATE beams SET
                 type = @Type,
-                date = @Date,
                 timestamp = @Timestamp,
                 path = @Path,
                 rel_uniformity = @RelUniformity,
@@ -124,6 +123,20 @@ public class BeamRepository(PostgresConnectionFactory connectionFactory) : IBeam
             WHERE id = @Id::uuid";
 
         var rows = await connection.ExecuteAsync(sql, beam);
+        return rows > 0;
+    }
+
+    public async Task<bool> ApproveAsync(string id, string approvedBy, DateTime approvedDate, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(id, out _)) return false;
+        using var connection = connectionFactory.CreateConnection();
+        var sql = @"
+            UPDATE beams SET
+                approved_by = @ApprovedBy,
+                approved_date = @ApprovedDate
+            WHERE id = @Id::uuid";
+
+        var rows = await connection.ExecuteAsync(sql, new { Id = id, ApprovedBy = approvedBy, ApprovedDate = approvedDate });
         return rows > 0;
     }
 

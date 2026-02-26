@@ -35,6 +35,12 @@ public interface IGeoCheckRepository
     Task<bool> UpdateAsync(GeoCheck geoCheck, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Approves a geo check by updating only the approved_by and approved_date columns.
+    /// This avoids rewriting other columns (like timestamp) which can cause timezone drift.
+    /// </summary>
+    Task<bool> ApproveAsync(string id, string approvedBy, DateTime approvedDate, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a geometry check by ID.
     /// </summary>
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);

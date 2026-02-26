@@ -27,6 +27,7 @@ public class ResultsControllerTests
             It.IsAny<DateTime?>(),
             It.IsAny<DateTime?>(),
             It.IsAny<DateTime?>(),
+            It.IsAny<bool>(),
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<GeoCheck>().AsReadOnly());
     }
@@ -41,14 +42,14 @@ public class ResultsControllerTests
             {
                 Id = "beam-1",
                 MachineId = "1",
-                Date = new DateTime(2025, 9, 5),
+                Timestamp = new DateTime(2025, 9, 5),
                 Type = "15x"
             },
             new Beam
             {
                 Id = "beam-2",
                 MachineId = "1",
-                Date = new DateTime(2025, 9, 10),
+                Timestamp = new DateTime(2025, 9, 10),
                 Type = "6e"
             }
         };
@@ -220,14 +221,14 @@ public class ResultsControllerTests
             {
                 Id = "beam-1",
                 MachineId = "1",
-                Date = new DateTime(2025, 9, 5),
+                Timestamp = new DateTime(2025, 9, 5),
                 Type = "15x"
             },
             new Beam
             {
                 Id = "beam-2",
                 MachineId = "1",
-                Date = new DateTime(2025, 9, 5),
+                Timestamp = new DateTime(2025, 9, 5),
                 Type = "6e"
             }
         };

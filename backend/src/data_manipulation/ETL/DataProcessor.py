@@ -54,6 +54,9 @@ class DataProcessor:
         # Database Uploader
         self.up = Uploader()
 
+        # Timezone for converting local timestamps to UTC (fetched from DB)
+        self._timezone = None
+
     # -------------------------------------------------------------------------
     # Generic helper method for beams
     # -------------------------------------------------------------------------
@@ -61,12 +64,12 @@ class DataProcessor:
     def _init_beam_model(self, model_class, beam_type):
         """
         Generic initializer for any beam model.
-        Sets path, type, date, and machine SN automatically.
+        Sets path, type, date (UTC), and machine SN automatically.
         """
         model = model_class()
         model.set_path(self.folder_path)  # Use folder path instead of data_path for database
         model.set_type(beam_type)
-        model.set_date(model._getDateFromPathName(self.data_path))
+        model.set_date(model._getDateFromPathName(self.data_path, tz_name=self._timezone))
         model.set_machine_SN(model._getSNFromPathName(self.data_path))
         model.set_baseline(model._getIsBaselineFromPathName(self.data_path))
         return model
@@ -84,7 +87,7 @@ class DataProcessor:
         image = ImageModel()
         image.set_path(self.image_path) #Path to the BeamProfileCheck.xim file
         image.set_type(beam_type)
-        image.set_date(image._getDateFromPathName(self.image_path))
+        image.set_date(image._getDateFromPathName(self.image_path, tz_name=self._timezone))
         image.set_machine_SN(image._getSNFromPathName(self.image_path))
         image.set_image_name(image.generate_image_name())
         image.set_image(XIM(image.get_path()))
@@ -199,7 +202,19 @@ class DataProcessor:
             return None
         else:
             logger.info("Connected to PostgreSQL.")
-            return self.up
+
+        # Fetch timezone from app_settings — abort if not configured
+        tz = self.up.get_app_timezone()
+        if not tz:
+            self.up.close()
+            raise RuntimeError(
+                "Timezone has not been configured. "
+                "Please set the timezone in the MPC Plus Settings page before ingesting data."
+            )
+        self._timezone = tz
+        logger.info(f"Using timezone: {self._timezone}")
+
+        return self.up
     
     
     # -------------------------------------------------------------------------

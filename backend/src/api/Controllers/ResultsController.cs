@@ -69,7 +69,7 @@ public class ResultsController : ControllerBase
         // Process beam checks
         foreach (var check in beamChecks)
         {
-            var date = DateOnly.FromDateTime(check.Date);
+            var date = DateOnly.FromDateTime(check.Timestamp);
             var status = DetermineCheckStatus(check);
             double? value = check.RelOutput ?? check.RelUniformity ?? check.CenterShift;
             bool isApproved = !string.IsNullOrEmpty(check.ApprovedBy);
@@ -91,7 +91,7 @@ public class ResultsController : ControllerBase
         // Process geometry checks
         foreach (var check in geoChecks)
         {
-            var date = DateOnly.FromDateTime(check.Date);
+            var date = DateOnly.FromDateTime(check.Timestamp);
             var status = DetermineGeoCheckStatus(check);
             double? value = check.IsoCenterSize ?? check.IsoCenterMVOffset ?? check.GantryAbsolute; // Prioritize IsoCenterSize, then geo-specific metrics as fallbacks
             bool isApproved = !string.IsNullOrEmpty(check.ApprovedBy);

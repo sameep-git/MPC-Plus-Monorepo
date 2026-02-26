@@ -197,8 +197,8 @@ function ResultDetailPageContent() {
     // Since useDailyChecks only fetches for the exact selectedDate,
     // we just need to sort them by timestamp
     return [...allGeoChecks].sort((a, b) => {
-      const timeA = new Date(a.timestamp || a.date).getTime();
-      const timeB = new Date(b.timestamp || b.date).getTime();
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
       return timeA - timeB;
     });
   }, [allGeoChecks]);

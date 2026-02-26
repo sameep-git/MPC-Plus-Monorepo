@@ -108,11 +108,9 @@ export const fetchGraphData = async (startDate: Date, endDate: Date, machineId: 
                 fullDate: isoDate,
             };
 
-            // Map Beams - check both date and timestamp fields
+            // Map Beams - match by timestamp
             const dayBeams = beams.filter(b => {
-                const dateMatch = b.date && b.date.startsWith(isoDate);
-                const tsMatch = b.timestamp && b.timestamp.startsWith(isoDate);
-                return dateMatch || tsMatch;
+                return b.timestamp && b.timestamp.startsWith(isoDate);
             });
             dayBeams.forEach(b => {
                 if (b.type) {
@@ -133,11 +131,8 @@ export const fetchGraphData = async (startDate: Date, endDate: Date, machineId: 
             });
 
             // Map Geo Checks (assuming one per day)
-            // Use timestamp first, fallback to date
             const dayGeo = geoChecks.find(g => {
-                const dateMatch = g.date && g.date.startsWith(isoDate);
-                const tsMatch = g.timestamp && g.timestamp.startsWith(isoDate);
-                return dateMatch || tsMatch;
+                return g.timestamp && g.timestamp.startsWith(isoDate);
             });
             if (dayGeo) {
                 // IsoCenter

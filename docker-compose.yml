@@ -14,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Ensure your backup file is here!
-      - ./backups/mpc_full_backup.sql:/docker-entrypoint-initdb.d/backup.sql
+      - ./backups/mpc_plus_backup_20260226_152849.sql:/docker-entrypoint-initdb.d/backup.sql
 
   # ── Backend (.NET API) ────────────────────────────────────
   backend:

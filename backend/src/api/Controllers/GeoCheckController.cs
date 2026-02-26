@@ -151,33 +151,24 @@ public class GeoCheckController : ControllerBase
             return BadRequest("No geometry check IDs provided.");
         }
 
-        var results = new List<GeoCheck>();
+        var approvedDate = DateTime.UtcNow;
+        var results = new List<string>();
         var errors = new List<string>();
 
         foreach (var id in request.GeoCheckIds)
         {
-            var geoCheck = await _repository.GetByIdAsync(id, cancellationToken);
-            if (geoCheck is null)
-            {
-                errors.Add($"Geometry check with id '{id}' was not found.");
-                continue;
-            }
-
-            geoCheck.ApprovedBy = request.ApprovedBy;
-            geoCheck.ApprovedDate = DateTime.UtcNow;
-
-            var updated = await _repository.UpdateAsync(geoCheck, cancellationToken);
+            var updated = await _repository.ApproveAsync(id, request.ApprovedBy, approvedDate, cancellationToken);
             if (!updated)
             {
-                errors.Add($"Failed to update geometry check '{id}'.");
+                errors.Add($"Geometry check with id '{id}' was not found or failed to update.");
             }
             else
             {
-                results.Add(geoCheck);
+                results.Add(id);
             }
         }
 
-        return Ok(results);
+        return Ok(new { approved = results, errors });
     }
 }
 

@@ -2,8 +2,7 @@ export interface Beam {
   id: string;
   type: string;
   typeID?: string;
-  date: string; // ISO date
-  timestamp?: string; // ISO datetime
+  timestamp: string; // ISO datetime (UTC)
   path?: string;
   relUniformity?: number;
   relOutput?: number;
