@@ -178,6 +178,24 @@ class PostgresAdapter(DatabaseAdapter):
             self.conn.rollback()
             return False
 
+    def get_app_timezone(self) -> str | None:
+        """
+        Look up the configured timezone from the app_settings table.
+        Returns the IANA timezone name (e.g. 'America/Chicago') or None.
+        """
+        if not self.connected or not self.conn:
+            return None
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    "SELECT value FROM app_settings WHERE key = 'timezone'"
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+        except Exception as e:
+            logger.error(f"Error fetching timezone from app_settings: {e}")
+            return None
+
     def upload_beam_data(self, table_name: str, data: Dict[str, Any], path: str = None) -> Dict[str, Any]:
         """
         Upload beam data to PostgreSQL table.
@@ -450,6 +468,14 @@ class Uploader:
             self.db_adapter.close()
         self.connected = False
 
+    def get_app_timezone(self) -> Optional[str]:
+        """
+        Retrieve the configured timezone from app_settings via the adapter.
+        """
+        if hasattr(self.db_adapter, 'get_app_timezone'):
+            return self.db_adapter.get_app_timezone()
+        return None
+
     def upload(self, model):
         """
         Automatically calls the correct upload method
@@ -515,7 +541,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'rel_uniformity',
-                    'date': date,
+                    'timestamp': date,
                     'value': rel_uniformity
                 })
             
@@ -528,7 +554,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'rel_output',
-                    'date': date,
+                    'timestamp': date,
                     'value': rel_output
                 })
             
@@ -542,7 +568,7 @@ class Uploader:
                         'beam_variant': beam_variant,
                         'typeID': typeID,
                         'metric_type': 'center_shift',
-                        'date': date,
+                        'timestamp': date,
                         'value': center_shift
                     })
 
@@ -558,7 +584,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'vert_flatness',
-                    'date': date,
+                    'timestamp': date,
                     'value': flat_vert
                 })
 
@@ -571,7 +597,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'hori_flatness',
-                    'date': date,
+                    'timestamp': date,
                     'value': flat_hori
                 })
 
@@ -584,7 +610,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'vert_symmetry',
-                    'date': date,
+                    'timestamp': date,
                     'value': sym_vert
                 })
 
@@ -597,7 +623,7 @@ class Uploader:
                     'beam_variant': beam_variant,
                     'typeID': typeID,
                     'metric_type': 'hori_symmetry',
-                    'date': date,
+                    'timestamp': date,
                     'value': sym_hori
                 })
             
@@ -708,7 +734,7 @@ class Uploader:
                 data = {
                     'typeID': eBeam.get_typeID(),
                     'type': eBeam.get_type(),
-                    'date': eBeam.get_date(),
+                    'timestamp': eBeam.get_date(),
                     'path': eBeam.get_path(),
                     'rel_uniformity': eBeam.get_relative_uniformity(),
                     'rel_output': eBeam.get_relative_output(),
@@ -764,7 +790,7 @@ class Uploader:
                 data = {
                     'typeID': xBeam.get_typeID(),
                     'type': xBeam.get_type(),
-                    'date': xBeam.get_date(),
+                    'timestamp': xBeam.get_date(),
                     'path': xBeam.get_path(),
                     'rel_uniformity': xBeam.get_relative_uniformity(),
                     'rel_output': xBeam.get_relative_output(),
@@ -800,7 +826,7 @@ class Uploader:
             # ---- Build single geochecks row with ALL geometry fields ----
             geocheck_data = {
                 'machine_id': geoModel.get_machine_SN(),
-                'date': geoModel.get_date(),
+                'timestamp': geoModel.get_date(),
                 'path': geoModel.get_path(),
                 'type': geoModel.get_type(),
                 'note': None,
@@ -905,7 +931,7 @@ class Uploader:
             beam_data = {
                 'typeID': geoModel.get_typeID(),
                 'type': geoModel.get_type(),
-                'date': geoModel.get_date(),
+                'timestamp': geoModel.get_date(),
                 'path': geoModel.get_path(),
                 'rel_uniformity': geoModel.get_relative_uniformity(),
                 'rel_output': geoModel.get_relative_output(),

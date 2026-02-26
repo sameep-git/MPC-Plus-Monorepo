@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchUser, handleApiError, fetchThresholds, saveThreshold, fetchMachines, fetchBeamVariantsWithIds, type Threshold, type BeamVariantWithId } from '../../lib/api';
+import { fetchUser, handleApiError, fetchThresholds, saveThreshold, fetchMachines, fetchBeamVariantsWithIds, fetchTimezone, setTimezone as setTimezoneApi, type Threshold, type BeamVariantWithId } from '../../lib/api';
 import DocFactorSettings from '../../components/settings/DocFactorSettings';
 import MachineSettings from '../../components/settings/MachineSettings';
 import type { Machine } from '../../models/Machine';
@@ -110,6 +110,7 @@ const SETTINGS_SECTIONS = [
   // { id: 'graph-threshold-settings', label: 'Graph Threshold' },
   // { id: 'baseline-settings', label: 'Baseline' },
   { id: 'doc-settings', label: 'Dose Output Correction' },
+  { id: 'timezone-settings', label: 'Timezone' },
 ] as const;
 
 export default function SettingsPage() {
@@ -130,6 +131,13 @@ export default function SettingsPage() {
   const [loadingThresholds, setLoadingThresholds] = useState(false);
   const [savingThresholds, setSavingThresholds] = useState(false);
   const [thresholdSuccess, setThresholdSuccess] = useState<string | null>(null);
+
+  // Timezone State
+  const [currentTimezone, setCurrentTimezone] = useState<string | null>(null);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>('');
+  const [savingTimezone, setSavingTimezone] = useState(false);
+  const [timezoneSuccess, setTimezoneSuccess] = useState<string | null>(null);
+  const [timezoneFilter, setTimezoneFilter] = useState('');
 
   // Geo-specific UI state
   const [geoInputMode, setGeoInputMode] = useState<'easy' | 'manual'>('easy');
@@ -176,6 +184,12 @@ export default function SettingsPage() {
 
     loadUser();
     loadData();
+
+    // Load timezone
+    fetchTimezone().then((tz) => {
+      setCurrentTimezone(tz);
+      if (tz) setSelectedTimezone(tz);
+    }).catch(console.error);
   }, []);
 
   const { refreshThresholds } = useThresholds();
@@ -889,6 +903,91 @@ export default function SettingsPage() {
 
         {/* DOC Factor Settings */}
         <DocFactorSettings />
+
+        {/* Timezone Settings */}
+        <section
+          id="timezone-settings"
+          className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 scroll-mt-24"
+        >
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Timezone</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            Set the IANA timezone for your facility. This is used to convert local folder timestamps to UTC during data ingestion.
+          </p>
+
+          {!currentTimezone && (
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+              <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">
+                ⚠️ No timezone configured. The ETL process will not ingest data until a timezone is set.
+              </p>
+            </div>
+          )}
+
+          <div className="max-w-md space-y-3">
+            <Label className="block">Facility Timezone</Label>
+            <Input
+              type="text"
+              placeholder="Filter timezones…"
+              value={timezoneFilter}
+              onChange={(e) => setTimezoneFilter(e.target.value)}
+              className="bg-white dark:bg-gray-900 mb-1"
+            />
+            <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+              <SelectTrigger className="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 h-12">
+                <SelectValue placeholder="Select a timezone" />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                {(() => {
+                  try {
+                    const allZones = Intl.supportedValuesOf('timeZone');
+                    const filtered = timezoneFilter
+                      ? allZones.filter(z => z.toLowerCase().includes(timezoneFilter.toLowerCase()))
+                      : allZones;
+                    return filtered.map((tz) => (
+                      <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                    ));
+                  } catch {
+                    // Fallback for older browsers
+                    const fallback = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu', 'UTC'];
+                    return fallback.map((tz) => (
+                      <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                    ));
+                  }
+                })()}
+              </SelectContent>
+            </Select>
+
+            {currentTimezone && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Currently set to: <span className="font-medium text-gray-700 dark:text-gray-200">{currentTimezone}</span>
+              </p>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                disabled={!selectedTimezone || savingTimezone}
+                onClick={async () => {
+                  setSavingTimezone(true);
+                  setTimezoneSuccess(null);
+                  try {
+                    await setTimezoneApi(selectedTimezone);
+                    setCurrentTimezone(selectedTimezone);
+                    setTimezoneSuccess('Timezone saved!');
+                    setTimeout(() => setTimezoneSuccess(null), 3000);
+                  } catch (e) {
+                    setError(handleApiError(e));
+                  } finally {
+                    setSavingTimezone(false);
+                  }
+                }}
+              >
+                {savingTimezone ? 'Saving…' : 'Save Timezone'}
+              </Button>
+              {timezoneSuccess && (
+                <span className="text-green-600 font-medium self-center animate-pulse">{timezoneSuccess}</span>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-end">

@@ -46,7 +46,7 @@ public class InMemoryBeamRepositoryTests
         var result = await _repository.GetAllAsync(date: testDate);
 
         // Assert
-        result.Should().NotBeNull().And.AllSatisfy(b => b.Date.Should().Be(testDate));
+        result.Should().NotBeNull().And.AllSatisfy(b => b.Timestamp.Date.Should().Be(testDate.Date));
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class InMemoryBeamRepositoryTests
         result.Should().NotBeNull()
             .And.AllSatisfy(b =>
             {
-                b.Date.CompareTo(startDate).Should().BeGreaterThanOrEqualTo(0);
-                b.Date.CompareTo(endDate).Should().BeLessThanOrEqualTo(0);
+                b.Timestamp.CompareTo(startDate).Should().BeGreaterThanOrEqualTo(0);
+                b.Timestamp.CompareTo(endDate).Should().BeLessThanOrEqualTo(0);
             });
     }
 
@@ -76,7 +76,7 @@ public class InMemoryBeamRepositoryTests
         var resultList = result.ToList();
         for (int i = 0; i < resultList.Count - 1; i++)
         {
-            resultList[i].Date.CompareTo(resultList[i + 1].Date).Should().BeGreaterThanOrEqualTo(0);
+            resultList[i].Timestamp.CompareTo(resultList[i + 1].Timestamp).Should().BeGreaterThanOrEqualTo(0);
         }
     }
 
@@ -110,7 +110,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "test-beam",
             Type = "9e",
-            Date = new DateTime(2025, 11, 12),
+            Timestamp = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0
@@ -134,7 +134,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "beam-001",
             Type = "9e",
-            Date = new DateTime(2025, 11, 12),
+            Timestamp = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0
@@ -153,7 +153,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "beam-001",
             Type = "6e",
-            Date = new DateTime(2025, 11, 7),
+            Timestamp = new DateTime(2025, 11, 7),
             MachineId = "MPC-001",
             RelUniformity = 99.5,
             RelOutput = 99.0,
@@ -178,7 +178,7 @@ public class InMemoryBeamRepositoryTests
         {
             Id = "nonexistent-beam",
             Type = "9e",
-            Date = new DateTime(2025, 11, 12),
+            Timestamp = new DateTime(2025, 11, 12),
             MachineId = "MPC-001",
             RelUniformity = 99.0,
             RelOutput = 98.0

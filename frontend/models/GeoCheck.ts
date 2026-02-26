@@ -6,10 +6,9 @@ export interface MlcBacklashEntry { leafNumber: number; value: number; }
 export interface GeoCheck {
     id: string;
     type: string;
-    date: string; // ISO date
+    timestamp: string; // ISO datetime (UTC)
     machineId: string;
     path?: string;
-    timestamp?: string; // ISO date-time
 
     // IsoCenter
     isoCenterSize?: number;
