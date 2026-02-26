@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "5000:8080"
+      - "5132:8080"
     environment:
       - ConnectionStrings__Database=Host=db;Port=5432;Database=${POSTGRES_DB:-mpc_plus};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-your_password_here}
       - CORS_ORIGINS=http://localhost:3000
@@ -38,12 +38,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:5132/api
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      # Browser-side access (public URL)
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
     depends_on:
       - backend
 
