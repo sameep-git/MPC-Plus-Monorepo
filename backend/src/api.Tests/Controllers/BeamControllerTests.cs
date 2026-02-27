@@ -16,6 +16,9 @@ public class BeamControllerTests
     {
         _mockRepository = new Mock<IBeamRepository>();
         _mockValidator = new Mock<IThresholdRepository>();
+        // CalculateStatus needs thresholds; return an empty list by default
+        _mockValidator.Setup(v => v.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Threshold>().AsReadOnly());
         _controller = new BeamsController(_mockRepository.Object, _mockValidator.Object);
     }
 
@@ -34,10 +37,10 @@ public class BeamControllerTests
         // Act
         var result = await _controller.GetAll(null, null, null, null, null, CancellationToken.None);
 
-        // Assert
+        // Assert — controller groups beams into CheckGroup objects
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var returnedBeams = okResult.Value.Should().BeAssignableTo<IEnumerable<Beam>>().Subject;
-        returnedBeams.Should().HaveCount(2);
+        var returnedGroups = okResult.Value.Should().BeAssignableTo<IEnumerable<CheckGroup>>().Subject;
+        returnedGroups.SelectMany(g => g.Beams).Should().HaveCount(2);
     }
 
     [Fact]
@@ -244,5 +247,161 @@ public class BeamControllerTests
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var returnedTypes = okResult.Value.Should().BeAssignableTo<IEnumerable<string>>().Subject;
         returnedTypes.Should().HaveCount(7);
+    }
+
+    // ─── GetBeamVariants ───────────────────────────────────────
+
+    [Fact]
+    public async Task GetBeamVariants_ReturnsOkWithVariants()
+    {
+        // Arrange
+        var variants = new List<BeamVariantDto>
+        {
+            new("253c1694-12d0-4497-9bd0-8487ee7c6f6f", "6x"),
+            new("ffda6e9f-8f4d-48c3-8270-621d4a99db51", "6xFFF"),
+            new("e6763342-a180-444a-a869-ce57d1b086b1", "6e")
+        };
+        _mockRepository.Setup(r => r.GetBeamVariantsWithIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(variants.AsReadOnly());
+
+        // Act
+        var result = await _controller.GetBeamVariants(CancellationToken.None);
+
+        // Assert
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var returned = okResult.Value.Should().BeAssignableTo<IEnumerable<BeamVariantDto>>().Subject;
+        returned.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task GetBeamVariants_WhenEmpty_ReturnsOkWithEmptyList()
+    {
+        // Arrange
+        _mockRepository.Setup(r => r.GetBeamVariantsWithIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BeamVariantDto>().AsReadOnly());
+
+        // Act
+        var result = await _controller.GetBeamVariants(CancellationToken.None);
+
+        // Assert
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var returned = okResult.Value.Should().BeAssignableTo<IEnumerable<BeamVariantDto>>().Subject;
+        returned.Should().BeEmpty();
+    }
+
+    // ─── GetByDate ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetByDate_WithValidParams_ReturnsOkWithBeamCheckOptions()
+    {
+        // Arrange
+        var testDate = new DateTime(2025, 11, 9);
+        var beams = new List<Beam>
+        {
+            new() { Id = "beam-001", Type = "6x", Timestamp = testDate, MachineId = "MPC-001", RelOutput = 98.5 },
+            new() { Id = "beam-002", Type = "6x", Timestamp = testDate.AddMinutes(5), MachineId = "MPC-001", RelOutput = 99.0 }
+        };
+        _mockRepository.Setup(r => r.GetAllAsync("MPC-001", "6x", testDate, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(beams);
+
+        // Act
+        var result = await _controller.GetByDate("MPC-001", "6x", "2025-11-09", CancellationToken.None);
+
+        // Assert
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var returned = okResult.Value.Should().BeAssignableTo<IEnumerable<BeamCheckOption>>().Subject;
+        returned.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetByDate_WithEmptyMachineId_ReturnsBadRequest()
+    {
+        // Act
+        var result = await _controller.GetByDate("", "6x", "2025-11-09", CancellationToken.None);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetByDate_WithEmptyBeamType_ReturnsBadRequest()
+    {
+        // Act
+        var result = await _controller.GetByDate("MPC-001", "", "2025-11-09", CancellationToken.None);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetByDate_WithInvalidDate_ReturnsBadRequest()
+    {
+        // Act
+        var result = await _controller.GetByDate("MPC-001", "6x", "not-a-date", CancellationToken.None);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    // ─── Accept ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Accept_WithValidRequest_ReturnsOkWithApprovedIds()
+    {
+        // Arrange
+        var request = new AcceptBeamRequest(new[] { "beam-001", "beam-002" }, "Dr. Smith");
+        _mockRepository.Setup(r => r.ApproveAsync("beam-001", "Dr. Smith", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _mockRepository.Setup(r => r.ApproveAsync("beam-002", "Dr. Smith", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.Accept(request, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task Accept_WithEmptyIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new AcceptBeamRequest(new List<string>(), "Dr. Smith");
+
+        // Act
+        var result = await _controller.Accept(request, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Accept_WithNullIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new AcceptBeamRequest(null!, "Dr. Smith");
+
+        // Act
+        var result = await _controller.Accept(request, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Accept_WithPartialFailure_ReturnsOkWithErrorsList()
+    {
+        // Arrange
+        var request = new AcceptBeamRequest(new[] { "beam-001", "beam-invalid" }, "Dr. Smith");
+        _mockRepository.Setup(r => r.ApproveAsync("beam-001", "Dr. Smith", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _mockRepository.Setup(r => r.ApproveAsync("beam-invalid", "Dr. Smith", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.Accept(request, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
     }
 }
