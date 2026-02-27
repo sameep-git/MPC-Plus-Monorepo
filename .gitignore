@@ -155,4 +155,7 @@ coverage.xml
 *.whl
 *.manifest
 
+# guides
+/guides/
+
 # End of file
