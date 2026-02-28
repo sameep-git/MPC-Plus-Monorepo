@@ -20,7 +20,6 @@
     <Using Include="Xunit" />
     <Using Include="Moq" />
     <Using Include="FluentAssertions" />
-    <Using Include="Api.Repositories.InMemory" />
     <Using Include="Api.Repositories.Abstractions" />
   </ItemGroup>
 
