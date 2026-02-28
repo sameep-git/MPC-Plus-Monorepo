@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from dotenv import load_dotenv
 from src.data_manipulation.ETL.data_extractor import data_extractor
-from src.data_manipulation.ETL.image_extractor import image_extractor
+from src.data_manipulation.ETL.image_calculations.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
 
 from src.data_manipulation.models.EBeamModel import EBeamModel
