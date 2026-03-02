@@ -43,7 +43,7 @@ import sys
 
 from pylinac.core.image import XIM
 
-from src.data_manipulation.ETL.image_extractor import image_extractor
+from src.data_manipulation.ETL.image_calculations.image_extractor import image_extractor
 from src.data_manipulation.models.ImageModel import ImageModel
 
 
