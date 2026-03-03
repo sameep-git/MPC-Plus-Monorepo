@@ -133,7 +133,11 @@ class image_extractor:
         rows, cols = gain_map.shape
         margin = int((1 - field_fraction) / 2 * min(rows, cols))
         roi = gain_map[margin:rows - margin, margin:cols - margin]
-        gain_map /= np.mean(roi)
+        
+        mean_val = np.mean(roi)
+        # if mean_val == 0 or np.isnan(mean_val):
+        #     return np.ones_like(gain_map), np.zeros_like(gain_map, dtype=bool) # or handle safely for test mode
+        gain_map /= mean_val
 
         # Step 5: Flag + clip dead/hot pixels
         bad_pixel_mask = (gain_map < clip_low) | (gain_map > clip_high)
@@ -176,7 +180,45 @@ class image_extractor:
         if window % 2 == 0:
             window += 1
         return savgol_filter(profile, window, poly)
+    # def smooth_profile(self, profile, window=21, poly=3):
+    #     # Ensure window is odd and not larger than profile
+    #     if len(profile) < window:
+    #         window = len(profile) if len(profile) % 2 != 0 else len(profile) - 1
+    #         if window < 3:
+    #             return profile  # too short to smooth
+    #     if window % 2 == 0:
+    #         window += 1
 
+    #     return savgol_filter(profile, window, poly)
+    # def smooth_profile(self, profile, window=21, poly=3):
+    #     profile = np.asarray(profile, dtype=float)
+
+    #     n = len(profile)
+
+    #     # Cannot smooth empty or tiny arrays
+    #     if n < 3:
+    #         return profile
+
+    #     # Window must be <= n
+    #     window = min(window, n)
+
+    #     # Window must be odd
+    #     if window % 2 == 0:
+    #         window -= 1
+
+    #     # Window must be at least poly + 2
+    #     if window <= poly:
+    #         window = poly + 2
+
+    #     # Ensure still valid and odd
+    #     if window % 2 == 0:
+    #         window += 1
+
+    #     # Final safety check
+    #     if window > n:
+    #         return profile
+
+    #     return savgol_filter(profile, window, poly)
     def create_smoothed_profile_graphs(self, corrected, imageModel):
 
         rows, cols = corrected.shape
