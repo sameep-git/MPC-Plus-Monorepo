@@ -83,7 +83,7 @@ class GeoModel(AbstractBeamModel):
     def get_relative_uniformity(self): return self._relative_uniformity
     def set_relative_uniformity(self, value): self._relative_uniformity = Decimal(str(value))
 
-    def get_center_shift(self): return self._center_shift
+    def get_center_shift(self): return Decimal(self._center_shift)
     def set_center_shift(self, value): self._center_shift = Decimal(str(value))
 
     # ---------------- CollimationGroup ----------------
@@ -184,29 +184,10 @@ class GeoModel(AbstractBeamModel):
     def get_JawParallelismY2(self): return self._JawParallelismY2
     def set_JawParallelismY2(self, value): self._JawParallelismY2 = Decimal(str(value))
 
-    # Getters
-    def get_relative_uniformity(self):
-        return self._relative_uniformity
-    
-    def get_relative_output(self):
-        return self._relative_output
-
-    def get_center_shift(self):
-        return self._center_shift
     
     #uuid of the beam type
     def get_typeID(self):
         return self._typeID
-    
-    # Setters
-    def set_relative_uniformity(self, relative_uniformity):
-        self._relative_uniformity = relative_uniformity
-    
-    def set_relative_output(self, relative_output):
-        self._relative_output = relative_output
-
-    def set_center_shift(self, center_shift):
-        self._center_shift = center_shift
     
     def set_typeID(self, typeID):
         self._typeID = typeID

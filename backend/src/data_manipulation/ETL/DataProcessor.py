@@ -171,7 +171,7 @@ class DataProcessor:
         Extract the beam type from the path.
         """
         # Matches 6x, 6xFFF, 6xMVkVEnhancedCouch, 9x, 10x, etc.
-        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9]+)', path)
+        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9.]+)', path)
         if m:
             return m.group(1)
         return None
