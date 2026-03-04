@@ -5,12 +5,12 @@ Overview:
     It is designed for batch processing of multiple beam test result directories.
     
 Usage:
-    python -m src.data_manipulation.ETL.Reingest <folder_path>
+    python -m src.data_manipulation.ETL.scripts.Reingest <folder_path>
     
     Examples:
-        python -m src.data_manipulation.ETL.Reingest data/csv_data
-        python -m src.data_manipulation.ETL.Reingest /path/to/beam/data
-        python -m src.data_manipulation.ETL.Reingest data/csv_data --test
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data
+        python -m src.data_manipulation.ETL.scripts.Reingest /path/to/beam/data
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data --test
     
 Options:
     -h, --help      Show this help message and exit
@@ -36,7 +36,7 @@ def main():
     
     parser = argparse.ArgumentParser(
         description="Batch process all folders in a directory using DataProcessor.",
-        usage="python -m src.data_manipulation.ETL.Reingest <folder_path> [options]"
+        usage="python -m src.data_manipulation.ETL.scripts.Reingest <folder_path> [options]"
     )
     
     parser.add_argument(
