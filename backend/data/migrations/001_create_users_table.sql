@@ -1,4 +1,6 @@
 -- Create users table for authentication
+-- make sure we have bcrypt functions available
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
@@ -24,7 +26,7 @@ VALUES (
     'admin',
     'admin@mpc-plus.local',
     'Admin User',
-    '$2a$11$1G1f.4Ow5l3TpkFMDQiQie4qE3H4DBfG13dxWwBLqN5V3ZZOvMNOu', -- bcrypt hash of "admin123"
+    crypt('admin123', gen_salt('bf')),  -- compute bcrypt hash in the database so we don't hardcode it here
     'Admin',
     true
 )

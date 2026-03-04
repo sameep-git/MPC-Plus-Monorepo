@@ -26,18 +26,34 @@ public class AuthService : IAuthService
     public async Task<AuthResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByUsernameAsync(username, cancellationToken);
-        
+        if (user != null)
+        {
+            _logger.LogInformation("AuthService.LoginAsync fetched user for '{Username}' (hash length {Length}): '{Hash}'", username, user.PasswordHash?.Length, user.PasswordHash);
+        }
+
         if (user == null || !user.IsActive)
         {
             _logger.LogWarning($"Login failed: User '{username}' not found or inactive");
             throw new InvalidOperationException("Invalid username or password");
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        try
         {
-            _logger.LogWarning($"Login failed: Invalid password for user '{username}'");
-            throw new InvalidOperationException("Invalid username or password");
+            var ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            _logger.LogInformation("BCrypt.Verify returned {Result} for entered password '{Password}'", ok, password);
+            if (!ok)
+            {
+                _logger.LogWarning("Login failed: Invalid password for user '{Username}'", username);
+                throw new InvalidOperationException("Invalid username or password");
+            }
         }
+        catch (Exception ex)
+        {
+            // Log full details for diagnostic
+            _logger.LogError(ex, "BCrypt verification error for user '{Username}' with hash '{Hash}'", username, user.PasswordHash);
+            throw;
+        }
+        // verification succeeded; proceed to update login time
 
         // Update last login time
         user.LastLoginAt = DateTime.UtcNow;
