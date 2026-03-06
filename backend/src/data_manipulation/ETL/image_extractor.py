@@ -1,7 +1,7 @@
 """
 Image Extractor Module (EPID Gain Map Corrected Version)
 ---------------------------------------------------------
-Implements proper EPID gain-map pipeline:
+Implements proper EPID gain-map pipeline.
 
 Offline-style gain map build (using provided flood(s))
 Daily correction:
@@ -9,13 +9,12 @@ Daily correction:
     - Gain correction
     - 1D profile smoothing
     - FieldAnalysis
-
-Follows MPC EPID Gain Map Pipeline specification.
 """
 
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 from scipy.ndimage import median_filter, generic_filter
 from scipy.signal import savgol_filter
@@ -37,28 +36,19 @@ class image_extractor:
         dark_path = imageModel.get_dark_image_path()
         flood_path = imageModel.get_flood_image_path()
 
-        # ------------------------------------------------------
-        # Load images
-        # ------------------------------------------------------
-        clinical_raw = np.array(XIM(clinical_path), dtype=np.float64)
-        dark = np.array(XIM(dark_path), dtype=np.float64)
-        flood_raw = np.array(XIM(flood_path), dtype=np.float64)
+        clinical_raw = np.asarray(XIM(clinical_path), dtype=np.float64)
+        dark = np.asarray(XIM(dark_path), dtype=np.float64)
+        flood_raw = np.asarray(XIM(flood_path), dtype=np.float64)
 
-        # ------------------------------------------------------
-        # Build Gain Map (single-flood version)
-        # ------------------------------------------------------
         gain_map, bad_pixel_mask = self.build_gain_map(
-            flood_raw=flood_raw,
-            dark=dark,
+            flood_raw,
+            dark,
             kernel_size=75,
             clip_low=0.7,
             clip_high=1.3,
             field_fraction=0.8
         )
 
-        # ------------------------------------------------------
-        # Correct Clinical Image
-        # ------------------------------------------------------
         corrected = self.correct_clinical_image(
             clinical_raw,
             dark,
@@ -66,14 +56,8 @@ class image_extractor:
             bad_pixel_mask
         )
 
-        # ------------------------------------------------------
-        # Create ArrayImage for pylinac
-        # ------------------------------------------------------
         img = ArrayImage(corrected.astype(np.float32), dpi=280)
 
-        # ------------------------------------------------------
-        # Run FieldAnalysis
-        # ------------------------------------------------------
         analysis = FieldAnalysis(img)
 
         analysis.analyze(
@@ -89,9 +73,6 @@ class image_extractor:
         imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
         imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
 
-        # ------------------------------------------------------
-        # Generate smoothed profile graphs
-        # ------------------------------------------------------
         self.create_smoothed_profile_graphs(corrected, imageModel)
 
         if is_test:
@@ -113,33 +94,30 @@ class image_extractor:
         field_fraction=0.8
     ):
 
-        # Step 1: Dark subtract flood
         flood_net = flood_raw - dark
 
-        # Step 2: Beam shape estimate via large-kernel median filter
         beam_shape = median_filter(flood_net, size=kernel_size)
 
-        # Avoid divide-by-zero
         beam_shape_safe = np.where(
             beam_shape > 0.01 * np.max(beam_shape),
             beam_shape,
             1.0
         )
 
-        # Step 3: Isolate detector sensitivity
         gain_map = flood_net / beam_shape_safe
 
-        # Step 4: Normalize over in-field ROI (80%)
         rows, cols = gain_map.shape
         margin = int((1 - field_fraction) / 2 * min(rows, cols))
+
         roi = gain_map[margin:rows - margin, margin:cols - margin]
-        
+
         mean_val = np.mean(roi)
-        # if mean_val == 0 or np.isnan(mean_val):
-        #     return np.ones_like(gain_map), np.zeros_like(gain_map, dtype=bool) # or handle safely for test mode
+
+        if mean_val == 0 or np.isnan(mean_val):
+            mean_val = 1.0
+
         gain_map /= mean_val
 
-        # Step 5: Flag + clip dead/hot pixels
         bad_pixel_mask = (gain_map < clip_low) | (gain_map > clip_high)
         gain_map = np.clip(gain_map, clip_low, clip_high)
 
@@ -158,13 +136,10 @@ class image_extractor:
         bad_pixel_mask
     ):
 
-        # Step 1: Dark subtract
         c_net = clinical_raw - dark
 
-        # Step 2: Apply gain correction
         corrected = c_net / gain_map
 
-        # Step 3: Replace bad pixels with local median
         if np.any(bad_pixel_mask):
             local_med = generic_filter(corrected, np.nanmedian, size=5)
             corrected[bad_pixel_mask] = local_med[bad_pixel_mask]
@@ -172,56 +147,48 @@ class image_extractor:
         return corrected
 
     # ==========================================================
-    # PROFILE EXTRACTION + SMOOTHING
+    # PROFILE SMOOTHING
     # ==========================================================
     def smooth_profile(self, profile, window=15, poly=3):
-        if window >= len(profile):
-            window = len(profile) - 1
+
+        profile = np.asarray(profile, dtype=float)
+
+        n = len(profile)
+
+        if n < 5:
+            return profile
+
+        window = min(window, n)
+
+        if window % 2 == 0:
+            window -= 1
+
+        if window <= poly:
+            window = poly + 2
+
         if window % 2 == 0:
             window += 1
-        return savgol_filter(profile, window, poly)
-    # def smooth_profile(self, profile, window=21, poly=3):
-    #     # Ensure window is odd and not larger than profile
-    #     if len(profile) < window:
-    #         window = len(profile) if len(profile) % 2 != 0 else len(profile) - 1
-    #         if window < 3:
-    #             return profile  # too short to smooth
-    #     if window % 2 == 0:
-    #         window += 1
 
-    #     return savgol_filter(profile, window, poly)
-    # def smooth_profile(self, profile, window=21, poly=3):
-    #     profile = np.asarray(profile, dtype=float)
+        if window >= n:
+            window = n - 1 if n % 2 == 0 else n
 
-    #     n = len(profile)
+        if window <= poly or window < 3:
+            return profile
 
-    #     # Cannot smooth empty or tiny arrays
-    #     if n < 3:
-    #         return profile
+        try:
+            return savgol_filter(profile, window_length=window, polyorder=poly)
+        except Exception:
+            return profile
 
-    #     # Window must be <= n
-    #     window = min(window, n)
-
-    #     # Window must be odd
-    #     if window % 2 == 0:
-    #         window -= 1
-
-    #     # Window must be at least poly + 2
-    #     if window <= poly:
-    #         window = poly + 2
-
-    #     # Ensure still valid and odd
-    #     if window % 2 == 0:
-    #         window += 1
-
-    #     # Final safety check
-    #     if window > n:
-    #         return profile
-
-    #     return savgol_filter(profile, window, poly)
+    # ==========================================================
+    # PROFILE GRAPH GENERATION
+    # ==========================================================
     def create_smoothed_profile_graphs(self, corrected, imageModel):
 
+        corrected = np.asarray(corrected, dtype=float)
+
         rows, cols = corrected.shape
+
         center_row = rows // 2
         center_col = cols // 2
 
@@ -231,22 +198,26 @@ class image_extractor:
         crossline = self.smooth_profile(crossline_raw)
         inline = self.smooth_profile(inline_raw)
 
-        # Horizontal
         fig_h, ax_h = plt.subplots()
+
         ax_h.plot(crossline_raw, alpha=0.4, label="Raw")
         ax_h.plot(crossline, label="Smoothed")
+
         ax_h.set_title("Crossline Profile")
         ax_h.legend()
         ax_h.grid(True)
+
         imageModel.set_horizontal_profile_graph(fig_h)
 
-        # Vertical
         fig_v, ax_v = plt.subplots()
+
         ax_v.plot(inline_raw, alpha=0.4, label="Raw")
         ax_v.plot(inline, label="Smoothed")
+
         ax_v.set_title("Inline Profile")
         ax_v.legend()
         ax_v.grid(True)
+
         imageModel.set_vertical_profile_graph(fig_v)
 
         logger.info("Smoothed profiles generated")
