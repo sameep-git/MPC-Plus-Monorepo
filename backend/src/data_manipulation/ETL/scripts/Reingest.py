@@ -7,14 +7,14 @@ Overview:
     one or more beam variant names via --beam-types.
     
 Usage:
-    python -m src.data_manipulation.ETL.Reingest <folder_path> [options]
+    python -m src.data_manipulation.ETL.scripts.Reingest <folder_path> [options]
     
     Examples:
-        python -m src.data_manipulation.ETL.Reingest data/csv_data
-        python -m src.data_manipulation.ETL.Reingest /path/to/beam/data
-        python -m src.data_manipulation.ETL.Reingest data/csv_data --test
-        python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 6xFFF 10x
-        python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 2.5x --test
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data
+        python -m src.data_manipulation.ETL.scripts.Reingest /path/to/beam/data
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data --test
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data --beam-types 6xFFF 10x
+        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data --beam-types 2.5x --test
     
 Options:
     -h, --help                  Show this help message and exit
