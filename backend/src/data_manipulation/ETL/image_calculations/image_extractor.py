@@ -92,7 +92,7 @@ class image_extractor:
         # ------------------------------------------------------
         # Generate smoothed profile graphs
         # ------------------------------------------------------
-        self.create_smoothed_profile_graphs(corrected, imageModel)
+        self.create_smoothed_profile_graphs(corrected, imageModel, is_test)
 
         if is_test:
             logger.info("Flatness H: %s", imageModel.get_flatness_horizontal())
@@ -178,7 +178,7 @@ class image_extractor:
             window += 1
         return savgol_filter(profile, window, poly)
 
-    def create_smoothed_profile_graphs(self, corrected, imageModel):
+    def create_smoothed_profile_graphs(self, corrected, imageModel, is_test=False):
 
         rows, cols = corrected.shape
         center_row = rows // 2
@@ -198,6 +198,8 @@ class image_extractor:
         ax_h.legend()
         ax_h.grid(True)
         imageModel.set_horizontal_profile_graph(fig_h)
+        if is_test:
+            fig_h.savefig('horizontal_profile.png')
 
         # Vertical
         fig_v, ax_v = plt.subplots()
@@ -207,5 +209,7 @@ class image_extractor:
         ax_v.legend()
         ax_v.grid(True)
         imageModel.set_vertical_profile_graph(fig_v)
+        if is_test:
+            fig_v.savefig('vertical_profile.png')
 
         logger.info("Smoothed profiles generated")
