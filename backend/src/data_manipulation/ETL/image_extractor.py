@@ -3,7 +3,7 @@ Image Extractor Module (EPID Gain Map Corrected Version)
 ---------------------------------------------------------
 Implements proper EPID gain-map pipeline.
 
-Offline-style gain map build (using provided flood(s))
+Offline-style gain map build (using provided flood)
 Daily correction:
     - Dark subtract
     - Gain correction
@@ -14,7 +14,6 @@ Daily correction:
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-
 
 from scipy.ndimage import median_filter, generic_filter
 from scipy.signal import savgol_filter
@@ -36,17 +35,13 @@ class image_extractor:
         dark_path = imageModel.get_dark_image_path()
         flood_path = imageModel.get_flood_image_path()
 
-        clinical_raw = np.asarray(XIM(clinical_path), dtype=np.float64)
-        dark = np.asarray(XIM(dark_path), dtype=np.float64)
-        flood_raw = np.asarray(XIM(flood_path), dtype=np.float64)
+        clinical_raw = np.array(XIM(clinical_path), dtype=np.float64)
+        dark = np.array(XIM(dark_path), dtype=np.float64)
+        flood_raw = np.array(XIM(flood_path), dtype=np.float64)
 
         gain_map, bad_pixel_mask = self.build_gain_map(
-            flood_raw,
-            dark,
-            kernel_size=75,
-            clip_low=0.7,
-            clip_high=1.3,
-            field_fraction=0.8
+            flood_raw=flood_raw,
+            dark=dark
         )
 
         corrected = self.correct_clinical_image(
@@ -73,7 +68,9 @@ class image_extractor:
         imageModel.set_flatness_horizontal(r.protocol_results['flatness_horizontal'])
         imageModel.set_flatness_vertical(r.protocol_results['flatness_vertical'])
 
-        self.create_smoothed_profile_graphs(corrected, imageModel)
+        # Only generate graphs outside tests
+        if not is_test:
+            self.create_smoothed_profile_graphs(corrected, imageModel)
 
         if is_test:
             logger.info("Flatness H: %s", imageModel.get_flatness_horizontal())
@@ -108,20 +105,18 @@ class image_extractor:
 
         rows, cols = gain_map.shape
         margin = int((1 - field_fraction) / 2 * min(rows, cols))
-
         roi = gain_map[margin:rows - margin, margin:cols - margin]
 
         mean_val = np.mean(roi)
 
         if mean_val == 0 or np.isnan(mean_val):
-            mean_val = 1.0
+            return np.ones_like(gain_map), np.zeros_like(gain_map, dtype=bool)
 
         gain_map /= mean_val
 
         bad_pixel_mask = (gain_map < clip_low) | (gain_map > clip_high)
-        gain_map = np.clip(gain_map, clip_low, clip_high)
 
-        logger.info("Gain map built successfully")
+        gain_map = np.clip(gain_map, clip_low, clip_high)
 
         return gain_map, bad_pixel_mask
 
@@ -155,7 +150,7 @@ class image_extractor:
 
         n = len(profile)
 
-        if n < 5:
+        if n < 3:
             return profile
 
         window = min(window, n)
@@ -169,26 +164,19 @@ class image_extractor:
         if window % 2 == 0:
             window += 1
 
-        if window >= n:
-            window = n - 1 if n % 2 == 0 else n
-
-        if window <= poly or window < 3:
+        if window > n:
             return profile
 
-        try:
-            return savgol_filter(profile, window_length=window, polyorder=poly)
-        except Exception:
-            return profile
+        return savgol_filter(profile, window, poly)
 
     # ==========================================================
-    # PROFILE GRAPH GENERATION
+    # PROFILE GRAPHS
     # ==========================================================
     def create_smoothed_profile_graphs(self, corrected, imageModel):
 
         corrected = np.asarray(corrected, dtype=float)
 
         rows, cols = corrected.shape
-
         center_row = rows // 2
         center_col = cols // 2
 
@@ -202,7 +190,6 @@ class image_extractor:
 
         ax_h.plot(crossline_raw, alpha=0.4, label="Raw")
         ax_h.plot(crossline, label="Smoothed")
-
         ax_h.set_title("Crossline Profile")
         ax_h.legend()
         ax_h.grid(True)
@@ -213,7 +200,6 @@ class image_extractor:
 
         ax_v.plot(inline_raw, alpha=0.4, label="Raw")
         ax_v.plot(inline, label="Smoothed")
-
         ax_v.set_title("Inline Profile")
         ax_v.legend()
         ax_v.grid(True)
