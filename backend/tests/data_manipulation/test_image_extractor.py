@@ -5,6 +5,10 @@ Strategy: use numpy arrays as synthetic image data to avoid needing
 real XIM files. All pylinac / XIM / scipy dependencies are mocked
 at the unit-test boundary.
 """
+import matplotlib
+matplotlib.use("Agg") 
+import matplotlib.pyplot as plt # Fix macOS / CI matplotlib backend issues
+
 
 import os
 import sys
@@ -12,9 +16,7 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock, patch
 
-import matplotlib
-matplotlib.use("Agg") 
-import matplotlib.pyplot as plt # Fix macOS / CI matplotlib backend issues
+
 
 BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if BACKEND_ROOT not in sys.path:
@@ -144,7 +146,7 @@ class TestCorrectClinicalImage:
 # smooth_profile
 # ===========================================================================
 
-class TestSmoothProfile:
+# class TestSmoothProfile:
 
     def setup_method(self):
         self.extractor = image_extractor()
@@ -177,6 +179,49 @@ class TestSmoothProfile:
         result = self.extractor.smooth_profile(profile, window=10, poly=3)
         assert len(result) == 50
 
+class TestCreateSmoothedProfileGraphs:
+
+    def setup_method(self):
+        self.extractor = image_extractor()
+
+    @patch("matplotlib.pyplot.subplots")
+    def test_sets_horizontal_and_vertical_graphs(self, mock_subplots):
+        fake_fig = MagicMock()
+        fake_ax  = MagicMock()
+        mock_subplots.return_value = (fake_fig, fake_ax)
+
+        corrected = make_corrected_array(80, 80)
+        model = ImageModel()
+        self.extractor.create_smoothed_profile_graphs(corrected, model)
+
+        assert model.get_horizontal_profile_graph() is not None
+        assert model.get_vertical_profile_graph() is not None
+
+    @patch("matplotlib.pyplot.subplots")
+    def test_graphs_are_matplotlib_figures(self, mock_subplots):
+        fake_fig = MagicMock()
+        fake_ax  = MagicMock()
+        mock_subplots.return_value = (fake_fig, fake_ax)
+
+        corrected = make_corrected_array(60, 60)
+        model = ImageModel()
+        self.extractor.create_smoothed_profile_graphs(corrected, model)
+
+        assert model.get_horizontal_profile_graph() is not None
+        assert model.get_vertical_profile_graph() is not None
+
+    @patch("matplotlib.pyplot.subplots")
+    def test_non_square_array_works(self, mock_subplots):
+        fake_fig = MagicMock()
+        fake_ax  = MagicMock()
+        mock_subplots.return_value = (fake_fig, fake_ax)
+
+        corrected = make_corrected_array(rows=60, cols=120)
+        model = ImageModel()
+        self.extractor.create_smoothed_profile_graphs(corrected, model)
+
+        assert model.get_horizontal_profile_graph() is not None
+        assert model.get_vertical_profile_graph() is not None
 
 # ===========================================================================
 # create_smoothed_profile_graphs
