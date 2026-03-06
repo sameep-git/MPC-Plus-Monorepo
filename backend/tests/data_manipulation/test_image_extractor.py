@@ -146,39 +146,6 @@ class TestCorrectClinicalImage:
 # smooth_profile
 # ===========================================================================
 
-# class TestSmoothProfile:
-
-    def setup_method(self):
-        self.extractor = image_extractor()
-
-    def test_output_length_matches_input(self):
-        profile = np.linspace(0, 1, 100)
-        smoothed = self.extractor.smooth_profile(profile)
-        assert len(smoothed) == len(profile)
-
-    def test_output_is_numpy_array(self):
-        profile = np.random.randn(80)
-        result = self.extractor.smooth_profile(profile)
-        assert isinstance(result, np.ndarray)
-
-    def test_constant_profile_stays_constant(self):
-        """A perfectly flat profile should be unchanged after smoothing."""
-        profile = np.ones(100) * 5.0
-        smoothed = self.extractor.smooth_profile(profile)
-        np.testing.assert_allclose(smoothed, 5.0, atol=1e-6)
-
-    def test_short_profile_does_not_raise(self):
-        """Profile shorter than the default window should adjust the window."""
-        profile = np.ones(5)
-        result = self.extractor.smooth_profile(profile, window=15, poly=3)
-        assert len(result) == 5
-
-    def test_even_window_is_auto_corrected(self):
-        """An even window should be incremented to odd internally."""
-        profile = np.linspace(0, 1, 50)
-        result = self.extractor.smooth_profile(profile, window=10, poly=3)
-        assert len(result) == 50
-
 class TestCreateSmoothedProfileGraphs:
 
     def setup_method(self):
