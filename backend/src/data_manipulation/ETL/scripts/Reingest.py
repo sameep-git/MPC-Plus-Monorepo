@@ -7,14 +7,6 @@ Overview:
     one or more beam variant names via --beam-types.
     
 Usage:
-<<<<<<< HEAD:backend/src/data_manipulation/ETL/scripts/Reingest.py
-    python -m src.data_manipulation.ETL.scripts.Reingest <folder_path>
-    
-    Examples:
-        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data
-        python -m src.data_manipulation.ETL.scripts.Reingest /path/to/beam/data
-        python -m src.data_manipulation.ETL.scripts.Reingest data/csv_data --test
-=======
     python -m src.data_manipulation.ETL.Reingest <folder_path> [options]
     
     Examples:
@@ -23,7 +15,6 @@ Usage:
         python -m src.data_manipulation.ETL.Reingest data/csv_data --test
         python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 6xFFF 10x
         python -m src.data_manipulation.ETL.Reingest data/csv_data --beam-types 2.5x --test
->>>>>>> 5951320 (reingest changed to have type argument):backend/src/data_manipulation/ETL/Reingest.py
     
 Options:
     -h, --help                  Show this help message and exit
