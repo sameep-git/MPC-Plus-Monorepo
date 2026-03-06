@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.ndimage import median_filter, generic_filter
+from scipy.ndimage import median_filter
 from scipy.signal import savgol_filter
 
 from pylinac.field_analysis import FieldAnalysis, Protocol
@@ -40,7 +40,7 @@ class image_extractor:
         # ------------------------------------------------------
         # Load images
         # ------------------------------------------------------
-        clinical_raw = np.array(XIM(clinical_path), dtype=np.float64)
+        clinical_raw = np.array(imageModel.get_image(), dtype=np.float64)
         dark = np.array(XIM(dark_path), dtype=np.float64)
         flood_raw = np.array(XIM(flood_path), dtype=np.float64)
 
@@ -129,10 +129,11 @@ class image_extractor:
         # Step 3: Isolate detector sensitivity
         gain_map = flood_net / beam_shape_safe
 
-        # Step 4: Normalize over in-field ROI (80%)
+        # Step 4: Normalize over in-field ROI (field_fraction in each dimension)
         rows, cols = gain_map.shape
-        margin = int((1 - field_fraction) / 2 * min(rows, cols))
-        roi = gain_map[margin:rows - margin, margin:cols - margin]
+        margin_rows = int((1 - field_fraction) / 2 * rows)
+        margin_cols = int((1 - field_fraction) / 2 * cols)
+        roi = gain_map[margin_rows:rows - margin_rows, margin_cols:cols - margin_cols]
         gain_map /= np.mean(roi)
 
         # Step 5: Flag + clip dead/hot pixels
@@ -162,7 +163,7 @@ class image_extractor:
 
         # Step 3: Replace bad pixels with local median
         if np.any(bad_pixel_mask):
-            local_med = generic_filter(corrected, np.nanmedian, size=5)
+            local_med = median_filter(corrected, size=5)
             corrected[bad_pixel_mask] = local_med[bad_pixel_mask]
 
         return corrected
