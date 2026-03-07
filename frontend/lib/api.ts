@@ -2,6 +2,7 @@
 // All data access goes through the REST backend via NEXT_PUBLIC_API_URL.
 
 import { UI_CONSTANTS } from '../constants';
+import { getFetchOptions, getAuthToken } from './auth';
 import type { Machine as MachineType } from '../models/Machine';
 import type { UpdateModel as UpdateModelType } from '../models/Update';
 import type { Beam as BeamType } from '../models/Beam';
@@ -60,6 +61,12 @@ export const getImageUrl = (imagePath: string): string => {
 
 const safeFetch = async (input: RequestInfo, init?: RequestInit) => {
   const headers = new Headers(init?.headers as HeadersInit);
+
+  // Add auth token if available
+  const token = getAuthToken();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
   // Prevent aggressive caching of dashboard data
   const mergedInit: RequestInit = {
@@ -124,12 +131,23 @@ export const fetchResults = async (month: number, year: number, machineId: strin
 };
 
 export const fetchUser = async (): Promise<{ id: string; name: string; role: string } | null> => {
-  // Pending real auth integration, return a mocked admin user for the UI
-  return {
-    id: 'mock-user-stephen',
-    name: 'Stephen',
-    role: 'Admin',
-  };
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/auth/me`;
+    const response = await safeFetch(url);
+    
+    if (!response) {
+      return null;
+    }
+
+    return {
+      id: response.id,
+      name: response.fullName || response.username || 'User',
+      role: response.role || 'User',
+    };
+  } catch (err) {
+    console.error('[fetchUser] Error:', err);
+    return null;
+  }
 };
 
 // Beams API

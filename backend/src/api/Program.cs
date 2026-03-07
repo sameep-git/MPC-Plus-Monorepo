@@ -79,6 +79,9 @@ else
 // Register Data Access Layer (Npgsql + Dapper)
 builder.Services.AddDataAccess(builder.Configuration);
 
+// Register Authentication Services
+builder.Services.AddAuthenticationServices(builder.Configuration);
+
 builder.Services.AddScoped<IReportService, ReportService>();
 
 // Add services to the container.
@@ -112,6 +115,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseStaticFiles(); // Enable static file serving for images
 

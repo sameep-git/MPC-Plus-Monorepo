@@ -15,6 +15,9 @@ services:
       - pgdata:/var/lib/postgresql/data
       # Ensure your backup file is here!
       - ./backups/mpc_plus_backup_20260226_152849.sql:/docker-entrypoint-initdb.d/backup.sql
+      # Create users and other tables when initializing a fresh database
+      - ./backend/data/migrations/001_create_users_table.sql:/docker-entrypoint-initdb.d/02_create_users_table.sql
+      - ./backend/data/migrations/002_create_thresholds_table.sql:/docker-entrypoint-initdb.d/03_create_thresholds_table.sql
 
   # ── Backend (.NET API) ────────────────────────────────────
   backend:
