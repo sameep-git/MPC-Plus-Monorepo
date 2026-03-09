@@ -277,24 +277,15 @@ class DataProcessor:
 
                 elif self.data_format == "xml":
                     logger.info("Running XML extraction...")
-                    xml_result = extract_beam_values(self.folder_path)
-                    if xml_result is None:
+                    populated_beam = extract_beam_values(self.folder_path, beam)
+                    if populated_beam is None:
                         logger.error("XML extractor returned no data for: %s", self.folder_path)
                         return
 
-                    # Push extracted float values into the beam model
-                    from decimal import Decimal
-                    if "relative_output_percent" in xml_result:
-                        beam.set_relative_output(Decimal(str(xml_result["relative_output_percent"])))
-                    if "relative_uniformity_percent" in xml_result:
-                        beam.set_relative_uniformity(Decimal(str(xml_result["relative_uniformity_percent"])))
-                    if "center_shift_mm" in xml_result and xml_result["center_shift_mm"] is not None:
-                        beam.set_center_shift(Decimal(str(xml_result["center_shift_mm"])))
-
                     logger.info(
-                        "XML extraction complete — output: %s%%, uniformity: %s%%",
-                        xml_result.get("relative_output_percent"),
-                        xml_result.get("relative_uniformity_percent"),
+                        "XML extraction complete — output: %s, uniformity: %s",
+                        beam.get_relative_output(),
+                        beam.get_relative_uniformity(),
                     )
 
                 # -----------------------------------------------------------------
