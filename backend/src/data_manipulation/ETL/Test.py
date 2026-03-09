@@ -58,13 +58,13 @@ CSV_PATH_15X = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0003-BeamCheck
 CSV_PATH_6xFFF = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0001-BeamCheckTemplate6xFFF"
 CSV_PATH_GEO = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0008-GeometryCheckTemplate6xMVkVEnhancedCouch"
 # --- XML DATA PATHS ---
-XML_PATH_6E = r"data/xml_data/Placeholder_6e"
+XML_PATH_6E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckTemplate6e"
 XML_PATH_9E = r"data/xml_data/Placeholder_9e"
 XML_PATH_12E = r"data/xml_data/Placeholder_12e"
-XML_PATH_16E = r"data/xml_data/Placeholder_16e"
+XML_PATH_16E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
 XML_PATH_2_5X = r"data/xml_data/Placeholder_2_5x"
 XML_PATH_10X = r"data/xml_data/Placeholder_10x"
-XML_PATH_15X = r"data/xml_data/Placeholder_15x"
+XML_PATH_15X = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0003-BeamCheckTemplate15x"
 XML_PATH_6xFFF = r"data/xml_data/Placeholder_6xFFF"
 XML_PATH_GEO = r"data/xml_data/Placeholder_Geo"
 def get_beam_paths(use_csv=True):

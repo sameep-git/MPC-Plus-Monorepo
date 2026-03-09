@@ -7,11 +7,13 @@ from dotenv import load_dotenv
 from src.data_manipulation.ETL.csv_data_extractor import csv_data_extractor
 from src.data_manipulation.ETL.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
+from src.data_manipulation.ETL.xml_data_extractor.xml_beam_extractor_entry import extract_beam_values
 
 from src.data_manipulation.models.EBeamModel import EBeamModel
 from src.data_manipulation.models.XBeamModel import XBeamModel
 from src.data_manipulation.models.GeoModel import GeoModel
 from src.data_manipulation.models.ImageModel import ImageModel
+
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -43,14 +45,35 @@ class DataProcessor:
     def __init__(self, path: str):
         """
         Initialize the DataProcessor with the directory path containing beam data.
+
+        Automatically detects whether the results file is CSV or XML and sets
+        self.data_format to 'csv' or 'xml' accordingly.
         """
         self.folder_path = path  # Store the folder path for uploads
-        self.data_path = os.path.join(path, "Results.csv")
         self.image_path = os.path.join(path, "BeamProfileCheck.xim")
+
+        # --- Detect data format ---
+        csv_path = os.path.join(path, "Results.csv")
+        xml_path = os.path.join(path, "Results.xml")
+
+        if os.path.exists(xml_path):
+            self.data_format = "xml"
+            self.data_path = xml_path
+            logger.info("Data format detected: XML (%s)", xml_path)
+        elif os.path.exists(csv_path):
+            self.data_format = "csv"
+            self.data_path = csv_path
+            logger.info("Data format detected: CSV (%s)", csv_path)
+        else:
+            # Default to CSV path so downstream path helpers still work;
+            # _process_beam will log an error if neither file exists.
+            self.data_format = "unknown"
+            self.data_path = csv_path
+            logger.warning("Neither Results.csv nor Results.xml found in: %s", path)
 
         self.data_ex = csv_data_extractor()
         self.image_ex = image_extractor()
-        
+
         # Database Uploader
         self.up = Uploader()
 
@@ -207,33 +230,29 @@ class DataProcessor:
     def _process_beam(self, is_test=False):
         """
         Shared logic for both Run() and RunTest().
-        Detects the beam type, initializes the model, 
-        and sends it to the correct extractor method.
+        Detects the beam type, initializes the model, and routes data
+        extraction to the CSV or XML extractor based on self.data_format.
         """
-        
+
+        # Guard: unknown data format (neither Results.csv nor Results.xml present)
+        if self.data_format == "unknown":
+            logger.error("No Results.csv or Results.xml found in: %s", self.folder_path)
+            return
+
         # Skip EnhancedMLCCheckTemplate6x - these have leaves we don't want to ingest
         if "EnhancedMLCCheckTemplate6x" in self.data_path:
             logger.info(f"Skipping EnhancedMLCCheckTemplate6x path (leaves not ingested): {self.data_path}")
             return
 
-        
         self.connect_to_db()
         beam_map = self._get_dynamic_beam_map(is_test)
         #beam_map = self._get_static_beam_map(is_test)
         if not beam_map:
             return
 
-        # for key, (model_class, beam_type) in beam_map.items():
-        #     if key in self.data_path:
-        #         # Special handling for 6x: use "6xFFF" only for BeamCheckTemplate6xFFF
-        #         if key == "6x":
-        #             if "BeamCheckTemplate6xFFF" in self.data_path:
-        #                 beam_type = "6xFFF"
-        #             # For other 6x templates (like GeometryCheckTemplate6xMVkVEnhancedCouch), use "6x"
         beam_token = self.extract_beam_type(self.data_path)
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
-                #return model_class(beam_type=beam_type)
                 logger.info(f"{beam_type.upper()} Beam detected")
 
                 # Initialize the correct beam model (EBeam, XBeam, etc.)
@@ -244,24 +263,46 @@ class DataProcessor:
                 # --- Image Extraction for all beam types ---
                 logger.info(f"Extracting image data for {beam_type} beam...")
                 beam.set_image_model(self._init_beam_image(beam_type, is_test))
-                
-                ##Unsure of the cleanliness of this soln
-                #Problem: Beams need to hold flatness and sym of images
-                #Sol1: Data processor will tell beam to get  its vals from image
-                # ^ implemented soln
-                # Alt Soln: Image holds a direct link to its beam (Doublely Linked) 
-                # and updates its parent beam stats as they are calculated
                 beam.set_flat_and_sym_vals_from_image()
 
-                if(is_test):
-                    logger.info("Running test extraction...")
-                    self.data_ex.extractTest(beam)
-                else:
-                    logger.info("Running normal extraction...")
-                    self.data_ex.extract(beam)
+                # -----------------------------------------------------------------
+                # Data Extraction — branch on detected file format
+                # -----------------------------------------------------------------
+                if self.data_format == "csv":
+                    logger.info("Running CSV extraction...")
+                    if is_test:
+                        self.data_ex.extractTest(beam)
+                    else:
+                        self.data_ex.extract(beam)
+
+                elif self.data_format == "xml":
+                    logger.info("Running XML extraction...")
+                    xml_result = extract_beam_values(self.folder_path)
+                    if xml_result is None:
+                        logger.error("XML extractor returned no data for: %s", self.folder_path)
+                        return
+
+                    # Push extracted float values into the beam model
+                    from decimal import Decimal
+                    if "relative_output_percent" in xml_result:
+                        beam.set_relative_output(Decimal(str(xml_result["relative_output_percent"])))
+                    if "relative_uniformity_percent" in xml_result:
+                        beam.set_relative_uniformity(Decimal(str(xml_result["relative_uniformity_percent"])))
+                    if "center_shift_mm" in xml_result and xml_result["center_shift_mm"] is not None:
+                        beam.set_center_shift(Decimal(str(xml_result["center_shift_mm"])))
+
+                    logger.info(
+                        "XML extraction complete — output: %s%%, uniformity: %s%%",
+                        xml_result.get("relative_output_percent"),
+                        xml_result.get("relative_uniformity_percent"),
+                    )
+
+                # -----------------------------------------------------------------
+                # Upload (skipped during test runs)
+                # -----------------------------------------------------------------
+                if not is_test:
                     logger.info("Uploading to PostgreSQL...")
-                    # Connection is already established at start of function
-                    if(not self.up.upload(beam)):
+                    if not self.up.upload(beam):
                         logger.error("Cannot upload to the database")
                         return
                     logger.info("Beam Uploading Complete")

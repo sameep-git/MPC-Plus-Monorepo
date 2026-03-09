@@ -14,8 +14,14 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 
-from ebeam_extractor import extract_ebeam_values
-from xbeam_extractor import extract_xbeam_values
+try:
+    # Package import (used when called from DataProcessor or any other module)
+    from src.data_manipulation.ETL.xml_data_extractor.ebeam_extractor import extract_ebeam_values
+    from src.data_manipulation.ETL.xml_data_extractor.xbeam_extractor import extract_xbeam_values
+except ImportError:
+    # Fallback for running the file directly as a script
+    from ebeam_extractor import extract_ebeam_values
+    from xbeam_extractor import extract_xbeam_values
 
 
 def _normalize_paths(path: str):
