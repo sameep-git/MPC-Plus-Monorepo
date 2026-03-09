@@ -1,7 +1,7 @@
 """
-Data Extractor Module
+CSV Data Extractor Module
 ----------------
-This module defines the `data_extractor` class, responsible for reading and parsing
+This module defines the `csv_data_extractor` class, responsible for reading and parsing
 beam data from CSV files and populating model objects (EBeamModel, XBeamModel,
 GeoModel) with corresponding numerical values.
 
@@ -22,7 +22,7 @@ from decimal import Decimal
 # Set up logger for this module
 logger = logging.getLogger(__name__)
 
-class data_extractor:
+class csv_data_extractor:
     """
     Handles data extraction from CSV files for various beam models.
     Each method corresponds to a specific model type and maps CSV entries

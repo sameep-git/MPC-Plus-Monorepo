@@ -4,7 +4,7 @@ import logging
 import re
 from pathlib import Path
 from dotenv import load_dotenv
-from src.data_manipulation.ETL.data_extractor import data_extractor
+from src.data_manipulation.ETL.csv_data_extractor import csv_data_extractor
 from src.data_manipulation.ETL.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
 
@@ -48,7 +48,7 @@ class DataProcessor:
         self.data_path = os.path.join(path, "Results.csv")
         self.image_path = os.path.join(path, "BeamProfileCheck.xim")
 
-        self.data_ex = data_extractor()
+        self.data_ex = csv_data_extractor()
         self.image_ex = image_extractor()
         
         # Database Uploader
