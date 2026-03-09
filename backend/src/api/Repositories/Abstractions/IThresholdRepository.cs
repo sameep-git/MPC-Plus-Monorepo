@@ -5,5 +5,6 @@ namespace Api.Repositories.Abstractions;
 public interface IThresholdRepository
 {
     Task<IReadOnlyList<Threshold>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Threshold>> GetByMachineAsync(string machineId, CancellationToken cancellationToken = default);
     Task<Threshold> SaveAsync(Threshold threshold, CancellationToken cancellationToken = default);
 }

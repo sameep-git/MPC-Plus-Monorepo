@@ -84,10 +84,7 @@ public class ReportService : IReportService
         Console.WriteLine($"[ReportService] Parsed geo types: [{string.Join(", ", selectedGeoTypes)}]");
 
         // 2b. Fetch thresholds for this machine
-        var allThresholds = await _thresholdRepository.GetAllAsync(cancellationToken);
-        var machineThresholds = allThresholds
-            .Where(t => t.MachineId == request.MachineId)
-            .ToList();
+        var machineThresholds = (await _thresholdRepository.GetByMachineAsync(request.MachineId, cancellationToken)).ToList();
         Console.WriteLine($"[ReportService] Fetched {machineThresholds.Count} thresholds for machine {request.MachineId}");
 
         // 3. Fetch ALL data for the full range once
@@ -312,15 +309,25 @@ public class ReportService : IReportService
 
     /// <summary>
     /// Looks up a threshold value for the given check type, metric type, and optional beam variant.
+    /// Prefers an exact variant match; if none is found, falls back to a record with no variant.
     /// </summary>
     private static double? FindThreshold(List<Threshold> thresholds, string checkType, string metricType, string? beamVariant = null)
     {
-        var match = thresholds.FirstOrDefault(t =>
+        // First try to find an exact match including the beam variant
+        var exactMatch = thresholds.FirstOrDefault(t =>
             t.CheckType.Equals(checkType, StringComparison.OrdinalIgnoreCase) &&
             t.MetricType.Equals(metricType, StringComparison.OrdinalIgnoreCase) &&
-            (beamVariant == null || t.BeamVariant == null ||
-             t.BeamVariant.Equals(beamVariant, StringComparison.OrdinalIgnoreCase)));
-        return match?.Value;
+            (beamVariant != null && t.BeamVariant != null && t.BeamVariant.Equals(beamVariant, StringComparison.OrdinalIgnoreCase)));
+
+        if (exactMatch != null) return exactMatch.Value;
+
+        // Fall back to a threshold that applies to all variants (BeamVariant is null)
+        var fallbackMatch = thresholds.FirstOrDefault(t =>
+            t.CheckType.Equals(checkType, StringComparison.OrdinalIgnoreCase) &&
+            t.MetricType.Equals(metricType, StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrEmpty(t.BeamVariant));
+
+        return fallbackMatch?.Value;
     }
 
     /// <summary>
@@ -788,13 +795,13 @@ public class ReportService : IReportService
                         });
 
                         if (geo.JawParallelismX1.HasValue)
-                            AddGeoMetricRow(table, "Parallelism X1", geo.JawParallelismX1, "mm", FindThreshold(thresholds, "geometry", "Parallelism X1"));
+                            AddGeoMetricRow(table, "Parallelism X1", geo.JawParallelismX1, "°", FindThreshold(thresholds, "geometry", "Parallelism X1"));
                         if (geo.JawParallelismX2.HasValue)
-                            AddGeoMetricRow(table, "Parallelism X2", geo.JawParallelismX2, "mm", FindThreshold(thresholds, "geometry", "Parallelism X2"));
+                            AddGeoMetricRow(table, "Parallelism X2", geo.JawParallelismX2, "°", FindThreshold(thresholds, "geometry", "Parallelism X2"));
                         if (geo.JawParallelismY1.HasValue)
-                            AddGeoMetricRow(table, "Parallelism Y1", geo.JawParallelismY1, "mm", FindThreshold(thresholds, "geometry", "Parallelism Y1"));
+                            AddGeoMetricRow(table, "Parallelism Y1", geo.JawParallelismY1, "°", FindThreshold(thresholds, "geometry", "Parallelism Y1"));
                         if (geo.JawParallelismY2.HasValue)
-                            AddGeoMetricRow(table, "Parallelism Y2", geo.JawParallelismY2, "mm", FindThreshold(thresholds, "geometry", "Parallelism Y2"));
+                            AddGeoMetricRow(table, "Parallelism Y2", geo.JawParallelismY2, "°", FindThreshold(thresholds, "geometry", "Parallelism Y2"));
                     });
                 }
             }

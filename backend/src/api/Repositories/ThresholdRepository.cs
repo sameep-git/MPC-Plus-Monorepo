@@ -22,6 +22,14 @@ public class ThresholdRepository : IThresholdRepository
         return thresholds.AsList();
     }
 
+    public async Task<IReadOnlyList<Threshold>> GetByMachineAsync(string machineId, CancellationToken cancellationToken = default)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        var sql = "SELECT * FROM thresholds WHERE machine_id = @MachineId";
+        var thresholds = await connection.QueryAsync<Threshold>(sql, new { MachineId = machineId });
+        return thresholds.AsList();
+    }
+
     public async Task<Threshold> SaveAsync(Threshold threshold, CancellationToken cancellationToken = default)
     {
         using var connection = _connectionFactory.CreateConnection();
