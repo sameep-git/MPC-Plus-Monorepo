@@ -199,6 +199,11 @@ class PostgresAdapter(DatabaseAdapter):
             
             columns = data.keys()
             values = [data[k] for k in columns]
+            # FIX: convert numpy scalars to python types
+            values = [
+                v.item() if isinstance(v, np.generic) else v
+                for v in values
+            ]
             
             query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
                 sql.Identifier(table_name),
