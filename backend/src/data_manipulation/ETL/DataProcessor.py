@@ -151,12 +151,10 @@ class DataProcessor:
             
             # Map database variant string to Model Class
             # Heuristic based on ending char
-            if variant == "6x":
-                # Special case for 6x geometry check from path name mapped to 6x in database
+            if "6xMVkVEnhancedCouch" in variant:
+                # Special case for 6x geometry check from path name mapped to 6xMVkVEnhancedCouch in database
                 beam_map["6xMVkVEnhancedCouch"] = (GeoModel, "6x", typeID)
-                # Normal 6x beam check
-                beam_map["6x"] = (XBeamModel, "6x", typeID)
-            elif variant == "6xFFF":
+            elif "6xFFF" in variant:
                 # Special case for 6xFFF check
                 beam_map[variant] = (XBeamModel, "6xFFF", typeID)
             elif variant.endswith("x"):
@@ -165,7 +163,6 @@ class DataProcessor:
                 beam_map[variant] = (EBeamModel, variant, typeID)
             else:
                 logger.warning(f"Unknown variant format from DB: {variant}. Skipping.")
-        
         return beam_map
 
     def _get_static_beam_map(self, is_test=False):
