@@ -9,62 +9,62 @@ class GeoModel(AbstractBeamModel):
         self._typeID = None 
         
         # ---- IsoCenterGroup ----
-        self._IsoCenterSize = Decimal('0.0')
-        self._IsoCenterMVOffset = Decimal('0.0')
-        self._IsoCenterKVOffset = Decimal('0.0')
+        self._IsoCenterSize = None
+        self._IsoCenterMVOffset = None
+        self._IsoCenterKVOffset = None
 
         # ---- BeamGroup ----
-        self._relative_output = Decimal('0.0')
-        self._relative_uniformity = Decimal('0.0')
-        self._center_shift = Decimal('0.0')
+        self._relative_output = None
+        self._relative_uniformity = None
+        self._center_shift = None
 
         # ---- CollimationGroup ----
-        self._CollimationRotationOffset = Decimal('0.0')
+        self._CollimationRotationOffset = None
 
         # ---- GantryGroup ----
-        self._GantryAbsolute = Decimal('0.0')
-        self._GantryRelative = Decimal('0.0')
+        self._GantryAbsolute = None
+        self._GantryRelative = None
 
         # ---- EnhancedCouchGroup ----
-        self._CouchMaxPositionError = Decimal('0.0')
-        self._CouchLat = Decimal('0.0')
-        self._CouchLng = Decimal('0.0')
-        self._CouchVrt = Decimal('0.0')
-        self._CouchRtnFine = Decimal('0.0')
-        self._CouchRtnLarge = Decimal('0.0')
-        self._RotationInducedCouchShiftFullRange = Decimal('0.0')
+        self._CouchMaxPositionError = None
+        self._CouchLat = None
+        self._CouchLng = None
+        self._CouchVrt = None
+        self._CouchRtnFine = None
+        self._CouchRtnLarge = None
+        self._RotationInducedCouchShiftFullRange = None
 
         # ---- CollimationGroup / MLCGroup ----
         # 60 leaves for A and B banks (1–60)
-        self._MLCLeavesA = {f"Leaf{i}": Decimal('0.0') for i in range(1, 61)}
-        self._MLCLeavesB = {f"Leaf{i}": Decimal('0.0') for i in range(1, 61)}
+        self._MLCLeavesA = {f"Leaf{i}": None for i in range(1, 61)}
+        self._MLCLeavesB = {f"Leaf{i}": None for i in range(1, 61)}
 
-        self._MaxOffsetA = Decimal('0.0')
-        self._MaxOffsetB = Decimal('0.0')
-        self._MeanOffsetA = Decimal('0.0')
-        self._MeanOffsetB = Decimal('0.0')
+        self._MaxOffsetA = None
+        self._MaxOffsetB = None
+        self._MeanOffsetA = None
+        self._MeanOffsetB = None
 
         # ---- CollimationGroup / MLCBacklashGroup ----
         # 60 leaves for A and B banks (1–60)
-        self._MLCBacklashA = {f"Leaf{i}": Decimal('0.0') for i in range(1, 61)}
-        self._MLCBacklashB = {f"Leaf{i}": Decimal('0.0') for i in range(1, 61)}
+        self._MLCBacklashA = {f"Leaf{i}": None for i in range(1, 61)}
+        self._MLCBacklashB = {f"Leaf{i}": None for i in range(1, 61)}
 
-        self._MLCBacklashMaxA = Decimal('0.0')
-        self._MLCBacklashMaxB = Decimal('0.0')
-        self._MLCBacklashMeanA = Decimal('0.0')
-        self._MLCBacklashMeanB = Decimal('0.0')
+        self._MLCBacklashMaxA = None
+        self._MLCBacklashMaxB = None
+        self._MLCBacklashMeanA = None
+        self._MLCBacklashMeanB = None
 
         # ---- CollimationGroup / JawsGroup ----
-        self._JawX1 = Decimal('0.0')
-        self._JawX2 = Decimal('0.0')
-        self._JawY1 = Decimal('0.0')
-        self._JawY2 = Decimal('0.0')
+        self._JawX1 = None
+        self._JawX2 = None
+        self._JawY1 = None
+        self._JawY2 = None
 
         # ---- CollimationGroup / JawsParallelismGroup ----
-        self._JawParallelismX1 = Decimal('0.0')
-        self._JawParallelismX2 = Decimal('0.0')
-        self._JawParallelismY1 = Decimal('0.0')
-        self._JawParallelismY2 = Decimal('0.0')
+        self._JawParallelismX1 = None
+        self._JawParallelismX2 = None
+        self._JawParallelismY1 = None
+        self._JawParallelismY2 = None
 
     # ---------------- IsoCenterGroup ----------------
     def get_IsoCenterSize(self): return self._IsoCenterSize

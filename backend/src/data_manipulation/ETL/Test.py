@@ -62,7 +62,7 @@ XML_PATH_6E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckT
 XML_PATH_9E = r"data/xml_data/Placeholder_9e"
 XML_PATH_12E = r"data/xml_data/Placeholder_12e"
 XML_PATH_16E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
-XML_PATH_2_5X = r"data/xml_only/NDS-WKS-SN6543-2015-09-18-08-06-01-0000-BeamCheckTemplate2.5x"
+XML_PATH_2_5X = r"data/xml_only/NDS-WKS-SN7018-2025-09-17-06-06-54-0000-BeamCheckTemplate2.5x"
 XML_PATH_10X = r"data/xml_data/Placeholder_10x"
 XML_PATH_15X = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0003-BeamCheckTemplate15x"
 XML_PATH_6xFFF = r"data/xml_data/Placeholder_6xFFF"
@@ -178,16 +178,6 @@ def main():
             print(f"\nSkipping {key}: Path does not exist: {path}")
             continue
         print(f"\nProcessing {key}: {path}")
-        # try:
-        #     dp = DataProcessor(path)
-        #     if args.upload:
-        #         print("Running in UPLOAD mode...")
-        #         dp.Run()
-        #     else:
-        #         print("Running in TEST mode...")
-        #         dp.RunTest()
-        # except Exception as e:
-        #     print(f"ERROR processing {key}: {e}")
         dp = DataProcessor(path)
         if args.upload:
             print("Running in UPLOAD mode...")

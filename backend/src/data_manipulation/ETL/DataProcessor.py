@@ -195,7 +195,7 @@ class DataProcessor:
         Extract the beam type from the path.
         """
         # Matches 6x, 6xFFF, 6xMVkVEnhancedCouch, 9x, 10x, etc.
-        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9]+)', path)
+        m = re.search(r'(?:Template|CheckTemplate)([A-Za-z0-9.]+)', path)
         if m:
             return m.group(1)
         return None
@@ -291,9 +291,9 @@ class DataProcessor:
                     )
                     if beam_type == "6x":
                         logger.info(
-                            "XML Geo Model — Gantry: %s, Couch: %s",
-                            round(beam.get_GantryAbsolute(), 4),
-                            round(beam.get_RotationInducedCouchShiftFullRange(), 4),
+                            "XML Geo Model — Gantry: %s, Couch: %s (Show Null)",
+                            beam.get_GantryAbsolute(),
+                            beam.get_RotationInducedCouchShiftFullRange(),
                         )
 
                 # -----------------------------------------------------------------
