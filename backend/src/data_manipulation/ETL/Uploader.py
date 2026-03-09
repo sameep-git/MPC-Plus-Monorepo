@@ -218,7 +218,19 @@ class PostgresAdapter(DatabaseAdapter):
             # Special handling for JSON fields (image_paths)
             # data has 'image_paths' as string json dump?
             
-            columns = list(data.keys())
+            columns = data.keys()
+            values = [data[k] for k in columns]
+            # FIX: convert numpy scalars to python types
+            values = [
+                v.item() if isinstance(v, np.generic) else v
+                for v in values
+            ]
+            
+            query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
+                sql.Identifier(table_name),
+                sql.SQL(', ').join(map(sql.Identifier, columns)),
+                sql.SQL(', ').join(sql.Placeholder() * len(columns))
+            )
             
             # Determine conflict target for UPSERT functionality
             if table_name in ['beams', 'geochecks']:
