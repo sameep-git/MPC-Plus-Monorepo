@@ -62,11 +62,11 @@ XML_PATH_6E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckT
 XML_PATH_9E = r"data/xml_data/Placeholder_9e"
 XML_PATH_12E = r"data/xml_data/Placeholder_12e"
 XML_PATH_16E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
-XML_PATH_2_5X = r"data/xml_data/Placeholder_2_5x"
+XML_PATH_2_5X = r"data/xml_only/NDS-WKS-SN6543-2015-09-18-08-06-01-0000-BeamCheckTemplate2.5x"
 XML_PATH_10X = r"data/xml_data/Placeholder_10x"
 XML_PATH_15X = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0003-BeamCheckTemplate15x"
 XML_PATH_6xFFF = r"data/xml_data/Placeholder_6xFFF"
-XML_PATH_GEO = r"data/xml_data/Placeholder_Geo"
+XML_PATH_GEO = r"data/xml_only/NDS-WKS-SN7018-2025-09-21-09-29-17-0009-GeometryCheckTemplate6xMVkVEnhancedCouch"
 def get_beam_paths(use_csv=True):
     """Returns a dictionary mapping beam keys to their configured paths."""
     if use_csv:

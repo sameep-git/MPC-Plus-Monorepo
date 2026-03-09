@@ -95,29 +95,29 @@ def _normalize_paths(path: str):
     return folder_path, xml_path
 
 
-def detect_beam_type(path: str) -> str:
-    """
-    Detect beam type **only from the folder path**.
+# def detect_beam_type(path: str) -> str:
+#     """
+#     Detect beam type **only from the folder path**.
 
-    Folder-name based rules:
-    - Geometry : folder contains \"geometry\" or \"geom\"
-    - X-beam   : folder contains \"6x\", \"15x\", or \"xbeam\"
-    - E-beam   : folder contains \"6e\", \"16e\", or \"beamchecktemplate\"
+#     Folder-name based rules:
+#     - Geometry : folder contains \"geometry\" or \"geom\"
+#     - X-beam   : folder contains \"6x\", \"15x\", or \"xbeam\"
+#     - E-beam   : folder contains \"6e\", \"16e\", or \"beamchecktemplate\"
 
-    Returns:
-        str: 'ebeam', 'xbeam', 'geometry', or 'unknown'
-    """
-    folder_path, _ = _normalize_paths(path)
-    folder_name = os.path.basename(folder_path).lower()
+#     Returns:
+#         str: 'ebeam', 'xbeam', 'geometry', or 'unknown'
+#     """
+#     folder_path, _ = _normalize_paths(path)
+#     folder_name = os.path.basename(folder_path).lower()
 
-    if any(token in folder_name for token in ["geometry", "geom"]):
-        return "geometry"
-    if any(token in folder_name for token in ["6x", "15x", "xbeam"]):
-        return "xbeam"
-    if any(token in folder_name for token in ["6e", "16e", "beamchecktemplate"]):
-        return "ebeam"
+#     if any(token in folder_name for token in ["geometry", "geom"]):
+#         return "geometry"
+#     if any(token in folder_name for token in ["6x", "15x", "xbeam"]):
+#         return "xbeam"
+#     if any(token in folder_name for token in ["6e", "16e", "beamchecktemplate"]):
+#         return "ebeam"
 
-    return "unknown"
+#     return "unknown"
 
 
 def extract_beam_values(path: str, model):
@@ -132,7 +132,8 @@ def extract_beam_values(path: str, model):
     Returns:
         The same model object with its fields populated, or None on failure.
     """
-    beam_type = detect_beam_type(path)
+    #beam_type = detect_beam_type(path)
+    beam_type = model.get_type()
     folder_path, xml_path = _normalize_paths(path)
 
     # -------------------------------------------------------------------------
