@@ -56,14 +56,15 @@ class DataProcessor:
         csv_path = os.path.join(path, "Results.csv")
         xml_path = os.path.join(path, "Results.xml")
 
-        if os.path.exists(xml_path):
-            self.data_format = "xml"
-            self.data_path = xml_path
-            logger.info("Data format detected: XML (%s)", xml_path)
-        elif os.path.exists(csv_path):
+        # CSV first because XML is a subset of CSV
+        if os.path.exists(csv_path):
             self.data_format = "csv"
             self.data_path = csv_path
             logger.info("Data format detected: CSV (%s)", csv_path)
+        elif os.path.exists(xml_path):
+            self.data_format = "xml"
+            self.data_path = xml_path
+            logger.info("Data format detected: XML (%s)", xml_path)
         else:
             # Default to CSV path so downstream path helpers still work;
             # _process_beam will log an error if neither file exists.
@@ -254,7 +255,8 @@ class DataProcessor:
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
                 logger.info(f"{beam_type.upper()} Beam detected")
-
+                if beam_type == "6x":
+                    model_class = GeoModel
                 # Initialize the correct beam model (EBeam, XBeam, etc.)
                 beam = self._init_beam_model(model_class, beam_type)
                 beam.set_typeID(typeID)
@@ -284,9 +286,15 @@ class DataProcessor:
 
                     logger.info(
                         "XML extraction complete — output: %s, uniformity: %s",
-                        beam.get_relative_output(),
-                        beam.get_relative_uniformity(),
+                        round(beam.get_relative_output(), 4),
+                        round(beam.get_relative_uniformity(), 4),
                     )
+                    if beam_type == "6x":
+                        logger.info(
+                            "XML Geo Model — Gantry: %s, Couch: %s",
+                            round(beam.get_GantryAbsolute(), 4),
+                            round(beam.get_RotationInducedCouchShiftFullRange(), 4),
+                        )
 
                 # -----------------------------------------------------------------
                 # Upload (skipped during test runs)

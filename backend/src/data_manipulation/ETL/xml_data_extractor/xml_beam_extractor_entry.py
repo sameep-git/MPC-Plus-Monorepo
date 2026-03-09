@@ -14,6 +14,7 @@ Supported model types:
     - GeoModel    → all geometry/MLC fields extracted from XML
 """
 
+from scipy.optimize._lsq.common import print_header_nonlinear
 import os
 import sys
 
@@ -95,31 +96,6 @@ def _normalize_paths(path: str):
     return folder_path, xml_path
 
 
-# def detect_beam_type(path: str) -> str:
-#     """
-#     Detect beam type **only from the folder path**.
-
-#     Folder-name based rules:
-#     - Geometry : folder contains \"geometry\" or \"geom\"
-#     - X-beam   : folder contains \"6x\", \"15x\", or \"xbeam\"
-#     - E-beam   : folder contains \"6e\", \"16e\", or \"beamchecktemplate\"
-
-#     Returns:
-#         str: 'ebeam', 'xbeam', 'geometry', or 'unknown'
-#     """
-#     folder_path, _ = _normalize_paths(path)
-#     folder_name = os.path.basename(folder_path).lower()
-
-#     if any(token in folder_name for token in ["geometry", "geom"]):
-#         return "geometry"
-#     if any(token in folder_name for token in ["6x", "15x", "xbeam"]):
-#         return "xbeam"
-#     if any(token in folder_name for token in ["6e", "16e", "beamchecktemplate"]):
-#         return "ebeam"
-
-#     return "unknown"
-
-
 def extract_beam_values(path: str, model):
     """
     Unified entrypoint to extract beam QA values into a model object.
@@ -132,14 +108,14 @@ def extract_beam_values(path: str, model):
     Returns:
         The same model object with its fields populated, or None on failure.
     """
-    #beam_type = detect_beam_type(path)
-    beam_type = model.get_type()
+    model_type = type(model).__name__.lower()
     folder_path, xml_path = _normalize_paths(path)
+    #print(model_type)
 
     # -------------------------------------------------------------------------
     # E-beam: relative output + relative uniformity
     # -------------------------------------------------------------------------
-    if beam_type == "ebeam":
+    if "ebeam" in model_type:
         if not isinstance(model, EBeamModel):
             raise TypeError(
                 f"Expected EBeamModel for ebeam path, got {type(model).__name__}"
@@ -156,7 +132,7 @@ def extract_beam_values(path: str, model):
     # -------------------------------------------------------------------------
     # X-beam: relative output + relative uniformity + center shift
     # -------------------------------------------------------------------------
-    if beam_type == "xbeam":
+    if "xbeam" in model_type:
         if not isinstance(model, XBeamModel):
             raise TypeError(
                 f"Expected XBeamModel for xbeam path, got {type(model).__name__}"
@@ -175,7 +151,7 @@ def extract_beam_values(path: str, model):
     # -------------------------------------------------------------------------
     # Geometry: full MLC + beam profile fields via GeoModel
     # -------------------------------------------------------------------------
-    if beam_type == "geometry":
+    if "geo" in model_type:
         if not isinstance(model, GeoModel):
             raise TypeError(
                 f"Expected GeoModel for geometry path, got {type(model).__name__}"
