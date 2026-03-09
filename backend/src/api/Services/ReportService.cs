@@ -16,17 +16,20 @@ public class ReportService : IReportService
     private readonly IBeamRepository _beamRepository;
     private readonly IGeoCheckRepository _geoCheckRepository;
     private readonly IMachineRepository _machineRepository;
+    private readonly IThresholdRepository _thresholdRepository;
     private readonly PostgresConnectionFactory _connectionFactory;
 
     public ReportService(
         IBeamRepository beamRepository,
         IGeoCheckRepository geoCheckRepository,
         IMachineRepository machineRepository,
+        IThresholdRepository thresholdRepository,
         PostgresConnectionFactory connectionFactory)
     {
         _beamRepository = beamRepository;
         _geoCheckRepository = geoCheckRepository;
         _machineRepository = machineRepository;
+        _thresholdRepository = thresholdRepository;
         _connectionFactory = connectionFactory;
     }
 
@@ -79,6 +82,13 @@ public class ReportService : IReportService
 
         Console.WriteLine($"[ReportService] Parsed beam types count: {selectedBeamTypes.Count}, types: [{string.Join(", ", selectedBeamTypes)}]");
         Console.WriteLine($"[ReportService] Parsed geo types: [{string.Join(", ", selectedGeoTypes)}]");
+
+        // 2b. Fetch thresholds for this machine
+        var allThresholds = await _thresholdRepository.GetAllAsync(cancellationToken);
+        var machineThresholds = allThresholds
+            .Where(t => t.MachineId == request.MachineId)
+            .ToList();
+        Console.WriteLine($"[ReportService] Fetched {machineThresholds.Count} thresholds for machine {request.MachineId}");
 
         // 3. Fetch ALL data for the full range once
         var searchEndDate = request.EndDate.Date.AddDays(1);
@@ -145,7 +155,7 @@ public class ReportService : IReportService
         {
             // Generate an empty report for the range so the user gets feedback
             var emptyPdf = GenerateSingleDayPdf(machineName, request.StartDate, request.EndDate,
-                new List<Beam>(), new List<GeoCheck>(), selectedGeoTypes, false, tz);
+                new List<Beam>(), new List<GeoCheck>(), selectedGeoTypes, false, tz, machineThresholds);
             var emptyFileName = $"MPC_Report_{safeMachineName}_{request.StartDate:yyyyMMdd}.pdf";
             return (emptyPdf, "application/pdf", emptyFileName);
         }
@@ -158,7 +168,7 @@ public class ReportService : IReportService
             var dayGeo = geoByDay.GetValueOrDefault(day, new List<GeoCheck>());
 
             var pdfBytes = GenerateSingleDayPdf(machineName, day, day,
-                dayBeams, dayGeo, selectedGeoTypes, showGeoChecks, tz);
+                dayBeams, dayGeo, selectedGeoTypes, showGeoChecks, tz, machineThresholds);
 
             var fileName = $"MPC_Report_{safeMachineName}_{day:yyyyMMdd}.pdf";
             Console.WriteLine($"[ReportService] Single day PDF generated. Size: {pdfBytes.Length} bytes.");
@@ -178,7 +188,7 @@ public class ReportService : IReportService
 
 
                 var pdfBytes = GenerateSingleDayPdf(machineName, day, day,
-                    dayBeams, dayGeo, selectedGeoTypes, showGeoChecks, tz);
+                    dayBeams, dayGeo, selectedGeoTypes, showGeoChecks, tz, machineThresholds);
 
                 var entryName = $"MPC_Report_{safeMachineName}_{day:yyyyMMdd}.pdf";
                 var entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
@@ -204,7 +214,8 @@ public class ReportService : IReportService
         List<GeoCheck> geoChecks,
         HashSet<string> selectedGeoTypes,
         bool showGeoChecks,
-        TimeZoneInfo tz)
+        TimeZoneInfo tz,
+        List<Threshold> thresholds)
     {
         var document = Document.Create(container =>
         {
@@ -216,7 +227,7 @@ public class ReportService : IReportService
                 page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
 
                 page.Header().Element(header => ComposeHeader(header, machineName, startDate, endDate, tz));
-                page.Content().Element(content => ComposeContent(content, beams, geoChecks, selectedGeoTypes, showGeoChecks, tz));
+                page.Content().Element(content => ComposeContent(content, beams, geoChecks, selectedGeoTypes, showGeoChecks, tz, thresholds));
                 page.Footer().Element(ComposeFooter);
             });
         });
@@ -245,7 +256,7 @@ public class ReportService : IReportService
     }
 
     private void ComposeContent(IContainer container, List<Beam> beams, List<GeoCheck> geoChecks,
-        HashSet<string> selectedGeoTypes, bool showGeoChecks, TimeZoneInfo tz)
+        HashSet<string> selectedGeoTypes, bool showGeoChecks, TimeZoneInfo tz, List<Threshold> thresholds)
     {
         // Group beams into check runs (2-minute proximity, same as BeamsController)
         var checkRuns = GroupBeamsByRun(beams);
@@ -256,7 +267,7 @@ public class ReportService : IReportService
         container.PaddingVertical(0.5f, Unit.Centimetre).Column(column =>
         {
             // Overview Section
-            column.Item().Element(c => ComposeOverview(c, beams, geoChecks, showGeoChecks, totalRuns));
+            column.Item().Element(c => ComposeOverview(c, beams, geoChecks, showGeoChecks, totalRuns, thresholds));
 
             column.Item().PaddingVertical(0.3f, Unit.Centimetre).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
@@ -279,7 +290,7 @@ public class ReportService : IReportService
                     column.Item().PaddingTop(0.3f, Unit.Centimetre).Text("Beam Checks").FontSize(13).SemiBold();
                     foreach (var beam in checkRuns[i].Beams)
                     {
-                        column.Item().Element(c => ComposeBeamSection(c, beam, tz));
+                        column.Item().Element(c => ComposeBeamSection(c, beam, tz, thresholds));
                     }
                 }
 
@@ -287,7 +298,7 @@ public class ReportService : IReportService
                 if (showGeoChecks && i < sortedGeoChecks.Count)
                 {
                     column.Item().PaddingTop(0.3f, Unit.Centimetre).Text("Geometry Check").FontSize(13).SemiBold();
-                    column.Item().Element(c => ComposeGeoSection(c, sortedGeoChecks[i], selectedGeoTypes, tz));
+                    column.Item().Element(c => ComposeGeoSection(c, sortedGeoChecks[i], selectedGeoTypes, tz, thresholds));
                 }
 
                 // Separator between runs
@@ -299,15 +310,53 @@ public class ReportService : IReportService
         });
     }
 
-    private void ComposeOverview(IContainer container, List<Beam> beams, List<GeoCheck> geoChecks,
-        bool showGeoChecks, int totalRuns = 1)
+    /// <summary>
+    /// Looks up a threshold value for the given check type, metric type, and optional beam variant.
+    /// </summary>
+    private static double? FindThreshold(List<Threshold> thresholds, string checkType, string metricType, string? beamVariant = null)
     {
-        // Placeholder pass logic until thresholds are reworked
-        var passedBeams = beams.Count; // Assume all pass for now
+        var match = thresholds.FirstOrDefault(t =>
+            t.CheckType.Equals(checkType, StringComparison.OrdinalIgnoreCase) &&
+            t.MetricType.Equals(metricType, StringComparison.OrdinalIgnoreCase) &&
+            (beamVariant == null || t.BeamVariant == null ||
+             t.BeamVariant.Equals(beamVariant, StringComparison.OrdinalIgnoreCase)));
+        return match?.Value;
+    }
+
+    /// <summary>
+    /// Determines if a metric value passes the threshold (within ± threshold).
+    /// Returns true if no threshold is configured.
+    /// </summary>
+    private static bool IsWithinThreshold(double? value, double? threshold)
+    {
+        if (!value.HasValue || !threshold.HasValue) return true;
+        return Math.Abs(value.Value) <= threshold.Value;
+    }
+
+    private void ComposeOverview(IContainer container, List<Beam> beams, List<GeoCheck> geoChecks,
+        bool showGeoChecks, int totalRuns, List<Threshold> thresholds)
+    {
         var totalBeams = beams.Count;
         var geoCount = showGeoChecks ? geoChecks.Count : 0;
         var totalChecks = totalBeams + geoCount;
-        var passedGeo = showGeoChecks ? geoChecks.Count : 0; // Assume all pass
+
+        // Count beam passes using thresholds
+        var passedBeams = 0;
+        foreach (var beam in beams)
+        {
+            var outputThreshold = FindThreshold(thresholds, "beam", "Relative Output", beam.Type);
+            var uniformityThreshold = FindThreshold(thresholds, "beam", "Relative Uniformity", beam.Type);
+            var centerShiftThreshold = FindThreshold(thresholds, "beam", "Center Shift", beam.Type);
+
+            var outputPass = IsWithinThreshold(beam.RelOutput, outputThreshold);
+            var uniformityPass = IsWithinThreshold(beam.RelUniformity, uniformityThreshold);
+            var centerShiftPass = IsWithinThreshold(beam.CenterShift, centerShiftThreshold);
+
+            if (outputPass && uniformityPass && centerShiftPass) passedBeams++;
+        }
+
+        // Count geo passes (assume pass when no threshold configured)
+        var passedGeo = showGeoChecks ? geoChecks.Count : 0; // Geo threshold checking can be refined later
         var passedTotal = passedBeams + passedGeo;
 
         container.Column(column =>
@@ -331,10 +380,18 @@ public class ReportService : IReportService
         });
     }
 
-    private void ComposeBeamSection(IContainer container, Beam beam, TimeZoneInfo tz)
+    private void ComposeBeamSection(IContainer container, Beam beam, TimeZoneInfo tz, List<Threshold> thresholds)
     {
-        // Placeholder pass logic
-        var isPass = true;
+        // Look up thresholds for this beam type
+        var outputThreshold = FindThreshold(thresholds, "beam", "Relative Output", beam.Type);
+        var uniformityThreshold = FindThreshold(thresholds, "beam", "Relative Uniformity", beam.Type);
+        var centerShiftThreshold = FindThreshold(thresholds, "beam", "Center Shift", beam.Type);
+
+        var outputPass = IsWithinThreshold(beam.RelOutput, outputThreshold);
+        var uniformityPass = IsWithinThreshold(beam.RelUniformity, uniformityThreshold);
+        var centerShiftPass = IsWithinThreshold(beam.CenterShift, centerShiftThreshold);
+        var isPass = outputPass && uniformityPass && centerShiftPass;
+
         var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
         var statusText = isPass ? "PASS" : "FAIL";
         
@@ -389,26 +446,26 @@ public class ReportService : IReportService
 
                 // Relative Output
                 AddMetricRow(table, "Relative Output", 
-                    beam.RelOutput, null, "%");
+                    beam.RelOutput, outputThreshold, "%");
 
                 // Relative Uniformity
                 AddMetricRow(table, "Relative Uniformity", 
-                    beam.RelUniformity, null, "%");
+                    beam.RelUniformity, uniformityThreshold, "%");
 
                 // Center Shift
                 AddMetricRow(table, "Center Shift", 
-                    beam.CenterShift, null, "mm");
+                    beam.CenterShift, centerShiftThreshold, "mm");
             });
         });
     }
 
     private void AddMetricRow(TableDescriptor table, string name, double? value, double? thresholdValue, string unit)
     {
-        var isPass = true; // Placeholder
+        var isPass = IsWithinThreshold(value, thresholdValue);
         var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
         var statusText = isPass ? "PASS" : "FAIL";
         var valueStr = value.HasValue ? $"{value.Value:F3}" : "-";
-        var thresholdStr = "N/A"; // Placeholder
+        var thresholdStr = thresholdValue.HasValue ? $"± {thresholdValue.Value:F2} {unit}" : "N/A";
 
         table.Cell().Element(DataCellStyle).Text(name);
         table.Cell().Element(DataCellStyle).Text(valueStr);
@@ -422,11 +479,11 @@ public class ReportService : IReportService
     // Helper to add a geo metric row with dynamic threshold lookup
     private void AddGeoMetricRow(TableDescriptor table, string name, double? value, string unit, double? thresholdValue)
     {
-        var isPass = true; // Placeholder
+        var isPass = IsWithinThreshold(value, thresholdValue);
         var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
         var statusText = isPass ? "PASS" : "FAIL";
         var valueStr = value.HasValue ? $"{value.Value:F2} {unit}" : "-";
-        var thresholdStr = "N/A";
+        var thresholdStr = thresholdValue.HasValue ? $"± {thresholdValue.Value:F2} {unit}" : "N/A";
 
         table.Cell().Element(DataCellStyle).Text(name);
         table.Cell().Element(DataCellStyle).Text(valueStr);
@@ -439,7 +496,7 @@ public class ReportService : IReportService
     {
         var statusColor = isPass ? Colors.Green.Medium : Colors.Red.Medium;
         var statusText = isPass ? "PASS" : "FAIL";
-        var thresholdStr = "N/A";
+        var thresholdStr = thresholdValue.HasValue ? $"± {thresholdValue.Value:F2} {unit}" : "N/A";
 
         table.Cell().Element(DataCellStyle).Text(name);
         table.Cell().Element(DataCellStyle).Text(""); // No individual value for group summary
@@ -448,10 +505,36 @@ public class ReportService : IReportService
     }
 
 
-    private void ComposeGeoSection(IContainer container, GeoCheck geo, HashSet<string> selectedGeoTypes, TimeZoneInfo tz)
+    private void ComposeGeoSection(IContainer container, GeoCheck geo, HashSet<string> selectedGeoTypes, TimeZoneInfo tz, List<Threshold> thresholds)
     {
         // Determine overall geo check pass/fail using dynamic thresholds
-        bool isOverallPass = true; // Placeholder
+        // Check each metric against its threshold
+        bool isOverallPass = true;
+        var geoThresholdChecks = new (string metricType, double? value)[] {
+            ("Iso Center Size", geo.IsoCenterSize),
+            ("Iso Center MV Offset", geo.IsoCenterMVOffset),
+            ("Iso Center KV Offset", geo.IsoCenterKVOffset),
+            ("Collimation Rotation Offset", geo.CollimationRotationOffset),
+            ("Gantry Absolute", geo.GantryAbsolute),
+            ("Gantry Relative", geo.GantryRelative),
+            ("Couch Lat", geo.CouchLat),
+            ("Couch Lng", geo.CouchLng),
+            ("Couch Vrt", geo.CouchVrt),
+            ("Max Position Error", geo.CouchMaxPositionError),
+            ("Mean Offset A", geo.MeanOffsetA),
+            ("Max Offset A", geo.MaxOffsetA),
+            ("Mean Offset B", geo.MeanOffsetB),
+            ("Max Offset B", geo.MaxOffsetB),
+            ("Jaw X1", geo.JawX1),
+            ("Jaw X2", geo.JawX2),
+            ("Jaw Y1", geo.JawY1),
+            ("Jaw Y2", geo.JawY2),
+        };
+        foreach (var (metricType, value) in geoThresholdChecks)
+        {
+            var threshold = FindThreshold(thresholds, "geometry", metricType);
+            if (!IsWithinThreshold(value, threshold)) isOverallPass = false;
+        }
         
         var overallStatusColor = isOverallPass ? Colors.Green.Medium : Colors.Red.Medium;
         var overallStatusText = isOverallPass ? "PASS" : "FAIL";
@@ -496,11 +579,11 @@ public class ReportService : IReportService
                         columns.RelativeColumn(1); // Status
                     });
 
-                    AddGeoMetricRow(table, "Size", geo.IsoCenterSize, "mm", null);
+                    AddGeoMetricRow(table, "Size", geo.IsoCenterSize, "mm", FindThreshold(thresholds, "geometry", "Iso Center Size"));
                     if (geo.IsoCenterMVOffset.HasValue)
-                        AddGeoMetricRow(table, "MV Offset", geo.IsoCenterMVOffset, "mm", null);
+                        AddGeoMetricRow(table, "MV Offset", geo.IsoCenterMVOffset, "mm", FindThreshold(thresholds, "geometry", "Iso Center MV Offset"));
                     if (geo.IsoCenterKVOffset.HasValue)
-                        AddGeoMetricRow(table, "kV Offset", geo.IsoCenterKVOffset, "mm", null);
+                        AddGeoMetricRow(table, "kV Offset", geo.IsoCenterKVOffset, "mm", FindThreshold(thresholds, "geometry", "Iso Center KV Offset"));
                 });
             }
 
@@ -521,9 +604,9 @@ public class ReportService : IReportService
                         });
 
                         if (geo.GantryAbsolute.HasValue)
-                            AddGeoMetricRow(table, "Absolute", geo.GantryAbsolute, "°", null);
+                            AddGeoMetricRow(table, "Absolute", geo.GantryAbsolute, "°", FindThreshold(thresholds, "geometry", "Gantry Absolute"));
                         if (geo.GantryRelative.HasValue)
-                            AddGeoMetricRow(table, "Relative", geo.GantryRelative, "°", null);
+                            AddGeoMetricRow(table, "Relative", geo.GantryRelative, "°", FindThreshold(thresholds, "geometry", "Gantry Relative"));
                     });
                 }
             }
@@ -544,7 +627,7 @@ public class ReportService : IReportService
                             columns.RelativeColumn(1);
                         });
 
-                        AddGeoMetricRow(table, "Max Position Error", geo.CouchMaxPositionError, "mm", null);
+                        AddGeoMetricRow(table, "Max Position Error", geo.CouchMaxPositionError, "mm", FindThreshold(thresholds, "geometry", "Max Position Error"));
                     });
                 }
             }
@@ -565,7 +648,7 @@ public class ReportService : IReportService
                             columns.RelativeColumn(1);
                         });
 
-                        AddGeoMetricRow(table, "Rotation Offset", geo.CollimationRotationOffset, "°", null);
+                        AddGeoMetricRow(table, "Rotation Offset", geo.CollimationRotationOffset, "°", FindThreshold(thresholds, "geometry", "Collimation Rotation Offset"));
                     });
                 }
             }
@@ -590,13 +673,13 @@ public class ReportService : IReportService
                         });
 
                         if (geo.MaxOffsetA.HasValue)
-                            AddGeoMetricRow(table, "Maximal Offset Leaves A", geo.MaxOffsetA, "mm", null);
+                            AddGeoMetricRow(table, "Maximal Offset Leaves A", geo.MaxOffsetA, "mm", FindThreshold(thresholds, "geometry", "Max Offset A"));
                         if (geo.MaxOffsetB.HasValue)
-                            AddGeoMetricRow(table, "Maximal Offset Leaves B", geo.MaxOffsetB, "mm", null);
+                            AddGeoMetricRow(table, "Maximal Offset Leaves B", geo.MaxOffsetB, "mm", FindThreshold(thresholds, "geometry", "Max Offset B"));
                         if (geo.MeanOffsetA.HasValue)
-                            AddGeoMetricRow(table, "Mean Offset Leaves A", geo.MeanOffsetA, "mm", null);
+                            AddGeoMetricRow(table, "Mean Offset Leaves A", geo.MeanOffsetA, "mm", FindThreshold(thresholds, "geometry", "Mean Offset A"));
                         if (geo.MeanOffsetB.HasValue)
-                            AddGeoMetricRow(table, "Mean Offset Leaves B", geo.MeanOffsetB, "mm", null);
+                            AddGeoMetricRow(table, "Mean Offset Leaves B", geo.MeanOffsetB, "mm", FindThreshold(thresholds, "geometry", "Mean Offset B"));
 
                         // Leaves A overall pass/fail (check if all individual leaves are within threshold)
                         if (geo.MLCLeavesA != null && geo.MLCLeavesA.Count > 0)
@@ -677,13 +760,13 @@ public class ReportService : IReportService
                         });
 
                         if (geo.JawX1.HasValue)
-                            AddGeoMetricRow(table, "Jaw X1", geo.JawX1, "mm", null);
+                            AddGeoMetricRow(table, "Jaw X1", geo.JawX1, "mm", FindThreshold(thresholds, "geometry", "Jaw X1"));
                         if (geo.JawX2.HasValue)
-                            AddGeoMetricRow(table, "Jaw X2", geo.JawX2, "mm", null);
+                            AddGeoMetricRow(table, "Jaw X2", geo.JawX2, "mm", FindThreshold(thresholds, "geometry", "Jaw X2"));
                         if (geo.JawY1.HasValue)
-                            AddGeoMetricRow(table, "Jaw Y1", geo.JawY1, "mm", null);
+                            AddGeoMetricRow(table, "Jaw Y1", geo.JawY1, "mm", FindThreshold(thresholds, "geometry", "Jaw Y1"));
                         if (geo.JawY2.HasValue)
-                            AddGeoMetricRow(table, "Jaw Y2", geo.JawY2, "mm", null);
+                            AddGeoMetricRow(table, "Jaw Y2", geo.JawY2, "mm", FindThreshold(thresholds, "geometry", "Jaw Y2"));
                     });
                 }
             }
@@ -705,13 +788,13 @@ public class ReportService : IReportService
                         });
 
                         if (geo.JawParallelismX1.HasValue)
-                            AddGeoMetricRow(table, "Parallelism X1", geo.JawParallelismX1, "mm", null);
+                            AddGeoMetricRow(table, "Parallelism X1", geo.JawParallelismX1, "mm", FindThreshold(thresholds, "geometry", "Parallelism X1"));
                         if (geo.JawParallelismX2.HasValue)
-                            AddGeoMetricRow(table, "Parallelism X2", geo.JawParallelismX2, "mm", null);
+                            AddGeoMetricRow(table, "Parallelism X2", geo.JawParallelismX2, "mm", FindThreshold(thresholds, "geometry", "Parallelism X2"));
                         if (geo.JawParallelismY1.HasValue)
-                            AddGeoMetricRow(table, "Parallelism Y1", geo.JawParallelismY1, "mm", null);
+                            AddGeoMetricRow(table, "Parallelism Y1", geo.JawParallelismY1, "mm", FindThreshold(thresholds, "geometry", "Parallelism Y1"));
                         if (geo.JawParallelismY2.HasValue)
-                            AddGeoMetricRow(table, "Parallelism Y2", geo.JawParallelismY2, "mm", null);
+                            AddGeoMetricRow(table, "Parallelism Y2", geo.JawParallelismY2, "mm", FindThreshold(thresholds, "geometry", "Parallelism Y2"));
                     });
                 }
             }

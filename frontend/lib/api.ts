@@ -260,6 +260,42 @@ export const saveThreshold = async (threshold: Threshold): Promise<Threshold> =>
   }
 };
 
+// Baselines
+export interface Baseline {
+  machineId: string;
+  checkType: string;
+  beamVariant?: string;
+  metricType: string;
+  date: string; // ISO date string
+  value: number | null;
+}
+
+export const fetchBaselines = async (machineId?: string): Promise<Baseline[]> => {
+  try {
+    const params = machineId ? `?machineId=${encodeURIComponent(machineId)}` : '';
+    const url = `${API_BASE.replace(/\/$/, '')}/baselines${params || '/all'}`;
+    return toCamelCase(await safeFetch(url));
+  } catch (err) {
+    console.error('[fetchBaselines] Error:', err);
+    throw err;
+  }
+};
+
+export const saveBaseline = async (baseline: Baseline): Promise<Baseline> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/baselines`;
+    const data = await safeFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(baseline),
+    });
+    return toCamelCase(data);
+  } catch (err) {
+    console.error('[saveBaseline] Error:', err);
+    throw err;
+  }
+};
+
 // Report Generation API
 export interface ReportRequest {
   startDate: string; // YYYY-MM-DD

@@ -557,6 +557,8 @@ function ResultDetailPageContent() {
                 onClearMetrics={() => setSelectedMetrics(new Set())}
                 onClose={() => setShowGraph(false)}
                 availableMetrics={getAllAvailableMetrics()}
+                machineId={machineId}
+                checkType="beam"
               />
               {/* Quick Dates */}
               <div className="mb-4 border border-gray-200 rounded-lg p-4">
