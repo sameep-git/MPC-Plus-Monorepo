@@ -1,6 +1,5 @@
 """
-Backward-compatible shim — imports have moved to the db/ package.
-Import from src.data_manipulation.ETL.db instead.
+db package — re-exports for convenience.
 """
 from src.data_manipulation.ETL.db.adapter import DatabaseAdapter
 from src.data_manipulation.ETL.db.postgres_adapter import PostgresAdapter

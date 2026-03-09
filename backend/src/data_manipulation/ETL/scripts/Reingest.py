@@ -153,10 +153,11 @@ def main():
         
         # Check if the folder contains required files
         results_csv = subfolder / "Results.csv"
+        results_xml = subfolder / "Results.xml"
         beam_profile = subfolder / "BeamProfileCheck.xim"
         
-        if not results_csv.exists():
-            logger.warning(f"Skipping {subfolder.name}: Results.csv not found")
+        if not results_csv.exists() and not results_xml.exists():
+            logger.warning(f"Skipping {subfolder.name}: No Results.csv or Results.xml found")
             skipped += 1
             continue
         

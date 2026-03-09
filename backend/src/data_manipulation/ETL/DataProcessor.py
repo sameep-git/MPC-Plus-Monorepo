@@ -4,10 +4,10 @@ import logging
 import re
 from pathlib import Path
 from dotenv import load_dotenv
-from src.data_manipulation.ETL.csv_data_extractor import csv_data_extractor
-from src.data_manipulation.ETL.image_extractor import image_extractor
+from src.data_manipulation.ETL.extractors.csv_data_extractor import csv_data_extractor
+from src.data_manipulation.ETL.image.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
-from src.data_manipulation.ETL.xml_data_extractor.xml_beam_extractor_entry import extract_beam_values
+from src.data_manipulation.ETL.extractors.xml.xml_beam_extractor_entry import extract_beam_values
 
 from src.data_manipulation.models.EBeamModel import EBeamModel
 from src.data_manipulation.models.XBeamModel import XBeamModel

@@ -20,9 +20,9 @@ import sys
 
 try:
     # Package import (used when called from DataProcessor or any other module)
-    from src.data_manipulation.ETL.xml_data_extractor.ebeam_extractor import extract_ebeam_values
-    from src.data_manipulation.ETL.xml_data_extractor.xbeam_extractor import extract_xbeam_values
-    from src.data_manipulation.ETL.xml_data_extractor.geometry_extractor import extract_geometry_values
+    from src.data_manipulation.ETL.extractors.xml.ebeam_extractor import extract_ebeam_values
+    from src.data_manipulation.ETL.extractors.xml.xbeam_extractor import extract_xbeam_values
+    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
@@ -32,7 +32,7 @@ except ImportError:
     from xbeam_extractor import extract_xbeam_values
     from geometry_extractor import extract_geometry_values
     import sys, os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
@@ -49,9 +49,9 @@ def _normalize_paths(path: str):
     Handles relative paths by trying to resolve them relative to MPC-Plus directory.
     """
     # Get MPC-Plus directory (common parent directory)
-    # Navigate up from current script: ETL -> data_manipulation -> src -> MPC-Plus
+    # Navigate up from current script: xml -> extractors -> ETL -> data_manipulation -> src -> backend
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mpc_plus_dir = os.path.abspath(os.path.join(script_dir, '../../..'))
+    mpc_plus_dir = os.path.abspath(os.path.join(script_dir, '../../../..'))
 
     # Normalize path separators
     path = path.replace('\\', os.sep).replace('/', os.sep)
