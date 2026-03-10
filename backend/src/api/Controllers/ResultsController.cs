@@ -10,13 +10,16 @@ public class ResultsController : ControllerBase
 {
     private readonly IBeamRepository _beamRepository;
     private readonly IGeoCheckRepository _geoCheckRepository;
+    private readonly IThresholdRepository _thresholdRepository;
 
     public ResultsController(
         IBeamRepository beamRepository, 
-        IGeoCheckRepository geoCheckRepository)
+        IGeoCheckRepository geoCheckRepository,
+        IThresholdRepository thresholdRepository)
     {
         _beamRepository = beamRepository;
         _geoCheckRepository = geoCheckRepository;
+        _thresholdRepository = thresholdRepository;
     }
 
     [HttpGet]
@@ -63,6 +66,8 @@ public class ResultsController : ControllerBase
             includeDetails: false, // Don't include heavy leaf data for list view
             cancellationToken: cancellationToken);
             
+        var thresholds = (await _thresholdRepository.GetAllAsync(cancellationToken)).ToList();
+
         // Group by date and aggregate status + example display values + approval status + counts
         var dailyChecks = new Dictionary<DateOnly, (string? beamStatus, double? beamValue, bool beamApproved, int beamCount, string? geoStatus, double? geoValue, bool geoApproved, int geoCount)>();
         
@@ -70,7 +75,7 @@ public class ResultsController : ControllerBase
         foreach (var check in beamChecks)
         {
             var date = DateOnly.FromDateTime(check.Timestamp);
-            var status = DetermineCheckStatus(check);
+            var status = DetermineCheckStatus(check, thresholds);
             double? value = check.RelOutput ?? check.RelUniformity ?? check.CenterShift;
             bool isApproved = !string.IsNullOrEmpty(check.ApprovedBy);
 
@@ -92,7 +97,7 @@ public class ResultsController : ControllerBase
         foreach (var check in geoChecks)
         {
             var date = DateOnly.FromDateTime(check.Timestamp);
-            var status = DetermineGeoCheckStatus(check);
+            var status = DetermineGeoCheckStatus(check, thresholds);
             double? value = check.IsoCenterSize ?? check.IsoCenterMVOffset ?? check.GantryAbsolute; // Prioritize IsoCenterSize, then geo-specific metrics as fallbacks
             bool isApproved = !string.IsNullOrEmpty(check.ApprovedBy);
 
@@ -139,21 +144,89 @@ public class ResultsController : ControllerBase
         return Ok(monthlyResults);
     }
 
-    /// <summary>
-    /// Determine the status of a single beam check based on pass criteria.
-    /// </summary>
-    private static string DetermineCheckStatus(Beam beam)
+    // Look up a threshold value
+    private static double? FindThreshold(IEnumerable<Threshold> thresholds, string machineId, string checkType, string metricType, string? beamVariant = null)
     {
-        // Placeholder until threshold logic is reworked
+        var match = thresholds.FirstOrDefault(t =>
+            t.MachineId == machineId &&
+            t.CheckType.Equals(checkType, StringComparison.OrdinalIgnoreCase) &&
+            t.MetricType.Equals(metricType, StringComparison.OrdinalIgnoreCase) &&
+            (beamVariant == null || string.Equals(t.BeamVariant, beamVariant, StringComparison.OrdinalIgnoreCase)));
+        return match?.Value;
+    }
+
+    private static bool IsWithinThreshold(double? value, double? threshold)
+    {
+        if (!value.HasValue || !threshold.HasValue) return true;
+        return Math.Abs(value.Value) <= threshold.Value;
+    }
+
+    /// <summary>
+    /// Determine the status of a single beam check based on thresholds.
+    /// </summary>
+    private static string DetermineCheckStatus(Beam beam, IReadOnlyList<Threshold> thresholds)
+    {
+        var outputThreshold = FindThreshold(thresholds, beam.MachineId, "beam", "Relative Output", beam.Type);
+        var uniformityThreshold = FindThreshold(thresholds, beam.MachineId, "beam", "Relative Uniformity", beam.Type);
+        var centerShiftThreshold = FindThreshold(thresholds, beam.MachineId, "beam", "Center Shift", beam.Type);
+
+        if (!IsWithinThreshold(beam.RelOutput, outputThreshold)) return "fail";
+        if (!IsWithinThreshold(beam.RelUniformity, uniformityThreshold)) return "fail";
+        if (!IsWithinThreshold(beam.CenterShift, centerShiftThreshold)) return "fail";
+
         return "pass";
     }
 
     /// <summary>
-    /// Determine the status of a geometry check based on pass criteria.
+    /// Determine the status of a geometry check based on thresholds.
     /// </summary>
-    private static string DetermineGeoCheckStatus(GeoCheck geoCheck)
+    private static string DetermineGeoCheckStatus(GeoCheck geo, IReadOnlyList<Threshold> thresholds)
     {
-        // Placeholder until threshold logic is reworked
+        var checks = new (string metricType, double? value)[] {
+            ("Iso Center Size", geo.IsoCenterSize),
+            ("Iso Center MV Offset", geo.IsoCenterMVOffset),
+            ("Iso Center KV Offset", geo.IsoCenterKVOffset),
+            ("Collimation Rotation Offset", geo.CollimationRotationOffset),
+            ("Gantry Absolute", geo.GantryAbsolute),
+            ("Gantry Relative", geo.GantryRelative),
+            ("Couch Lat", geo.CouchLat),
+            ("Couch Lng", geo.CouchLng),
+            ("Couch Vrt", geo.CouchVrt),
+            ("Max Position Error", geo.CouchMaxPositionError),
+            ("Mean Offset A", geo.MeanOffsetA),
+            ("Max Offset A", geo.MaxOffsetA),
+            ("Mean Offset B", geo.MeanOffsetB),
+            ("Max Offset B", geo.MaxOffsetB),
+            ("Jaw X1", geo.JawX1),
+            ("Jaw X2", geo.JawX2),
+            ("Jaw Y1", geo.JawY1),
+            ("Jaw Y2", geo.JawY2),
+            ("Parallelism X1", geo.JawParallelismX1),
+            ("Parallelism X2", geo.JawParallelismX2),
+            ("Parallelism Y1", geo.JawParallelismY1),
+            ("Parallelism Y2", geo.JawParallelismY2)
+        };
+
+        foreach (var check in checks)
+        {
+            var threshold = FindThreshold(thresholds, geo.MachineId, "geometry", check.metricType);
+            if (!IsWithinThreshold(check.value, threshold)) return "fail";
+        }
+
+        var leafThreshold = FindThreshold(thresholds, geo.MachineId, "geometry", "mlc_leaf_position");
+        if (leafThreshold.HasValue)
+        {
+            if (geo.MLCLeavesA != null && geo.MLCLeavesA.Values.Any(v => !IsWithinThreshold(v, leafThreshold))) return "fail";
+            if (geo.MLCLeavesB != null && geo.MLCLeavesB.Values.Any(v => !IsWithinThreshold(v, leafThreshold))) return "fail";
+        }
+
+        var backlashThreshold = FindThreshold(thresholds, geo.MachineId, "geometry", "mlc_backlash");
+        if (backlashThreshold.HasValue)
+        {
+            if (geo.MLCBacklashA != null && geo.MLCBacklashA.Values.Any(v => !IsWithinThreshold(v, backlashThreshold))) return "fail";
+            if (geo.MLCBacklashB != null && geo.MLCBacklashB.Values.Any(v => !IsWithinThreshold(v, backlashThreshold))) return "fail";
+        }
+
         return "pass";
     }
 
