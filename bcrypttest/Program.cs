@@ -24,8 +24,9 @@ class Program
 			return;
 		}
 
-		Console.WriteLine("hash: " + hash);
-		Console.WriteLine("verify result: " + BCrypt.Net.BCrypt.Verify(password, hash));
+		// don't print the actual hash value
+		bool okPlain = BCrypt.Net.BCrypt.Verify(password, hash);
+		Console.WriteLine("verify result: " + (okPlain ? "OK" : "FAIL"));
 
 		// now try fetching from database using Npgsql + Dapper
 		var connectionString = Environment.GetEnvironmentVariable("BCRYPT_TEST_CONNECTION_STRING");
@@ -40,10 +41,11 @@ class Program
 			using var conn = new Npgsql.NpgsqlConnection(connectionString);
 			conn.Open();
 			var user = conn.QueryFirstOrDefault<dynamic>("select username, password_hash from users where username='admin'");
-			Console.WriteLine("db retrieved: " + user?.password_hash);
-			if (user?.password_hash != null)
+			var dbHash = user?.password_hash as string;
+			if (!string.IsNullOrEmpty(dbHash))
 			{
-				Console.WriteLine("db verify: " + BCrypt.Net.BCrypt.Verify(password, (string)user.password_hash));
+				bool okDb = BCrypt.Net.BCrypt.Verify(password, dbHash);
+				Console.WriteLine("db verify: " + (okDb ? "OK" : "FAIL"));
 			}
 			else
 			{

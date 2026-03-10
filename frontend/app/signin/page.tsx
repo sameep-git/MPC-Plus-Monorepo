@@ -86,11 +86,13 @@ export default function SignInPage() {
             </Button>
           </form>
 
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              <strong>Demo Admin:</strong> username: <code className="font-mono">admin</code>, password: <code className="font-mono">admin123</code>
-            </p>
-          </div>
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                <strong>Demo Admin:</strong> username: <code className="font-mono">admin</code>, password: <code className="font-mono">admin123</code>
+              </p>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground">
