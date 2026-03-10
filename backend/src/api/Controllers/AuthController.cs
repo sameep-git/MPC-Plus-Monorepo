@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Login error: {ex.Message}");
+            _logger.LogError(ex, "Login error");
             return StatusCode(500, new { message = "An error occurred during login" });
         }
     }

@@ -95,7 +95,17 @@ export const getAuthToken = (): string | null => {
 export const getStoredUser = () => {
   if (typeof window !== 'undefined') {
     const userJson = localStorage.getItem('user');
-    return userJson ? JSON.parse(userJson) : null;
+    if (!userJson) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(userJson);
+    } catch {
+      // Clear corrupted user data to avoid repeated parse failures
+      localStorage.removeItem('user');
+      return null;
+    }
   }
   return null;
 };

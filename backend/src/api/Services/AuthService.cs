@@ -26,10 +26,6 @@ public class AuthService : IAuthService
     public async Task<AuthResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByUsernameAsync(username, cancellationToken);
-        if (user != null)
-        {
-            _logger.LogInformation("AuthService.LoginAsync fetched user for '{Username}' (hash length {Length}): '{Hash}'", username, user.PasswordHash?.Length, user.PasswordHash);
-        }
 
         if (user == null || !user.IsActive)
         {

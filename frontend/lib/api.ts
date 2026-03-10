@@ -2,7 +2,7 @@
 // All data access goes through the REST backend via NEXT_PUBLIC_API_URL.
 
 import { UI_CONSTANTS } from '../constants';
-import { getFetchOptions, getAuthToken } from './auth';
+import { getAuthToken } from './auth';
 import type { Machine as MachineType } from '../models/Machine';
 import type { UpdateModel as UpdateModelType } from '../models/Update';
 import type { Beam as BeamType } from '../models/Beam';

@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: isAuthenticated() }}>
       {children}
     </AuthContext.Provider>
   );
