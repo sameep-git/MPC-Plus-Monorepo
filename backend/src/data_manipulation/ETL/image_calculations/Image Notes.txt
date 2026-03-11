@@ -1,6 +1,0 @@
-In build gain map, it not using 
-the last 5 - 7 days of data. Fix that
-
-Test time on my mac: 3.5 min. Test PC
-
-Look for optimizations
