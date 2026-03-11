@@ -3,6 +3,7 @@ from pylinac.core.image import XIM
 import logging
 import re
 from pathlib import Path
+import numpy as np
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
 from src.data_manipulation.ETL.extractors.csv_data_extractor import csv_data_extractor
@@ -127,7 +128,6 @@ class DataProcessor:
             
         # Retrieve recent floods for gain map construction
         past_floods = self._get_recent_floods(image, limit=5)
-
         image.set_dark_image_path(
             image.get_path().replace("BeamProfileCheck.xim", "Offset.dat")
             )
@@ -145,7 +145,7 @@ class DataProcessor:
     def _get_recent_floods(self, image, limit: int = 5) -> list:
         """
         Retrieves the 'limit' most recent flood images for the machine/beam type.
-        Returns a list of NumPy arrays.
+        Returns a list of NumPy arrays. Prioritizes .npy (RAW) files over PNG.
         """
         past_floods = []
         try:
@@ -154,25 +154,37 @@ class DataProcessor:
                 past_floods.append(np.array(image.get_flood_image(), dtype=np.float64))
             
             # Query DB for up to (limit-1) more recent ones
-            recent_paths = self.up.get_recent_flood_image_paths(
+            recent_data = self.up.get_recent_flood_image_paths(
                 image.get_machine_SN(), 
                 image.get_type(), 
                 image.get_date(), 
                 limit=limit-1
             )
             
-            # Paths come back as URLs like "/images/SN6543/20250919/12e/124149/floodImage.png"
-            # We need to map them back to the local storage root
+            # recent_data is a list of tuples: (png_url, npy_url_or_none)
             storage_root = self.up.db_adapter.storage_root
-            for rel_path in recent_paths:
-                # rel_path = "/images/sub/path/to/image.png"
-                # Strip leading "/images" and join with storage_root
-                clean_rel = rel_path.replace("/images/", "").replace("/", os.sep)
-                abs_path = os.path.join(storage_root, clean_rel)
+            for png_url, npy_url in recent_data:
+                loaded = False
                 
-                if os.path.exists(abs_path):
-                    # These are already PNGs on disk (saved in previous uploads)
-                    past_floods.append(np.array(plt.imread(abs_path), dtype=np.float64))
+                # 1. Try RAW NPY first
+                if npy_url:
+                    clean_rel = npy_url.replace("/images/", "").replace("/", os.sep)
+                    abs_path = os.path.join(storage_root, clean_rel)
+                    if os.path.exists(abs_path):
+                        past_floods.append(np.load(abs_path).astype(np.float64))
+                        logger.info(f"Loaded RAW (.npy) flood from: {abs_path}")
+                        loaded = True
+                
+                # 2. Fallback to PNG
+                if not loaded and png_url:
+                    clean_rel = png_url.replace("/images/", "").replace("/", os.sep)
+                    abs_path = os.path.join(storage_root, clean_rel)
+                    if os.path.exists(abs_path):
+                        # PNGs are 0-255 or 0-1, we assume scale is roughly compatible 
+                        # but NPY is much better.
+                        past_floods.append(np.array(plt.imread(abs_path), dtype=np.float64))
+                        logger.info(f"Loaded PNG flood from: {abs_path} (Raw data missing)")
+                        loaded = True
                     
             logger.info(f"Using {len(past_floods)} floods for gain map construction")
         except Exception as e:

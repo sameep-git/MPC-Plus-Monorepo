@@ -344,6 +344,11 @@ class PostgresAdapter(DatabaseAdapter):
                     with open(file_path, "wb") as f:
                         f.write(f_bytes)
                     image_urls["floodImage"] = f"{self.base_url}/{base_folder_path}/floodImage.png"
+                
+                # Also save RAW data as .npy to preserve bit depth for future gain map calculations
+                npy_path = os.path.join(full_path, "floodImage_raw.npy")
+                np.save(npy_path, flood_image)
+                image_urls["floodImage_raw"] = f"{self.base_url}/{base_folder_path}/floodImage_raw.npy"
             
             if horizontal_profile is not None:
                 b_bytes = self._matplotlib_figure_to_png_bytes(horizontal_profile)
@@ -383,9 +388,11 @@ class PostgresAdapter(DatabaseAdapter):
             with self.conn.cursor() as cur:
                 # Query the beams table for records matching machine_id and type
                 # that are strictly older than before_timestamp.
-                # Extract the 'floodImage' path from the image_paths JSONB column.
+                # Extract both 'floodImage' (PNG) and 'floodImage_raw' (NPY) paths.
                 query = """
-                    SELECT image_paths->>'floodImage' 
+                    SELECT 
+                        image_paths->>'floodImage',
+                        image_paths->>'floodImage_raw'
                     FROM beams 
                     WHERE machine_id = %s 
                       AND type = %s 
@@ -396,8 +403,8 @@ class PostgresAdapter(DatabaseAdapter):
                 """
                 cur.execute(query, (machine_id, beam_type, before_timestamp, limit))
                 rows = cur.fetchall()
-                # Filter out any None values and return the list of paths
-                return [row[0] for row in rows if row[0]]
+                # Return a list of tuples (png_path, npy_path)
+                return [(row[0], row[1]) for row in rows if row[0]]
         except Exception as e:
             logger.error(f"Error fetching recent flood image paths: {e}")
             return []
