@@ -172,7 +172,7 @@ class DataProcessor:
                     abs_path = os.path.join(storage_root, clean_rel)
                     if os.path.exists(abs_path):
                         past_floods.append(np.load(abs_path).astype(np.float64))
-                        logger.info(f"Loaded RAW (.npy) flood from: {abs_path}")
+                        logger.info(f"Flood[{len(past_floods)-1}] Loaded RAW (.npy) flood from: {abs_path}")
                         loaded = True
                 
                 # 2. Fallback to PNG
@@ -183,7 +183,7 @@ class DataProcessor:
                         # PNGs are 0-255 or 0-1, we assume scale is roughly compatible 
                         # but NPY is much better.
                         past_floods.append(np.array(plt.imread(abs_path), dtype=np.float64))
-                        logger.info(f"Loaded PNG flood from: {abs_path} (Raw data missing)")
+                        logger.info(f"Flood[{len(past_floods)-1}] Loaded PNG flood from: {abs_path} (Raw data missing)")
                         loaded = True
                     
             logger.info(f"Using {len(past_floods)} floods for gain map construction")
