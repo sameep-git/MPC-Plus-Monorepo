@@ -320,7 +320,8 @@ class PostgresAdapter(DatabaseAdapter):
     def upload_beam_images(self, bucket_name: str, base_folder_path: str, 
                           beam_image: Optional[np.ndarray] = None,
                           horizontal_profile: Optional[Any] = None,
-                          vertical_profile: Optional[Any] = None) -> Optional[Dict[str, str]]:
+                          vertical_profile: Optional[Any] = None,
+                          flood_image: Optional[np.ndarray] = None) -> Optional[Dict[str, str]]:
         
         full_path = os.path.join(self.storage_root, base_folder_path)
         os.makedirs(full_path, exist_ok=True)
@@ -335,6 +336,14 @@ class PostgresAdapter(DatabaseAdapter):
                     with open(file_path, "wb") as f:
                         f.write(b_bytes)
                     image_urls["beamImage"] = f"{self.base_url}/{base_folder_path}/beamImage.png"
+            
+            if flood_image is not None:
+                f_bytes = self._numpy_array_to_png_bytes(flood_image)
+                if f_bytes:
+                    file_path = os.path.join(full_path, "floodImage.png")
+                    with open(file_path, "wb") as f:
+                        f.write(f_bytes)
+                    image_urls["floodImage"] = f"{self.base_url}/{base_folder_path}/floodImage.png"
             
             if horizontal_profile is not None:
                 b_bytes = self._matplotlib_figure_to_png_bytes(horizontal_profile)

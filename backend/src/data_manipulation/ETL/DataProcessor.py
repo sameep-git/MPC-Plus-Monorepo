@@ -115,10 +115,15 @@ class DataProcessor:
         image.set_machine_SN(image._getSNFromPathName(self.image_path))
         image.set_image_name(image.generate_image_name())
         image.set_image(XIM(image.get_path()))
-        #Image path has suffix "BeamProfileCheck.xim", remove and add "Flood" and "Dark" to get flood and dark image paths
-        image.set_flood_image_path(
-            image.get_path().replace("BeamProfileCheck.xim", "Floodfield-Raw.xim")
-            )
+        # Attempt to find the flood image. Try user-specified "flood-field.xim" first, then fallback to "Floodfield-Raw.xim"
+        flood_path = image.get_path().replace("BeamProfileCheck.xim", "flood-field.xim")
+        if not os.path.exists(flood_path):
+            flood_path = image.get_path().replace("BeamProfileCheck.xim", "Floodfield-Raw.xim")
+        
+        image.set_flood_image_path(flood_path)
+        if os.path.exists(image.get_flood_image_path()):
+            image.set_flood_image(XIM(image.get_flood_image_path()))
+            
         image.set_dark_image_path(
             image.get_path().replace("BeamProfileCheck.xim", "Offset.dat")
             )

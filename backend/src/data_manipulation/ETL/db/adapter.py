@@ -54,6 +54,19 @@ class DatabaseAdapter(ABC):
         pass
 
     @abstractmethod
+    def upload_beam_images(
+        self, 
+        bucket_name: str, 
+        base_folder_path: str, 
+        beam_image: Any = None,
+        horizontal_profile: Any = None,
+        vertical_profile: Any = None,
+        flood_image: Any = None
+    ) -> Dict[str, str]:
+        """Upload images associated with a beam."""
+        pass
+
+    @abstractmethod
     def close(self):
         """Close the database connection."""
         pass

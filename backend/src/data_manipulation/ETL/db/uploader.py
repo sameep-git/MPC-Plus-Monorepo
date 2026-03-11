@@ -304,6 +304,7 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                    flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                     
                     horizontal_profile = None
                     if hasattr(eBeam, 'get_horizontal_profile_graph'):
@@ -319,7 +320,8 @@ class Uploader:
                         base_folder_path=base_folder_path,
                         beam_image=beam_image,
                         horizontal_profile=horizontal_profile,
-                        vertical_profile=vertical_profile
+                        vertical_profile=vertical_profile,
+                        flood_image=flood_image
                     )
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
@@ -367,6 +369,7 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                    flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                     horizontal_profile = xBeam.get_horizontal_profile_graph() if hasattr(xBeam, 'get_horizontal_profile_graph') else None
                     vertical_profile = xBeam.get_vertical_profile_graph() if hasattr(xBeam, 'get_vertical_profile_graph') else None
                     
@@ -376,7 +379,8 @@ class Uploader:
                         base_folder_path=base_folder_path,
                         beam_image=beam_image,
                         horizontal_profile=horizontal_profile,
-                        vertical_profile=vertical_profile
+                        vertical_profile=vertical_profile,
+                        flood_image=flood_image
                     )
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
@@ -506,6 +510,7 @@ class Uploader:
             if image_model:
                 base_folder_path = self._generate_image_folder_path(geoModel)
                 beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                 horizontal_profile = geoModel.get_horizontal_profile_graph() if hasattr(geoModel, 'get_horizontal_profile_graph') else None
                 vertical_profile = geoModel.get_vertical_profile_graph() if hasattr(geoModel, 'get_vertical_profile_graph') else None
                 image_urls = self.db_adapter.upload_beam_images(
@@ -513,7 +518,8 @@ class Uploader:
                     base_folder_path=base_folder_path,
                     beam_image=beam_image,
                     horizontal_profile=horizontal_profile,
-                    vertical_profile=vertical_profile
+                    vertical_profile=vertical_profile,
+                    flood_image=flood_image
                 )
 
             beam_data = {
