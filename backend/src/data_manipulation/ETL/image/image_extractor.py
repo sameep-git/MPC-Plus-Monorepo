@@ -33,16 +33,13 @@ class image_extractor:
     # ==========================================================
     def process_image(self, imageModel, recent_floods=None, is_test=False):
 
-        #clinical_path = imageModel.get_path()
         dark_path = imageModel.get_dark_image_path()
-        #flood_path = imageModel.get_flood_image_path()
 
         # ------------------------------------------------------
         # Load images
         # ------------------------------------------------------
         clinical_raw = np.array(imageModel.get_image(), dtype=np.float64)
         dark = np.array(XIM(dark_path), dtype=np.float64)
-        # flood_raw = np.array(imageModel.get_flood_image(), dtype=np.float64)
 
         # ------------------------------------------------------
         # Build Gain Map (multi-flood version)

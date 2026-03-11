@@ -106,7 +106,12 @@ class Uploader:
 
     def get_recent_flood_image_paths(self, machine_id, beam_type, before_timestamp, limit=5):
         """
-        Fetch the list of valid beam variants using the adapter.
+                Fetch recent flood image paths/URLs from the adapter for a given machine and beam type.
+        Args:
+            machine_id: Identifier of the machine for which to retrieve flood images.
+            beam_type: Type of beam (e.g. electron, x-ray) associated with the flood images.
+            before_timestamp: Only flood images created before this timestamp will be returned.
+            limit: Maximum number of flood image paths/URLs to return.
         """
         if not self.connected:
             logger.error("Not connected to database. Call connect() first.")
