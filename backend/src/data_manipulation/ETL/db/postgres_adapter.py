@@ -338,14 +338,7 @@ class PostgresAdapter(DatabaseAdapter):
                     image_urls["beamImage"] = f"{self.base_url}/{base_folder_path}/beamImage.png"
             
             if flood_image is not None:
-                f_bytes = self._numpy_array_to_png_bytes(flood_image)
-                if f_bytes:
-                    file_path = os.path.join(full_path, "floodImage.png")
-                    with open(file_path, "wb") as f:
-                        f.write(f_bytes)
-                    image_urls["floodImage"] = f"{self.base_url}/{base_folder_path}/floodImage.png"
-                
-                # Also save RAW data as .npy to preserve bit depth for future gain map calculations
+                # Save RAW data as .npy to preserve bit depth for future gain map calculations
                 npy_path = os.path.join(full_path, "floodImage_raw.npy")
                 np.save(npy_path, flood_image)
                 image_urls["floodImage_raw"] = f"{self.base_url}/{base_folder_path}/floodImage_raw.npy"
@@ -397,14 +390,14 @@ class PostgresAdapter(DatabaseAdapter):
                     WHERE machine_id = %s 
                       AND type = %s 
                       AND timestamp < %s 
-                      AND image_paths->>'floodImage' IS NOT NULL
+                      AND (image_paths->>'floodImage' IS NOT NULL OR image_paths->>'floodImage_raw' IS NOT NULL)
                     ORDER BY timestamp DESC 
                     LIMIT %s
                 """
                 cur.execute(query, (machine_id, beam_type, before_timestamp, limit))
                 rows = cur.fetchall()
                 # Return a list of tuples (png_path, npy_path)
-                return [(row[0], row[1]) for row in rows if row[0]]
+                return [(row[0], row[1]) for row in rows]
         except Exception as e:
             logger.error(f"Error fetching recent flood image paths: {e}")
             return []
