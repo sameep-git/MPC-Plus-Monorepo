@@ -14,7 +14,6 @@ Supported model types:
     - GeoModel    → all geometry/MLC fields extracted from XML
 """
 
-from scipy.optimize._lsq.common import print_header_nonlinear
 import os
 import sys
 
@@ -201,6 +200,38 @@ def extract_beam_values(path: str, model):
             model.set_MLCBacklashMeanA(data["mlc_backlash_mean_a"])
         if data.get("mlc_backlash_mean_b") is not None:
             model.set_MLCBacklashMeanB(data["mlc_backlash_mean_b"])
+
+        # --- IsoCenterGroup (from mpc_parser) ---
+        if data.get("iso_center_size") is not None:
+            model.set_IsoCenterSize(data["iso_center_size"])
+        if data.get("iso_center_mv_offset") is not None:
+            model.set_IsoCenterMVOffset(data["iso_center_mv_offset"])
+        if data.get("iso_center_kv_offset") is not None:
+            model.set_IsoCenterKVOffset(data["iso_center_kv_offset"])
+
+        # --- GantryGroup (from mpc_parser) ---
+        if data.get("gantry_absolute") is not None:
+            model.set_GantryAbsolute(data["gantry_absolute"])
+        if data.get("gantry_relative") is not None:
+            model.set_GantryRelative(data["gantry_relative"])
+
+        # --- EnhancedCouchGroup (from mpc_parser) ---
+        if data.get("couch_max_position_error") is not None:
+            model.set_CouchMaxPositionError(data["couch_max_position_error"])
+        if data.get("couch_lat") is not None:
+            model.set_CouchLat(data["couch_lat"])
+        if data.get("couch_lng") is not None:
+            model.set_CouchLng(data["couch_lng"])
+        if data.get("couch_vrt") is not None:
+            model.set_CouchVrt(data["couch_vrt"])
+        if data.get("couch_rtn_fine") is not None:
+            model.set_CouchRtnFine(data["couch_rtn_fine"])
+        if data.get("couch_rtn_large") is not None:
+            model.set_CouchRtnLarge(data["couch_rtn_large"])
+        if data.get("rotation_induced_couch_shift_full_range") is not None:
+            model.set_RotationInducedCouchShiftFullRange(
+                data["rotation_induced_couch_shift_full_range"]
+            )
 
         return model
 
