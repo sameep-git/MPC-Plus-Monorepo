@@ -1,6 +1,7 @@
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 
@@ -90,6 +91,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Get current user info (requires authentication)
     /// </summary>
+    [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetCurrentUser(CancellationToken cancellationToken)
     {

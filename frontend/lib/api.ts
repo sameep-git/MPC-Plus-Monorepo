@@ -77,6 +77,15 @@ const safeFetch = async (input: RequestInfo, init?: RequestInit) => {
 
   const res = await fetch(input, mergedInit);
   if (!res.ok) {
+    // Handle expired / invalid token — clear auth and redirect to signin
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/signin';
+      }
+      throw new Error('Session expired. Please sign in again.');
+    }
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
   }

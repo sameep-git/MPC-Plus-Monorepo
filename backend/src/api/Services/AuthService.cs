@@ -36,17 +36,19 @@ public class AuthService : IAuthService
         try
         {
             var ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-            _logger.LogInformation("BCrypt.Verify returned {Result} for entered password '{Password}'", ok, password);
             if (!ok)
             {
                 _logger.LogWarning("Login failed: Invalid password for user '{Username}'", username);
                 throw new InvalidOperationException("Invalid username or password");
             }
         }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            // Log full details for diagnostic
-            _logger.LogError(ex, "BCrypt verification error for user '{Username}' with hash '{Hash}'", username, user.PasswordHash);
+            _logger.LogError(ex, "BCrypt verification error for user '{Username}'", username);
             throw;
         }
         // verification succeeded; proceed to update login time

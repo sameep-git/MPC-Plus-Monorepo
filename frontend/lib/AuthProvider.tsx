@@ -22,15 +22,17 @@ const PUBLIC_ROUTES = ['/signin', '/signup'];
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     // Check if user is authenticated on mount
     const checkAuth = () => {
-      const authenticated = isAuthenticated();
+      const isAuth = isAuthenticated();
+      setAuthenticated(isAuth);
       
-      if (authenticated) {
+      if (isAuth) {
         const storedUser = getStoredUser();
         setUser(storedUser);
       } else {
@@ -48,8 +50,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [router, pathname]);
 
+  const isProtectedRoute = !PUBLIC_ROUTES.includes(pathname);
+
+  // Prevent flash of unauthenticated content while redirecting
+  if (isProtectedRoute && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: isAuthenticated() }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: authenticated }}>
       {children}
     </AuthContext.Provider>
   );

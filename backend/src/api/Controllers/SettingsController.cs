@@ -1,9 +1,11 @@
 using Dapper;
 using Api.Database;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SettingsController(PostgresConnectionFactory connectionFactory) : ControllerBase
