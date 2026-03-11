@@ -9,11 +9,13 @@ namespace Api.Controllers;
 public class GeoCheckController : ControllerBase
 {
     private readonly IGeoCheckRepository _repository;
+    private readonly IThresholdRepository _thresholdRepository;
     private readonly ILogger<GeoCheckController> _logger;
 
-    public GeoCheckController(IGeoCheckRepository repository, ILogger<GeoCheckController> logger)
+    public GeoCheckController(IGeoCheckRepository repository, IThresholdRepository thresholdRepository, ILogger<GeoCheckController> logger)
     {
         _repository = repository;
+        _thresholdRepository = thresholdRepository;
         _logger = logger;
     }
 
@@ -68,6 +70,12 @@ public class GeoCheckController : ControllerBase
             includeDetails: true, // Frontend expects full details in list view
             cancellationToken: cancellationToken);
 
+        var thresholds = await _thresholdRepository.GetAllAsync(cancellationToken);
+        foreach (var gc in geoChecks)
+        {
+            CalculateStatus(gc, thresholds);
+        }
+
         return Ok(geoChecks);
     }
 
@@ -83,6 +91,9 @@ public class GeoCheckController : ControllerBase
             return NotFound($"Geometry check with id '{id}' was not found.");
         }
 
+        var thresholds = await _thresholdRepository.GetAllAsync(cancellationToken);
+        CalculateStatus(geoCheck, thresholds);
+
         return Ok(geoCheck);
     }
 
@@ -95,6 +106,10 @@ public class GeoCheckController : ControllerBase
         try
         {
             var created = await _repository.CreateAsync(geoCheck, cancellationToken);
+            
+            var thresholds = await _thresholdRepository.GetAllAsync(cancellationToken);
+            CalculateStatus(created, thresholds);
+            
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
         catch (InvalidOperationException exception)
@@ -169,6 +184,81 @@ public class GeoCheckController : ControllerBase
         }
 
         return Ok(new { approved = results, errors });
+    }
+    
+    // Look up a threshold value
+    private static double? FindThreshold(IEnumerable<Threshold> thresholds, string machineId, string metricType)
+    {
+        var match = thresholds.FirstOrDefault(t =>
+            t.MachineId == machineId &&
+            t.CheckType.Equals("geometry", StringComparison.OrdinalIgnoreCase) &&
+            t.MetricType.Equals(metricType, StringComparison.OrdinalIgnoreCase));
+        return match?.Value;
+    }
+
+    // Determine if a metric value passes the threshold (within ± threshold)
+    private static bool IsWithinThreshold(double? value, double? threshold)
+    {
+        if (!value.HasValue || !threshold.HasValue) return true;
+        return Math.Abs(value.Value) <= threshold.Value;
+    }
+
+    private void CalculateStatus(GeoCheck geo, IReadOnlyList<Threshold> thresholds)
+    {
+        geo.MetricStatuses ??= new Dictionary<string, string>();
+
+        var checks = new (string metricType, string key, double? value)[] {
+            ("Iso Center Size", "IsoCenterSize", geo.IsoCenterSize),
+            ("Iso Center MV Offset", "IsoCenterMVOffset", geo.IsoCenterMVOffset),
+            ("Iso Center KV Offset", "IsoCenterKVOffset", geo.IsoCenterKVOffset),
+            ("Collimation Rotation Offset", "CollimationRotationOffset", geo.CollimationRotationOffset),
+            ("Gantry Absolute", "GantryAbsolute", geo.GantryAbsolute),
+            ("Gantry Relative", "GantryRelative", geo.GantryRelative),
+            ("Couch Lat", "CouchLat", geo.CouchLat),
+            ("Couch Lng", "CouchLng", geo.CouchLng),
+            ("Couch Vrt", "CouchVrt", geo.CouchVrt),
+            ("Max Position Error", "MaxPositionError", geo.CouchMaxPositionError),
+            ("Mean Offset A", "MeanOffsetA", geo.MeanOffsetA),
+            ("Max Offset A", "MaxOffsetA", geo.MaxOffsetA),
+            ("Mean Offset B", "MeanOffsetB", geo.MeanOffsetB),
+            ("Max Offset B", "MaxOffsetB", geo.MaxOffsetB),
+            ("Jaw X1", "JawX1", geo.JawX1),
+            ("Jaw X2", "JawX2", geo.JawX2),
+            ("Jaw Y1", "JawY1", geo.JawY1),
+            ("Jaw Y2", "JawY2", geo.JawY2),
+            ("Parallelism X1", "ParallelismX1", geo.JawParallelismX1),
+            ("Parallelism X2", "ParallelismX2", geo.JawParallelismX2),
+            ("Parallelism Y1", "ParallelismY1", geo.JawParallelismY1),
+            ("Parallelism Y2", "ParallelismY2", geo.JawParallelismY2)
+        };
+
+        foreach (var check in checks)
+        {
+            var threshold = FindThreshold(thresholds, geo.MachineId, check.metricType);
+            if (!IsWithinThreshold(check.value, threshold))
+            {
+                geo.MetricStatuses[check.key] = "FAIL";
+            }
+        }
+
+        // Special handling for leaf arrays (mlc_leaf_position and mlc_backlash keys mapped by frontend)
+        var leafThreshold = FindThreshold(thresholds, geo.MachineId, "mlc_leaf_position");
+        if (leafThreshold.HasValue)
+        {
+            if (geo.MLCLeavesA != null && geo.MLCLeavesA.Values.Any(v => !IsWithinThreshold(v, leafThreshold)))
+                geo.MetricStatuses["mlc_leaf_position"] = "FAIL";
+            if (geo.MLCLeavesB != null && geo.MLCLeavesB.Values.Any(v => !IsWithinThreshold(v, leafThreshold)))
+                geo.MetricStatuses["mlc_leaf_position"] = "FAIL";
+        }
+
+        var backlashThreshold = FindThreshold(thresholds, geo.MachineId, "mlc_backlash");
+        if (backlashThreshold.HasValue)
+        {
+            if (geo.MLCBacklashA != null && geo.MLCBacklashA.Values.Any(v => !IsWithinThreshold(v, backlashThreshold)))
+                geo.MetricStatuses["mlc_backlash"] = "FAIL";
+            if (geo.MLCBacklashB != null && geo.MLCBacklashB.Values.Any(v => !IsWithinThreshold(v, backlashThreshold)))
+                geo.MetricStatuses["mlc_backlash"] = "FAIL";
+        }
     }
 }
 

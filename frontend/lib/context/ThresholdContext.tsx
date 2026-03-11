@@ -1,13 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchThresholds, Threshold } from '../api';
+import { fetchThresholds, fetchBaselines, Threshold, Baseline } from '../api';
 
 interface ThresholdContextType {
     thresholds: Threshold[];
+    baselines: Baseline[];
     loading: boolean;
     error: string | null;
     getThreshold: (machineId: string, checkType: 'geometry' | 'beam', metricType: string, beamVariant?: string) => number | null;
+    getBaseline: (machineId: string, checkType: string, metricType: string, beamVariant?: string) => Baseline | null;
     refreshThresholds: () => Promise<void>;
 }
 
@@ -15,15 +17,20 @@ const ThresholdContext = createContext<ThresholdContextType | undefined>(undefin
 
 export function ThresholdProvider({ children }: { children: React.ReactNode }) {
     const [thresholds, setThresholds] = useState<Threshold[]>([]);
+    const [baselines, setBaselines] = useState<Baseline[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         // Fetch once on mount
-        const loadThresholds = async () => {
+        const loadData = async () => {
             try {
-                const data = await fetchThresholds();
-                setThresholds(data);
+                const [thresholdData, baselineData] = await Promise.all([
+                    fetchThresholds(),
+                    fetchBaselines().catch(() => [] as Baseline[]), // Gracefully handle if baselines endpoint isn't available
+                ]);
+                setThresholds(thresholdData);
+                setBaselines(baselineData);
             } catch (err) {
                 console.error('Failed to load thresholds', err);
                 setError('Failed to load thresholds');
@@ -32,7 +39,7 @@ export function ThresholdProvider({ children }: { children: React.ReactNode }) {
             }
         };
 
-        loadThresholds();
+        loadData();
     }, []);
 
     const getThreshold = (
@@ -64,11 +71,41 @@ export function ThresholdProvider({ children }: { children: React.ReactNode }) {
         return match ? match.value ?? null : null;
     };
 
+    const getBaseline = (
+        machineId: string,
+        checkType: string,
+        metricType: string,
+        beamVariant?: string
+    ): Baseline | null => {
+        const normalizedMetric = metricType.toLowerCase();
+
+        let match = baselines.find(b =>
+            b.machineId === machineId &&
+            b.checkType === checkType &&
+            b.metricType.toLowerCase() === normalizedMetric &&
+            (!beamVariant || b.beamVariant === beamVariant)
+        );
+
+        if (!match && !beamVariant) {
+            match = baselines.find(b =>
+                b.machineId === machineId &&
+                b.checkType === checkType &&
+                b.metricType.toLowerCase() === normalizedMetric
+            );
+        }
+
+        return match ?? null;
+    };
+
     const refreshThresholds = async () => {
         setLoading(true);
         try {
-            const data = await fetchThresholds();
-            setThresholds(data);
+            const [thresholdData, baselineData] = await Promise.all([
+                fetchThresholds(),
+                fetchBaselines().catch(() => [] as Baseline[]),
+            ]);
+            setThresholds(thresholdData);
+            setBaselines(baselineData);
             setError(null);
         } catch (err) {
             console.error('Failed to refresh thresholds', err);
@@ -79,7 +116,7 @@ export function ThresholdProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <ThresholdContext.Provider value={{ thresholds, loading, error, getThreshold, refreshThresholds }}>
+        <ThresholdContext.Provider value={{ thresholds, baselines, loading, error, getThreshold, getBaseline, refreshThresholds }}>
             {children}
         </ThresholdContext.Provider>
     );

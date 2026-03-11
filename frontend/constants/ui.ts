@@ -119,10 +119,10 @@ export const GRAPH_CONSTANTS = {
   DEFAULT_THRESHOLD_COLOR: '#fef3c7',
   DEFAULT_THRESHOLD_PERCENT: 16.67,
   Y_AXIS_DOMAINS: {
-    OUTPUT_CHANGE: [-6, 6],
-    UNIFORMITY_CHANGE: [-5, 5],
-    CENTER_SHIFT: [-4, 4],
-    DEFAULT: [-6, 6],
+    OUTPUT_CHANGE: [-1, 1],
+    UNIFORMITY_CHANGE: [-1, 1],
+    CENTER_SHIFT: [-1, 1],
+    DEFAULT: [-1, 1],
   },
 } as const;
 

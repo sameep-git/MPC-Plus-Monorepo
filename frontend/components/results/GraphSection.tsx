@@ -25,6 +25,7 @@ import { getDefaultDomainForMetric } from '../../lib/services/graphService';
 import { getMetricKey } from '../../lib/transformers/resultTransformers';
 import type { GraphDataPoint } from '../../models/Graph';
 import { generateGraphData } from '../../lib/services/graphService';
+import { useThresholds } from '../../lib/context/ThresholdContext';
 
 interface GraphSectionProps {
     data: GraphDataPoint[];
@@ -33,6 +34,9 @@ interface GraphSectionProps {
     onClearMetrics: () => void;
     onClose: () => void;
     availableMetrics: string[];
+    machineId?: string;
+    checkType?: 'beam' | 'geometry';
+    beamVariant?: string;
 }
 
 export const GraphSection: React.FC<GraphSectionProps> = ({
@@ -42,7 +46,11 @@ export const GraphSection: React.FC<GraphSectionProps> = ({
     onClearMetrics,
     onClose,
     availableMetrics,
+    machineId,
+    checkType,
+    beamVariant,
 }) => {
+    const { getThreshold } = useThresholds();
     // Local state for settings provided here for simplicity, or passed as props if needed to shift up
     // In the original file, these were state in Page. For now, we'll read direct or use props.
     // To avoid prop drilling hell, reading settings directly here is acceptable if they are global/local storage based.
@@ -173,8 +181,60 @@ export const GraphSection: React.FC<GraphSectionProps> = ({
         return [domainMin, domainMax];
     }, [chartData, selectedMetrics]);
 
+    // Threshold computation: use DB threshold values when exactly 1 metric is selected
+    const thresholdBands = useMemo(() => {
+        // Only show threshold bands when exactly 1 metric is selected and we have machine context
+        if (selectedMetrics.size !== 1 || !machineId || !checkType) {
+            return null;
+        }
 
+        const metricName = Array.from(selectedMetrics)[0];
+        // Extract the base metric type name (remove beam type suffix like " (6x)")
+        let metricType = metricName;
+        const parenMatch = metricName.match(/^(.+?)\s*\(/);
+        if (parenMatch) {
+            metricType = parenMatch[1].trim();
+        }
+
+        const thresholdValue = getThreshold(machineId, checkType, metricType, beamVariant);
+
+        if (thresholdValue === null) {
+            // No threshold configured — fall back to percentage-based display
+            const [min, max] = yAxisDomain;
+            const range = max - min;
+            if (range <= 0) return { topThreshold: max, bottomThreshold: min, min, max, thresholdValue: null };
+
+            return {
+                topThreshold: max - (range * graphThresholdSettings.topPercent) / 100,
+                bottomThreshold: min + (range * graphThresholdSettings.bottomPercent) / 100,
+                min,
+                max,
+                thresholdValue: null,
+            };
+        }
+
+        // Use the actual threshold value: band is [-threshold, +threshold]
+        const [min, max] = yAxisDomain;
+        return {
+            topThreshold: thresholdValue,
+            bottomThreshold: -thresholdValue,
+            min,
+            max,
+            thresholdValue,
+        };
+    }, [selectedMetrics, machineId, checkType, beamVariant, getThreshold, yAxisDomain, graphThresholdSettings]);
+
+    // Fallback threshold computation for when we have no machineId/checkType (or multiple metrics)
     const { topThreshold, bottomThreshold, min: thresholdMin, max: thresholdMax } = useMemo(() => {
+        if (thresholdBands) {
+            return {
+                topThreshold: thresholdBands.topThreshold,
+                bottomThreshold: thresholdBands.bottomThreshold,
+                min: thresholdBands.min,
+                max: thresholdBands.max,
+            };
+        }
+
         const [min, max] = yAxisDomain;
         const range = max - min;
 
@@ -191,7 +251,7 @@ export const GraphSection: React.FC<GraphSectionProps> = ({
         const bottomThreshold = min + (range * graphThresholdSettings.bottomPercent) / 100;
 
         return { topThreshold, bottomThreshold, min, max };
-    }, [graphThresholdSettings.bottomPercent, graphThresholdSettings.topPercent, yAxisDomain]);
+    }, [thresholdBands, graphThresholdSettings.bottomPercent, graphThresholdSettings.topPercent, yAxisDomain]);
 
     const getMetricColor = (index: number): string => {
         return GRAPH_CONSTANTS.METRIC_COLORS[index % GRAPH_CONSTANTS.METRIC_COLORS.length];
@@ -343,22 +403,53 @@ export const GraphSection: React.FC<GraphSectionProps> = ({
                             }}
                             formatter={(value: number) => value.toFixed(3)}
                         />
-                        <>
-                            {/* Top threshold shading */}
-                            <ReferenceArea
-                                y1={topThreshold}
-                                y2={thresholdMax}
-                                fill={graphThresholdSettings.color}
-                                fillOpacity={0.3}
-                            />
-                            {/* Bottom threshold shading */}
-                            <ReferenceArea
-                                y1={thresholdMin}
-                                y2={bottomThreshold}
-                                fill={graphThresholdSettings.color}
-                                fillOpacity={0.3}
-                            />
-                        </>
+                        {selectedMetrics.size <= 1 && (
+                            <>
+                                {/* Top threshold shading */}
+                                <ReferenceArea
+                                    y1={topThreshold}
+                                    y2={thresholdMax}
+                                    fill={graphThresholdSettings.color}
+                                    fillOpacity={0.3}
+                                />
+                                {/* Bottom threshold shading */}
+                                <ReferenceArea
+                                    y1={thresholdMin}
+                                    y2={bottomThreshold}
+                                    fill={graphThresholdSettings.color}
+                                    fillOpacity={0.3}
+                                />
+                                {/* Threshold reference lines when using DB thresholds */}
+                                {thresholdBands?.thresholdValue !== null && thresholdBands?.thresholdValue !== undefined && (
+                                    <>
+                                        <ReferenceLine
+                                            y={thresholdBands.thresholdValue}
+                                            stroke="#ef4444"
+                                            strokeWidth={1}
+                                            strokeDasharray="6 3"
+                                            label={{
+                                                value: `+${thresholdBands.thresholdValue.toFixed(2)}`,
+                                                position: 'right',
+                                                fill: '#ef4444',
+                                                fontSize: 10,
+                                            }}
+                                        />
+                                        <ReferenceLine
+                                            y={-thresholdBands.thresholdValue}
+                                            stroke="#ef4444"
+                                            strokeWidth={1}
+                                            strokeDasharray="6 3"
+                                            label={{
+                                                value: `-${thresholdBands.thresholdValue.toFixed(2)}`,
+                                                position: 'right',
+                                                fill: '#ef4444',
+                                                fontSize: 10,
+                                            }}
+                                        />
+                                    </>
+                                )}
+                            </>
+                        )}
                         {baselineComputation.hasNumericBaseline && (
                             <ReferenceLine
                                 y={0}

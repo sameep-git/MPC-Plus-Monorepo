@@ -148,4 +148,11 @@ public class GeoCheck
 
     /// <summary>ID of the beam variant (e.g. 6xff).</summary>
     public Guid? BeamVariantId { get; set; }
+
+    /// <summary>
+    /// Dictionary of metric statuses (e.g. PASS, FAIL) computed against thresholds.
+    /// Used by the frontend to display individual metric pass/fail badges.
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public Dictionary<string, string>? MetricStatuses { get; set; }
 }

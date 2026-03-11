@@ -34,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBeamRepository, BeamRepository>();
         services.AddScoped<IGeoCheckRepository, GeoCheckRepository>();
         services.AddScoped<IThresholdRepository, ThresholdRepository>();
+        services.AddScoped<IBaselineRepository, BaselineRepository>();
         services.AddScoped<IUpdateRepository, UpdateRepository>();
         services.AddScoped<IDocFactorRepository, DocFactorRepository>();
 
