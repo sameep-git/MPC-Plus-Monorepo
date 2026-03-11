@@ -48,7 +48,9 @@ from src.data_manipulation.ETL.DataProcessor import DataProcessor
 # --- CSV DATA PATHS ---
 CSV_PATH_6E = r"data/csv_data/NDS-WKS-SN6543-2025-09-18-08-06-01-0004-BeamCheckTemplate6e"
 CSV_PATH_9E = r"data/csv_data/NDS-WKS-SN6543-2025-09-18-08-06-01-0005-BeamCheckTemplate9e"
-CSV_PATH_12E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0006-BeamCheckTemplate12e"
+#CSV_PATH_12E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0006-BeamCheckTemplate12e"
+#CSV_PATH_12E = r"data/csv_data/Synthetic_12e/SYN-WKS-SN6543-2025-09-25-08-06-01-0006-BeamCheckTemplate12e"
+CSV_PATH_12E = r"data/csv_data/Synthetic_12e/SYN-WKS-SN6543-2025-09-29-08-06-01-0006-BeamCheckTemplate12e"
 CSV_PATH_16E = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
 #CSV_PATH_16E = r"E:/MPC Data/Arlington/NDS-WKS-SN5512-2025-11-17-07-33-14-0007-BeamCheckTemplate16e"
 #CSV_PATH_16E = r"E:/MPC Data/Weatherford/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
@@ -60,7 +62,8 @@ CSV_PATH_GEO = r"data/csv_data/NDS-WKS-SN6543-2025-09-19-07-41-49-0008-GeometryC
 # --- XML DATA PATHS ---
 XML_PATH_6E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0004-BeamCheckTemplate6e"
 XML_PATH_9E = r"data/xml_data/Placeholder_9e"
-XML_PATH_12E = r"data/xml_data/Placeholder_12e"
+#XML_PATH_12E = r"data/csv_data/Synthetic_12e/SYN-XML-SN6523-2025-09-26-09-29-17-0007-BeamCheckTemplate12e"
+XML_PATH_12E = r"data/csv_data/Synthetic_12e/SYN-XML-SN6543-2025-09-26-06-08-23-0007-BeamCheckTemplate12e"
 XML_PATH_16E = r"data/xml_only/NDS-WKS-SN6543-2025-09-19-07-41-49-0007-BeamCheckTemplate16e"
 XML_PATH_2_5X = r"data/xml_only/NDS-WKS-SN7018-2025-09-17-06-06-54-0000-BeamCheckTemplate2.5x"
 XML_PATH_10X = r"data/xml_data/Placeholder_10x"

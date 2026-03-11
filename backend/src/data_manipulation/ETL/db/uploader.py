@@ -104,6 +104,21 @@ class Uploader:
             
         return self.db_adapter.get_beam_variants()
 
+    def get_recent_flood_image_paths(self, machine_id, beam_type, before_timestamp, limit=5):
+        """
+                Fetch recent flood image paths/URLs from the adapter for a given machine and beam type.
+        Args:
+            machine_id: Identifier of the machine for which to retrieve flood images.
+            beam_type: Type of beam (e.g. electron, x-ray) associated with the flood images.
+            before_timestamp: Only flood images created before this timestamp will be returned.
+            limit: Maximum number of flood image paths/URLs to return.
+        """
+        if not self.connected:
+            logger.error("Not connected to database. Call connect() first.")
+            return []
+            
+        return self.db_adapter.get_recent_flood_image_paths(machine_id, beam_type, before_timestamp, limit)
+
     def _upload_baseline_metrics(self, model, check_type: str):
         """
         Upload baseline data as individual metric records to the baseline table.
@@ -304,6 +319,7 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                    flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                     
                     horizontal_profile = None
                     if hasattr(eBeam, 'get_horizontal_profile_graph'):
@@ -319,7 +335,8 @@ class Uploader:
                         base_folder_path=base_folder_path,
                         beam_image=beam_image,
                         horizontal_profile=horizontal_profile,
-                        vertical_profile=vertical_profile
+                        vertical_profile=vertical_profile,
+                        flood_image=flood_image
                     )
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
@@ -367,6 +384,7 @@ class Uploader:
                     
                     # Get images from the model
                     beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                    flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                     horizontal_profile = xBeam.get_horizontal_profile_graph() if hasattr(xBeam, 'get_horizontal_profile_graph') else None
                     vertical_profile = xBeam.get_vertical_profile_graph() if hasattr(xBeam, 'get_vertical_profile_graph') else None
                     
@@ -376,7 +394,8 @@ class Uploader:
                         base_folder_path=base_folder_path,
                         beam_image=beam_image,
                         horizontal_profile=horizontal_profile,
-                        vertical_profile=vertical_profile
+                        vertical_profile=vertical_profile,
+                        flood_image=flood_image
                     )
                 
                 # Prepare data dictionary using model getters, matching the beam table schema
@@ -506,6 +525,7 @@ class Uploader:
             if image_model:
                 base_folder_path = self._generate_image_folder_path(geoModel)
                 beam_image = image_model.get_image() if hasattr(image_model, 'get_image') else None
+                flood_image = image_model.get_flood_image() if hasattr(image_model, 'get_flood_image') else None
                 horizontal_profile = geoModel.get_horizontal_profile_graph() if hasattr(geoModel, 'get_horizontal_profile_graph') else None
                 vertical_profile = geoModel.get_vertical_profile_graph() if hasattr(geoModel, 'get_vertical_profile_graph') else None
                 image_urls = self.db_adapter.upload_beam_images(
@@ -513,7 +533,8 @@ class Uploader:
                     base_folder_path=base_folder_path,
                     beam_image=beam_image,
                     horizontal_profile=horizontal_profile,
-                    vertical_profile=vertical_profile
+                    vertical_profile=vertical_profile,
+                    flood_image=flood_image
                 )
 
             beam_data = {

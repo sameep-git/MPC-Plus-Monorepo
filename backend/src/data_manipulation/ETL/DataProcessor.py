@@ -3,7 +3,9 @@ from pylinac.core.image import XIM
 import logging
 import re
 from pathlib import Path
+import numpy as np
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 from src.data_manipulation.ETL.extractors.csv_data_extractor import csv_data_extractor
 from src.data_manipulation.ETL.image.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
@@ -115,16 +117,23 @@ class DataProcessor:
         image.set_machine_SN(image._getSNFromPathName(self.image_path))
         image.set_image_name(image.generate_image_name())
         image.set_image(XIM(image.get_path()))
-        #Image path has suffix "BeamProfileCheck.xim", remove and add "Flood" and "Dark" to get flood and dark image paths
-        image.set_flood_image_path(
-            image.get_path().replace("BeamProfileCheck.xim", "Floodfield-Raw.xim")
-            )
+        # Attempt to find the flood image. Try user-specified "flood-field.xim" first, then fallback to "Floodfield-Raw.xim"
+        flood_path = image.get_path().replace("BeamProfileCheck.xim", "flood-field.xim")
+        if not os.path.exists(flood_path):
+            flood_path = image.get_path().replace("BeamProfileCheck.xim", "Floodfield-Raw.xim")
+        
+        image.set_flood_image_path(flood_path)
+        if os.path.exists(image.get_flood_image_path()):
+            image.set_flood_image(XIM(image.get_flood_image_path()))
+            
+        # Retrieve recent floods for gain map construction
+        past_floods = self._get_recent_floods(image, limit=5)
         image.set_dark_image_path(
             image.get_path().replace("BeamProfileCheck.xim", "Offset.dat")
             )
         #Process the image (Get flatness and symmetry from Pilinac FieldAnalysis)
         if is_test: logger.info("Processing test image in image_extractor.py")
-        self.image_ex.process_image(image, is_test)
+        self.image_ex.process_image(image, past_floods, is_test)
         #self.image_ex.process_image(image.get_path(), image.get_dark_image_path(), image.get_flood_image_path(), is_test)
         image.convert_XIM_to_PNG()
         if is_test: 
@@ -132,6 +141,43 @@ class DataProcessor:
             logger.info("Image Name: %s", image.get_image_name())
 
         return image
+
+    def _get_recent_floods(self, image, limit: int = 5) -> list:
+        """
+        Retrieves the 'limit' most recent flood images for the machine/beam type.
+        Returns a list of NumPy arrays. Prioritizes .npy (RAW) files over PNG.
+        """
+        past_floods = []
+        try:
+            # Current flood is the first in the "stack"
+            if image.get_flood_image() is not None:
+                past_floods.append(np.array(image.get_flood_image(), dtype=np.float64))
+            
+            # Query DB for up to (limit-1) more recent ones
+            recent_data = self.up.get_recent_flood_image_paths(
+                image.get_machine_SN(), 
+                image.get_type(), 
+                image.get_date(), 
+                limit=limit-1
+            )
+            
+            # recent_data is a list of tuples: (png_url, npy_url_or_none)
+            for png_url, npy_url in recent_data:
+                loaded = False
+                
+                # 1. Try RAW NPY first
+                if npy_url:
+                    abs_path = self.up.db_adapter.resolve_url_to_path(npy_url)
+                    if abs_path and os.path.exists(abs_path):
+                        past_floods.append(np.load(abs_path).astype(np.float64))
+                        logger.info(f"Flood[{len(past_floods)-1}] Loaded RAW (.npy) flood from: {abs_path}")
+                        loaded = True
+                    
+            logger.info(f"Using {len(past_floods)} floods for gain map construction")
+        except Exception as e:
+            logger.error(f"Error retrieving past floods: {e}")
+            
+        return past_floods
 
     def _get_dynamic_beam_map(self, is_test=False):
         """

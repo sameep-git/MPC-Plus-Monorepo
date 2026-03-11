@@ -320,7 +320,8 @@ class PostgresAdapter(DatabaseAdapter):
     def upload_beam_images(self, bucket_name: str, base_folder_path: str, 
                           beam_image: Optional[np.ndarray] = None,
                           horizontal_profile: Optional[Any] = None,
-                          vertical_profile: Optional[Any] = None) -> Optional[Dict[str, str]]:
+                          vertical_profile: Optional[Any] = None,
+                          flood_image: Optional[np.ndarray] = None) -> Optional[Dict[str, str]]:
         
         full_path = os.path.join(self.storage_root, base_folder_path)
         os.makedirs(full_path, exist_ok=True)
@@ -335,6 +336,12 @@ class PostgresAdapter(DatabaseAdapter):
                     with open(file_path, "wb") as f:
                         f.write(b_bytes)
                     image_urls["beamImage"] = f"{self.base_url}/{base_folder_path}/beamImage.png"
+            
+            if flood_image is not None:
+                # Save RAW data as .npy to preserve bit depth for future gain map calculations
+                npy_path = os.path.join(full_path, "floodImage_raw.npy")
+                np.save(npy_path, flood_image)
+                image_urls["floodImage_raw"] = f"{self.base_url}/{base_folder_path}/floodImage_raw.npy"
             
             if horizontal_profile is not None:
                 b_bytes = self._matplotlib_figure_to_png_bytes(horizontal_profile)
@@ -360,6 +367,64 @@ class PostgresAdapter(DatabaseAdapter):
         except Exception as e:
             logger.error(f"Error saving images to disk: {e}", exc_info=True)
             return None
+
+    def get_recent_flood_image_paths(self, machine_id: str, beam_type: str, 
+                                     before_timestamp: Any, limit: int = 5) -> list:
+        """
+        Fetch the paths of the most recent flood images for a given machine and beam type
+        that occurred BEFORE the provided timestamp.
+        """
+        if not self.connected or not self.conn:
+            return []
+            
+        try:
+            with self.conn.cursor() as cur:
+                # Query the beams table for records matching machine_id and type
+                # that are strictly older than before_timestamp.
+                # Extract both 'floodImage' (PNG) and 'floodImage_raw' (NPY) paths.
+                query = """
+                    SELECT 
+                        image_paths->>'floodImage',
+                        image_paths->>'floodImage_raw'
+                    FROM beams 
+                    WHERE machine_id = %s 
+                      AND type = %s 
+                      AND timestamp < %s 
+                      AND (image_paths->>'floodImage' IS NOT NULL OR image_paths->>'floodImage_raw' IS NOT NULL)
+                    ORDER BY timestamp DESC 
+                    LIMIT %s
+                """
+                cur.execute(query, (machine_id, beam_type, before_timestamp, limit))
+                rows = cur.fetchall()
+                # Return a list of tuples (png_path, npy_path)
+                return [(row[0], row[1]) for row in rows]
+        except Exception as e:
+            logger.error(f"Error fetching recent flood image paths: {e}")
+            return []
+
+    def resolve_url_to_path(self, url: str) -> Optional[str]:
+        """
+        Resolve a stored URL/relative path to a local absolute filesystem path.
+        Handles the storage_root and base_url conventions used by this adapter.
+        """
+        if not url:
+            return None
+        
+        # Replace the base_url prefix if present
+        # e.g., "/images/SN6543/..." -> "SN6543/..."
+        clean_rel = url
+        if self.base_url and clean_rel.startswith(self.base_url):
+            clean_rel = clean_rel[len(self.base_url):]
+        
+        # Remove leading slash if any
+        if clean_rel.startswith("/") or clean_rel.startswith("\\"):
+            clean_rel = clean_rel[1:]
+            
+        # Normalize slashes for the current OS
+        clean_rel = clean_rel.replace("/", os.sep).replace("\\", os.sep)
+        
+        # Join with storage_root
+        return os.path.join(self.storage_root, clean_rel)
 
     def close(self):
         if self.conn:

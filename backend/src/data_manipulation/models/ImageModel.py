@@ -9,6 +9,7 @@ class ImageModel(AbstractBeamModel):
         self._flatness_horizontal = None
         self._flatness_vertical = None
         self._flood_image_path = None
+        self._flood_image = None
         self._dark_image_path = None
         self._flatness_graph = None
         self._symmetry_graph = None
@@ -24,6 +25,9 @@ class ImageModel(AbstractBeamModel):
     def get_flood_image_path(self):
         return self._flood_image_path
 
+    def get_flood_image(self):
+        return self._flood_image
+
     def get_dark_image_path(self):
         return self._dark_image_path
     
@@ -37,6 +41,9 @@ class ImageModel(AbstractBeamModel):
 
     def set_flood_image_path(self, flood_image_path):
         self._flood_image_path = flood_image_path
+
+    def set_flood_image(self, flood_image):
+        self._flood_image = flood_image
 
     def set_dark_image_path(self, dark_image_path):
         self._dark_image_path = dark_image_path
@@ -78,5 +85,10 @@ class ImageModel(AbstractBeamModel):
 
         # Store the converted image for downstream field analysis and DB storage
         self.set_image(png_array)
+
+        # Also convert flood-field image if it exists
+        flood_xim = self.get_flood_image()
+        if flood_xim is not None:
+             self.set_flood_image(np.asarray(flood_xim))
 
 

@@ -6,7 +6,7 @@ Implementations should provide concrete methods for connecting and uploading dat
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class DatabaseAdapter(ABC):
@@ -50,6 +50,43 @@ class DatabaseAdapter(ABC):
         
         Returns:
             list: List of beam variant strings (e.g., ['6e', '10x'])
+        """
+        pass
+
+    @abstractmethod
+    def upload_beam_images(
+        self, 
+        bucket_name: str, 
+        base_folder_path: str, 
+        beam_image: Any = None,
+        horizontal_profile: Any = None,
+        vertical_profile: Any = None,
+        flood_image: Any = None
+    ) -> Dict[str, str]:
+        """Upload images associated with a beam."""
+        pass
+
+    @abstractmethod
+    def get_recent_flood_image_paths(
+        self, 
+        machine_id: str, 
+        beam_type: str, 
+        before_timestamp: Any, 
+        limit: int = 5
+    ) -> list:
+        """Fetch paths of recent flood images from the database."""
+        pass
+
+    @abstractmethod
+    def resolve_url_to_path(self, url: str) -> Optional[str]:
+        """
+        Resolve a stored URL/relative path to a local absolute filesystem path.
+        
+        Args:
+            url: The URL or relative path to resolve.
+            
+        Returns:
+            Optional[str]: Absolute filesystem path, or None if it cannot be resolved.
         """
         pass
 
