@@ -370,6 +370,38 @@ class PostgresAdapter(DatabaseAdapter):
             logger.error(f"Error saving images to disk: {e}", exc_info=True)
             return None
 
+    def get_recent_flood_image_paths(self, machine_id: str, beam_type: str, 
+                                     before_timestamp: Any, limit: int = 5) -> list:
+        """
+        Fetch the paths of the most recent flood images for a given machine and beam type
+        that occurred BEFORE the provided timestamp.
+        """
+        if not self.connected or not self.conn:
+            return []
+            
+        try:
+            with self.conn.cursor() as cur:
+                # Query the beams table for records matching machine_id and type
+                # that are strictly older than before_timestamp.
+                # Extract the 'floodImage' path from the image_paths JSONB column.
+                query = """
+                    SELECT image_paths->>'floodImage' 
+                    FROM beams 
+                    WHERE machine_id = %s 
+                      AND type = %s 
+                      AND timestamp < %s 
+                      AND image_paths->>'floodImage' IS NOT NULL
+                    ORDER BY timestamp DESC 
+                    LIMIT %s
+                """
+                cur.execute(query, (machine_id, beam_type, before_timestamp, limit))
+                rows = cur.fetchall()
+                # Filter out any None values and return the list of paths
+                return [row[0] for row in rows if row[0]]
+        except Exception as e:
+            logger.error(f"Error fetching recent flood image paths: {e}")
+            return []
+
     def close(self):
         if self.conn:
             self.conn.close()

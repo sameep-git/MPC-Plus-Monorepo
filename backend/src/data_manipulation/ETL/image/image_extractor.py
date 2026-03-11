@@ -31,24 +31,24 @@ class image_extractor:
     # ==========================================================
     # MAIN ENTRY
     # ==========================================================
-    def process_image(self, imageModel, is_test=False):
+    def process_image(self, imageModel, recent_floods=None, is_test=False):
 
-        clinical_path = imageModel.get_path()
+        #clinical_path = imageModel.get_path()
         dark_path = imageModel.get_dark_image_path()
-        flood_path = imageModel.get_flood_image_path()
+        #flood_path = imageModel.get_flood_image_path()
 
         # ------------------------------------------------------
         # Load images
         # ------------------------------------------------------
         clinical_raw = np.array(imageModel.get_image(), dtype=np.float64)
         dark = np.array(XIM(dark_path), dtype=np.float64)
-        flood_raw = np.array(XIM(flood_path), dtype=np.float64)
+        # flood_raw = np.array(imageModel.get_flood_image(), dtype=np.float64)
 
         # ------------------------------------------------------
-        # Build Gain Map (single-flood version)
+        # Build Gain Map (multi-flood version)
         # ------------------------------------------------------
         gain_map, bad_pixel_mask = self.build_gain_map(
-            flood_raw=flood_raw,
+            flood_stack=recent_floods,
             dark=dark,
             kernel_size=75,
             clip_low=0.7,
@@ -105,7 +105,7 @@ class image_extractor:
     # ==========================================================
     def build_gain_map(
         self,
-        flood_raw,
+        flood_stack,
         dark,
         kernel_size=75,
         clip_low=0.7,
@@ -113,8 +113,18 @@ class image_extractor:
         field_fraction=0.8
     ):
 
-        # Step 1: Dark subtract flood
-        flood_net = flood_raw - dark
+        # Step 1: Dark subtract floods and compute master median flood
+        if not flood_stack:
+             raise ValueError("No flood images provided for gain map construction")
+             
+        # F_net[i] = F_raw[i] - Dark
+        net_floods = [f - dark for f in flood_stack]
+        
+        # F_master = Pixel-wise median across stack
+        if len(net_floods) > 1:
+            flood_net = np.median(np.stack(net_floods), axis=0)
+        else:
+            flood_net = net_floods[0]
 
         # Step 2: Beam shape estimate via large-kernel median filter
         beam_shape = median_filter(flood_net, size=kernel_size)

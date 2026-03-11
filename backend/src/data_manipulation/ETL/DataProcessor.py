@@ -4,6 +4,7 @@ import logging
 import re
 from pathlib import Path
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 from src.data_manipulation.ETL.extractors.csv_data_extractor import csv_data_extractor
 from src.data_manipulation.ETL.image.image_extractor import image_extractor
 from src.data_manipulation.ETL.Uploader import Uploader
@@ -124,12 +125,15 @@ class DataProcessor:
         if os.path.exists(image.get_flood_image_path()):
             image.set_flood_image(XIM(image.get_flood_image_path()))
             
+        # Retrieve recent floods for gain map construction
+        past_floods = self._get_recent_floods(image, limit=5)
+
         image.set_dark_image_path(
             image.get_path().replace("BeamProfileCheck.xim", "Offset.dat")
             )
         #Process the image (Get flatness and symmetry from Pilinac FieldAnalysis)
         if is_test: logger.info("Processing test image in image_extractor.py")
-        self.image_ex.process_image(image, is_test)
+        self.image_ex.process_image(image, past_floods, is_test)
         #self.image_ex.process_image(image.get_path(), image.get_dark_image_path(), image.get_flood_image_path(), is_test)
         image.convert_XIM_to_PNG()
         if is_test: 
@@ -137,6 +141,44 @@ class DataProcessor:
             logger.info("Image Name: %s", image.get_image_name())
 
         return image
+
+    def _get_recent_floods(self, image, limit: int = 5) -> list:
+        """
+        Retrieves the 'limit' most recent flood images for the machine/beam type.
+        Returns a list of NumPy arrays.
+        """
+        past_floods = []
+        try:
+            # Current flood is the first in the "stack"
+            if image.get_flood_image() is not None:
+                past_floods.append(np.array(image.get_flood_image(), dtype=np.float64))
+            
+            # Query DB for up to (limit-1) more recent ones
+            recent_paths = self.up.get_recent_flood_image_paths(
+                image.get_machine_SN(), 
+                image.get_type(), 
+                image.get_date(), 
+                limit=limit-1
+            )
+            
+            # Paths come back as URLs like "/images/SN6543/20250919/12e/124149/floodImage.png"
+            # We need to map them back to the local storage root
+            storage_root = self.up.db_adapter.storage_root
+            for rel_path in recent_paths:
+                # rel_path = "/images/sub/path/to/image.png"
+                # Strip leading "/images" and join with storage_root
+                clean_rel = rel_path.replace("/images/", "").replace("/", os.sep)
+                abs_path = os.path.join(storage_root, clean_rel)
+                
+                if os.path.exists(abs_path):
+                    # These are already PNGs on disk (saved in previous uploads)
+                    past_floods.append(np.array(plt.imread(abs_path), dtype=np.float64))
+                    
+            logger.info(f"Using {len(past_floods)} floods for gain map construction")
+        except Exception as e:
+            logger.error(f"Error retrieving past floods: {e}")
+            
+        return past_floods
 
     def _get_dynamic_beam_map(self, is_test=False):
         """

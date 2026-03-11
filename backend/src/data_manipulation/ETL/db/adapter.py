@@ -67,6 +67,17 @@ class DatabaseAdapter(ABC):
         pass
 
     @abstractmethod
+    def get_recent_flood_image_paths(
+        self, 
+        machine_id: str, 
+        beam_type: str, 
+        before_timestamp: Any, 
+        limit: int = 5
+    ) -> list:
+        """Fetch paths of recent flood images from the database."""
+        pass
+
+    @abstractmethod
     def close(self):
         """Close the database connection."""
         pass

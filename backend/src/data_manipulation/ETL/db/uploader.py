@@ -104,6 +104,16 @@ class Uploader:
             
         return self.db_adapter.get_beam_variants()
 
+    def get_recent_flood_image_paths(self, machine_id, beam_type, before_timestamp, limit=5):
+        """
+        Fetch the list of valid beam variants using the adapter.
+        """
+        if not self.connected:
+            logger.error("Not connected to database. Call connect() first.")
+            return []
+            
+        return self.db_adapter.get_recent_flood_image_paths(machine_id, beam_type, before_timestamp, limit)
+
     def _upload_baseline_metrics(self, model, check_type: str):
         """
         Upload baseline data as individual metric records to the baseline table.
