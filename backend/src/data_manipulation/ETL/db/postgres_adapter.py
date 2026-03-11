@@ -402,6 +402,30 @@ class PostgresAdapter(DatabaseAdapter):
             logger.error(f"Error fetching recent flood image paths: {e}")
             return []
 
+    def resolve_url_to_path(self, url: str) -> Optional[str]:
+        """
+        Resolve a stored URL/relative path to a local absolute filesystem path.
+        Handles the storage_root and base_url conventions used by this adapter.
+        """
+        if not url:
+            return None
+        
+        # Replace the base_url prefix if present
+        # e.g., "/images/SN6543/..." -> "SN6543/..."
+        clean_rel = url
+        if self.base_url and clean_rel.startswith(self.base_url):
+            clean_rel = clean_rel[len(self.base_url):]
+        
+        # Remove leading slash if any
+        if clean_rel.startswith("/") or clean_rel.startswith("\\"):
+            clean_rel = clean_rel[1:]
+            
+        # Normalize slashes for the current OS
+        clean_rel = clean_rel.replace("/", os.sep).replace("\\", os.sep)
+        
+        # Join with storage_root
+        return os.path.join(self.storage_root, clean_rel)
+
     def close(self):
         if self.conn:
             self.conn.close()

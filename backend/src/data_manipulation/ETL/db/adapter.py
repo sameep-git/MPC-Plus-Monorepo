@@ -6,7 +6,7 @@ Implementations should provide concrete methods for connecting and uploading dat
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class DatabaseAdapter(ABC):
@@ -75,6 +75,19 @@ class DatabaseAdapter(ABC):
         limit: int = 5
     ) -> list:
         """Fetch paths of recent flood images from the database."""
+        pass
+
+    @abstractmethod
+    def resolve_url_to_path(self, url: str) -> Optional[str]:
+        """
+        Resolve a stored URL/relative path to a local absolute filesystem path.
+        
+        Args:
+            url: The URL or relative path to resolve.
+            
+        Returns:
+            Optional[str]: Absolute filesystem path, or None if it cannot be resolved.
+        """
         pass
 
     @abstractmethod

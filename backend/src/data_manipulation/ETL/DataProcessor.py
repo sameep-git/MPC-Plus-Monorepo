@@ -162,15 +162,13 @@ class DataProcessor:
             )
             
             # recent_data is a list of tuples: (png_url, npy_url_or_none)
-            storage_root = self.up.db_adapter.storage_root
             for png_url, npy_url in recent_data:
                 loaded = False
                 
                 # 1. Try RAW NPY first
                 if npy_url:
-                    clean_rel = npy_url.replace("/images/", "").replace("/", os.sep)
-                    abs_path = os.path.join(storage_root, clean_rel)
-                    if os.path.exists(abs_path):
+                    abs_path = self.up.db_adapter.resolve_url_to_path(npy_url)
+                    if abs_path and os.path.exists(abs_path):
                         past_floods.append(np.load(abs_path).astype(np.float64))
                         logger.info(f"Flood[{len(past_floods)-1}] Loaded RAW (.npy) flood from: {abs_path}")
                         loaded = True
