@@ -349,7 +349,9 @@ def _extract_gantry(steps):
 
 def _extract_enhanced_couch(steps):
     """Extract CouchLat, CouchLng, CouchVrt, CouchMaxPositionError, CouchRtnFine, CouchRtnLarge, RotationInducedCouchShiftFullRange."""
-    couch_steps = {tag: step for tag, step in steps.get("EnhancedCouchPosition", [])}
+    couch_steps = {}
+    for tag, step in steps.get("EnhancedCouchPosition", []):
+        couch_steps.setdefault(tag, []).append(step)
     result = {
         "couch_lat": None,
         "couch_lng": None,
@@ -361,8 +363,8 @@ def _extract_enhanced_couch(steps):
     }
     lin_errors = []
     for t in LINEAR_STEP_TAGS:
-        if t in couch_steps:
-            err = _extract_motion_error(couch_steps[t])
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
             if err is not None:
                 lin_errors.append(err)
     if lin_errors:
@@ -374,16 +376,16 @@ def _extract_enhanced_couch(steps):
         )
     fine_errors = []
     for t in FINE_ROTATION_STEP_TAGS:
-        if t in couch_steps:
-            err = _extract_motion_error(couch_steps[t])
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
             if err is not None:
                 fine_errors.append(err)
     if fine_errors:
         result["couch_rtn_fine"] = round(max(abs(e.az) for e in fine_errors), 2)
     large_errors = []
     for t in LARGE_ROTATION_STEP_TAGS:
-        if t in couch_steps:
-            err = _extract_motion_error(couch_steps[t])
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
             if err is not None:
                 large_errors.append(err)
     if large_errors:
