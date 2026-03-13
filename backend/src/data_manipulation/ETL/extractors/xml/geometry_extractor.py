@@ -137,14 +137,14 @@ def _build_step_index(root):
 
 def _wrap_angle(deg):
     """Normalize angle to [-180, +180]."""
-    while deg > 180:
-        deg -= 360
-    while deg < -180:
-        deg += 360
-    return deg
+    return ((deg + 180) % 360) - 180
 
 
 @dataclass
+class MotionError:
+    """Translational (cm) and rotational (deg) error from couch step."""
+
+    x: float
 class MotionError:
     """Translational (cm) and rotational (deg) error from couch step."""
 
