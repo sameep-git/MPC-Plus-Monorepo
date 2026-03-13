@@ -2,54 +2,40 @@
 Geometry Check Extractor - Extracts beam and MLC data from Results.xml.
 
 Reads Varian MPC Results.xml (geometry check), extracts beam profile values,
-center shift, and MLC leaf offsets. Output matches Results.csv format.
-Values not present in XML are returned as N/A.
+center shift, MLC leaf offsets, IsoCenter, Gantry, and EnhancedCouch metrics.
+Output matches Results.csv format. Values not present in XML are returned as N/A.
 
-=============================================================================
-XML STRUCTURE (Results.xml)
-=============================================================================
-
-The XML uses namespaces and xsi:type for polymorphism. Key elements:
-
-1. BEAM PROFILE (BeamProfileCheck)
-   Location: <d2p1:anyType i:type="BeamProfileCheck">
-   Children: <RelativeOutput>, <RelativeUniformity>
-   - RelativeOutput: ratio (e.g. 0.999 → -0.1% output change)
-   - RelativeUniformity: ratio (e.g. 0.001 → 0.1% uniformity change)
-
-2. CENTER SHIFT (JawEdgeCheck)
-   Location: <d2p1:anyType i:type="JawEdgeCheck">
-   Children: <IsoCenter>, <BaselineIsoCenter>
-   Each has <X>, <Y> sub-elements (normalized coordinates).
-   Formula: sqrt((X-X0)² + (Y-Y0)²) × 10 = center shift [mm]
-
-3. MLC LEAF DATA (MLCCheck)
-   Two containers in the XML:
-   - <LeafPairs>: First measurement (MLC position check)
-   - <LeafPairsEx>: Second measurement (used for backlash)
-   Each contains <ArrayOfMLCCheck.LeafPair> with <MLCCheck.LeafPair> entries:
-     <Index>11</Index>           → leaf number (11-50)
-     <LeafOffsetA>0.0099...</LeafOffsetA>  → bank A offset (normalized)
-     <LeafOffsetB>-0.0372...</LeafOffsetB> → bank B offset (normalized)
-
-=============================================================================
-CALCULATIONS (LeafOffset × 10 = value [mm])
-=============================================================================
-
-- MLCLeavesA: LeafPairsEx.LeafOffsetA × 10  (bank A position from 2nd measurement)
-- MLCLeavesB: |LeafPairs.LeafOffsetB| × 10  (bank B position from 1st, abs for positive)
-- MLCBacklashA: |LeafPairsEx.LeafOffsetA - LeafPairs.LeafOffsetA| × 10
-- MLCBacklashB: |LeafPairs.LeafOffsetB - LeafPairsEx.LeafOffsetB| × 10
-
-Summary stats (MLCMaxOffset, MLCMeanOffset, etc.) are max/mean of the leaf values.
+All calculations use the same formulas as mpc_parser.py (XML/mpc_parser.py)
+to ensure consistency with the validated MPC parser. No mpc_parser import.
 """
 
 import os
 import sys
 import math
+import statistics
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from dataclasses import dataclass
 
 NA = "N/A"
+
+# Step tags for EnhancedCouch (from mpc_parser)
+LINEAR_STEP_TAGS = [
+    "EnhancedCouch-Lin_Vrt",
+    "EnhancedCouch-Lin_Lat",
+    "EnhancedCouch-Lin_Lng",
+    "EnhancedCouch-Lin_VrtLatLng1",
+    "EnhancedCouch-Lin_VrtLatLng2",
+]
+FINE_ROTATION_STEP_TAGS = ["EnhancedCouch-Rtn_Fine1", "EnhancedCouch-Rtn_Fine2"]
+LARGE_ROTATION_STEP_TAGS = [
+    "EnhancedCouch-Rtn_Large090",
+    "EnhancedCouch-Rtn_Large135",
+    "EnhancedCouch-Rtn_Large225",
+    "EnhancedCouch-Rtn_Large270",
+]
+
+XSI_TYPE = "{http://www.w3.org/2001/XMLSchema-instance}type"
 
 
 def _tag(elem):
@@ -73,6 +59,52 @@ def _find_text(elem, child_tag):
             except (ValueError, TypeError):
                 return None
     return None
+
+
+def _find_child(elem, local_tag):
+    """Find direct child by local tag name. Returns None if not found."""
+    for child in elem:
+        if _tag(child) == local_tag:
+            return child
+    return None
+
+
+def _find_all_children(elem, local_tag):
+    """Find all direct children with given local tag."""
+    return [c for c in elem if _tag(c) == local_tag]
+
+
+def _get_workspace_root():
+    """
+    Get MPC-Plus workspace root (parent of MPC-Plus-Monorepo).
+    geometry_extractor is at: .../MPC-Plus-Monorepo/backend/.../extractors/xml/
+
+    Resolution strategy (in order):
+    1. Use MPC_PLUS_WORKSPACE_ROOT environment variable if set.
+    2. Walk up to find a directory named 'MPC-Plus-Monorepo' and return its parent.
+    3. Walk up to find a marker directory/file like '.git' or 'pyproject.toml'.
+    4. Fall back to the filesystem root.
+    """
+    # 1. Environment variable override
+    env_root = os.getenv("MPC_PLUS_WORKSPACE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
+
+    current = Path(__file__).resolve()
+
+    # 2. Look for the MPC-Plus-Monorepo directory and return its parent
+    for parent in current.parents:
+        if parent.name == "MPC-Plus-Monorepo":
+            return parent.parent
+
+    # 3. Look for common repository markers
+    marker_names = (".git", "pyproject.toml")
+    for parent in current.parents:
+        if any((parent / marker).exists() for marker in marker_names):
+            return parent
+
+    # 4. Fallback: filesystem root (topmost parent)
+    return current.parents[-1]
 
 
 def is_geometry_folder(folder_path):
@@ -100,15 +132,90 @@ def _resolve_folder_path(folder_path):
     """
     if os.path.exists(folder_path):
         return folder_path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    mpc_plus_dir = os.path.abspath(os.path.join(script_dir, "../../.."))
+    workspace_root = _get_workspace_root()
     for alt in [
-        os.path.join(mpc_plus_dir, folder_path),
-        os.path.join(mpc_plus_dir, "data", "csv_data", folder_path),
+        str(workspace_root / folder_path),
+        str(workspace_root / "data" / "csv_data" / folder_path),
+        str(workspace_root / "MPC-Plus-Monorepo" / "backend" / "data" / "xml_only" / folder_path),
     ]:
         if os.path.exists(alt):
             return alt
     return None
+
+
+def _build_step_index(root):
+    """
+    Index all CompletedSteps by their xsi:type attribute.
+    Returns dict mapping step type (e.g. 'BeamProfileCheck') to list of (tag, element).
+    """
+    steps = {}
+    completed = _find_child(root, "CompletedSteps")
+    if completed is None:
+        return steps
+    for child in completed:
+        stype = child.get(XSI_TYPE, "")
+        tag_el = _find_child(child, "Tag")
+        tag = tag_el.text.strip() if tag_el is not None and tag_el.text else ""
+        steps.setdefault(stype, []).append((tag, child))
+    return steps
+
+
+def _wrap_angle(deg):
+    """Normalize angle to [-180, +180]."""
+    return ((deg + 180) % 360) - 180
+
+
+@dataclass
+class MotionError:
+    """Translational (cm) and rotational (deg) error from couch step."""
+
+    x: float
+class MotionError:
+    """Translational (cm) and rotational (deg) error from couch step."""
+
+    x: float
+    y: float
+    z: float
+    ax: float
+    ay: float
+    az: float
+
+
+def _extract_motion_error(step):
+    """
+    Compute ActualMotion - NominalMotion for EnhancedCouchPosition step.
+    Returns MotionError with x,y,z (cm) and ax,ay,az (deg).
+    """
+    am = _find_child(step, "ActualMotion")
+    nm = _find_child(step, "NominalMotion")
+    if am is None or nm is None:
+        return None
+    amo = _find_child(am, "Origin")
+    nmo = _find_child(nm, "Origin")
+    if amo is None or nmo is None:
+        return None
+    x1 = _find_text(amo, "X")
+    y1 = _find_text(amo, "Y")
+    z1 = _find_text(amo, "Z")
+    x2 = _find_text(nmo, "X")
+    y2 = _find_text(nmo, "Y")
+    z2 = _find_text(nmo, "Z")
+    ax1 = _find_text(am, "AngleX")
+    ay1 = _find_text(am, "AngleY")
+    az1 = _find_text(am, "AngleZ")
+    ax2 = _find_text(nm, "AngleX")
+    ay2 = _find_text(nm, "AngleY")
+    az2 = _find_text(nm, "AngleZ")
+    if any(v is None for v in (x1, y1, z1, x2, y2, z2, ax1, ay1, az1, ax2, ay2, az2)):
+        return None
+    return MotionError(
+        x=x1 - x2,
+        y=y1 - y2,
+        z=z1 - z2,
+        ax=ax1 - ax2,
+        ay=ay1 - ay2,
+        az=az1 - az2,
+    )
 
 
 def _extract_leaf_pairs_from_container(container):
@@ -181,28 +288,150 @@ def _collect_leaf_data(root):
     return leaf_pairs, leaf_pairs_ex
 
 
+def _extract_iso_center(steps):
+    """Extract IsoCenterSize, IsoCenterMVOffset, IsoCenterKVOffset from IsoCal steps."""
+    iso_size = iso_mv = iso_kv = None
+    for _, step in steps.get("IsoCal", []):
+        all_mv = _find_child(step, "AllMVResults")
+        if all_mv is None:
+            continue
+        # KeyValueOfstringIsoCalResultsAsoNrQnM / Value / MaxCentralBeamError
+        kv_pair = _find_child(all_mv, "KeyValueOfstringIsoCalResultsAsoNrQnM")
+        if kv_pair is not None:
+            mv_val = _find_child(kv_pair, "Value")
+            if mv_val is not None:
+                mce = _find_child(mv_val, "MaxCentralBeamError")
+                if mce is not None and mce.text:
+                    iso_size = round(float(mce.text.strip()), 2)
+                # MV frames for IsoCenterMVOffset
+                frames_el = _find_child(mv_val, "Frames")
+                if frames_el is not None:
+                    frames = _find_all_children(frames_el, "IsoCalResults.Frame")
+                    if frames:
+                        radii = []
+                        for f in frames:
+                            px = _find_text(f, "IsocenterProjectionX")
+                            py = _find_text(f, "IsocenterProjectionY")
+                            if px is not None and py is not None:
+                                radii.append(math.sqrt(px**2 + py**2))
+                        if radii:
+                            iso_mv = round(max(radii), 2)
+        # KV frames for IsoCenterKVOffset
+        kv_res = _find_child(step, "KVResults")
+        if kv_res is not None:
+            frames_el = _find_child(kv_res, "Frames")
+            if frames_el is not None:
+                frames = _find_all_children(frames_el, "IsoCalResults.Frame")
+                if frames:
+                    radii = []
+                    for f in frames:
+                        px = _find_text(f, "IsocenterProjectionX")
+                        py = _find_text(f, "IsocenterProjectionY")
+                        if px is not None and py is not None:
+                            radii.append(math.sqrt(px**2 + py**2))
+                    if radii:
+                        iso_kv = round(max(radii), 2)
+        break
+    return iso_size, iso_mv, iso_kv
+
+
+def _extract_gantry(steps):
+    """Extract GantryAbsolute and GantryRelative."""
+    gantry_abs = gantry_rel = None
+    for _, step in steps.get("EnhancedCouchPositionGantryAbsCorrection", []):
+        err_el = _find_child(step, "GantryAbsoluteError")
+        if err_el is not None and err_el.text:
+            gantry_abs = round(-float(err_el.text.strip()), 2)
+        break
+    for _, step in steps.get("IsoCal", []):
+        all_mv = _find_child(step, "AllMVResults")
+        if all_mv is None:
+            continue
+        kv_pair = _find_child(all_mv, "KeyValueOfstringIsoCalResultsAsoNrQnM")
+        if kv_pair is None:
+            continue
+        mv_val = _find_child(kv_pair, "Value")
+        if mv_val is None:
+            continue
+        frames_el = _find_child(mv_val, "Frames")
+        if frames_el is None:
+            continue
+        frames = _find_all_children(frames_el, "IsoCalResults.Frame")
+        deviations = []
+        for f in frames:
+            found = _find_text(f, "FoundSourceAngle")
+            nominal = _find_text(f, "NominalSourceAngle")
+            if found is not None and nominal is not None:
+                deviations.append(_wrap_angle(found - nominal))
+        if deviations:
+            mean_dev = statistics.mean(deviations)
+            residuals = [d - mean_dev for d in deviations]
+            max_res = max(residuals, key=abs)
+            gantry_rel = round(-max_res, 2)
+        break
+    return gantry_abs, gantry_rel
+
+
+def _extract_enhanced_couch(steps):
+    """Extract CouchLat, CouchLng, CouchVrt, CouchMaxPositionError, CouchRtnFine, CouchRtnLarge, RotationInducedCouchShiftFullRange."""
+    couch_steps = {}
+    for tag, step in steps.get("EnhancedCouchPosition", []):
+        couch_steps.setdefault(tag, []).append(step)
+    result = {
+        "couch_lat": None,
+        "couch_lng": None,
+        "couch_vrt": None,
+        "couch_max_position_error": None,
+        "couch_rtn_fine": None,
+        "couch_rtn_large": None,
+        "rotation_induced_couch_shift_full_range": None,
+    }
+    lin_errors = []
+    for t in LINEAR_STEP_TAGS:
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
+            if err is not None:
+                lin_errors.append(err)
+    if lin_errors:
+        result["couch_lat"] = round(max(abs(e.x) for e in lin_errors) * 10, 2)
+        result["couch_lng"] = round(max(abs(e.y) for e in lin_errors) * 10, 2)
+        result["couch_vrt"] = round(max(abs(e.z) for e in lin_errors) * 10, 2)
+        result["couch_max_position_error"] = round(
+            max(math.sqrt(e.x**2 + e.y**2 + e.z**2) for e in lin_errors) * 10, 2
+        )
+    fine_errors = []
+    for t in FINE_ROTATION_STEP_TAGS:
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
+            if err is not None:
+                fine_errors.append(err)
+    if fine_errors:
+        result["couch_rtn_fine"] = round(max(abs(e.az) for e in fine_errors), 2)
+    large_errors = []
+    for t in LARGE_ROTATION_STEP_TAGS:
+        for step in couch_steps.get(t, []):
+            err = _extract_motion_error(step)
+            if err is not None:
+                large_errors.append(err)
+    if large_errors:
+        result["couch_rtn_large"] = round(max(abs(e.az) for e in large_errors), 2)
+        result["rotation_induced_couch_shift_full_range"] = round(
+            max(math.sqrt(e.x**2 + e.y**2) for e in large_errors) * 10, 2
+        )
+    return result
+
+
 def extract_geometry_values(folder_path):
     """
-    Extract beam values and MLC leaf data from geometry check Results.xml.
+    Extract beam values, MLC leaf data, IsoCenter, Gantry, and EnhancedCouch from Results.xml.
 
-    Flow: resolve path → parse XML → extract BeamProfileCheck, JawEdgeCheck,
-    LeafPairs/LeafPairsEx → compute leaf values and backlash → return dict.
+    All calculations match mpc_parser.py formulas. No mpc_parser import.
 
     Args:
         folder_path: Path to the folder containing Results.xml
 
     Returns:
-        dict with keys:
-            - beam_output_change: float (%)
-            - beam_uniformity_change: float (%)
-            - beam_center_shift: float (mm) or None
-            - mlc_leaves_a: dict {leaf_index: value_mm}
-            - mlc_leaves_b: dict {leaf_index: value_mm}
-            - mlc_backlash_a: dict {leaf_index: value_mm}
-            - mlc_backlash_b: dict {leaf_index: value_mm}
-            - mlc_max_offset_a/b, mlc_mean_offset_a/b: max/mean of leaf offsets
-            - mlc_backlash_max_a/b, mlc_backlash_mean_a/b: max/mean of backlash
-        Returns None if extraction fails.
+        dict with beam, MLC, IsoCenter, Gantry, Couch fields. None if extraction fails.
     """
     folder_path = _resolve_folder_path(folder_path)
     if not folder_path:
@@ -225,128 +454,83 @@ def extract_geometry_values(folder_path):
         print(f"Error parsing XML: {e}")
         return None
 
-    # ========================================================================
-    # BEAM PROFILE - XML: <d2p1:anyType i:type="BeamProfileCheck">
-    # ========================================================================
-    # Children: <RelativeOutput>, <RelativeUniformity>
-    # Conversion: (RelativeOutput - 1) * 100 = BeamOutputChange [%]
-    #             RelativeUniformity * 100 = BeamUniformityChange [%]
-    beam_output_change = None
-    beam_uniformity_change = None
-    beam_center_shift = None
-
-    xsi_type = "{http://www.w3.org/2001/XMLSchema-instance}type"
-    for elem in root.iter():
-        if elem.get(xsi_type) == "BeamProfileCheck":
-            for child in elem:
-                tag = _tag(child)
-                if tag == "RelativeOutput" and child.text:
-                    try:
-                        beam_output_change = (float(child.text.strip()) - 1) * 100
-                    except (ValueError, TypeError):
-                        pass
-                elif tag == "RelativeUniformity" and child.text:
-                    try:
-                        beam_uniformity_change = float(child.text.strip()) * 100
-                    except (ValueError, TypeError):
-                        pass
-            break
+    steps = _build_step_index(root)
 
     # ========================================================================
-    # CENTER SHIFT - XML: <d2p1:anyType i:type="JawEdgeCheck">
+    # BEAM PROFILE - (RelativeOutput - 1) * 100, RelativeUniformity * 100
     # ========================================================================
-    # Children: <IsoCenter> and <BaselineIsoCenter>, each with <X>, <Y> sub-elements
-    # Formula: Euclidean distance × 10 = BeamCenterShift [mm]
-    #          sqrt((X - X0)² + (Y - Y0)²) × 10
-    iso_x = iso_y = baseline_iso_x = baseline_iso_y = None
-    for elem in root.iter():
-        if elem.get(xsi_type) == "JawEdgeCheck":
-            for child in elem:
-                tag = _tag(child)
-                if tag == "IsoCenter":
-                    for coord in child:
-                        ct = _tag(coord)
-                        if ct == "X" and coord.text:
-                            iso_x = float(coord.text.strip())
-                        elif ct == "Y" and coord.text:
-                            iso_y = float(coord.text.strip())
-                elif tag == "BaselineIsoCenter":
-                    for coord in child:
-                        ct = _tag(coord)
-                        if ct == "X" and coord.text:
-                            baseline_iso_x = float(coord.text.strip())
-                        elif ct == "Y" and coord.text:
-                            baseline_iso_y = float(coord.text.strip())
-            break
-
-    if all(v is not None for v in (iso_x, iso_y, baseline_iso_x, baseline_iso_y)):
-        dx = iso_x - baseline_iso_x
-        dy = iso_y - baseline_iso_y
-        beam_center_shift = math.sqrt(dx * dx + dy * dy) * 10
+    beam_output_change = beam_uniformity_change = beam_center_shift = None
+    for _, step in steps.get("BeamProfileCheck", []):
+        ro = _find_text(step, "RelativeOutput")
+        ru = _find_text(step, "RelativeUniformity")
+        if ro is not None:
+            beam_output_change = round((ro - 1.0) * 100, 2)
+        if ru is not None:
+            beam_uniformity_change = round(ru * 100, 2)
+        break
 
     # ========================================================================
-    # MLC LEAF DATA - XML: <LeafPairs> and <LeafPairsEx> (under MLCCheck)
+    # CENTER SHIFT - sqrt((IsoCenter - BaselineIsoCenter)²) × 10 [mm]
+    # ========================================================================
+    for _, step in steps.get("JawEdgeCheck", []):
+        iso = _find_child(step, "IsoCenter")
+        base = _find_child(step, "BaselineIsoCenter")
+        if iso and base:
+            iso_x = _find_text(iso, "X")
+            iso_y = _find_text(iso, "Y")
+            base_x = _find_text(base, "X")
+            base_y = _find_text(base, "Y")
+            if all(v is not None for v in (iso_x, iso_y, base_x, base_y)):
+                dx = iso_x - base_x
+                dy = iso_y - base_y
+                beam_center_shift = round(math.sqrt(dx**2 + dy**2) * 10, 2)
+        break
+
+    # ========================================================================
+    # MLC LEAF DATA - mpc_parser formulas (max-abs selection, negate B)
     # ========================================================================
     leaf_pairs, leaf_pairs_ex = _collect_leaf_data(root)
+    all_indices = sorted(set(leaf_pairs.keys()) & set(leaf_pairs_ex.keys()))
+    chosen_a, chosen_b, backlash_a, backlash_b = [], [], [], []
+    mlc_leaves_a, mlc_leaves_b = {}, {}
+    mlc_backlash_a, mlc_backlash_b = {}, {}
 
-    # MLCLeavesA: CollimationGroup/MLCGroup/MLCLeavesA/MLCLeafN [mm]
-    # Source: LeafPairsEx → LeafOffsetA × 10 (second measurement, bank A)
-    mlc_leaves_a = {}
-    for idx, vals in leaf_pairs_ex.items():
-        off_a = vals.get("LeafOffsetA")
-        if off_a is not None:
-            mlc_leaves_a[idx] = round(off_a * 10, 2)
-
-    # MLCLeavesB: CollimationGroup/MLCGroup/MLCLeavesB/MLCLeafN [mm]
-    # Source: LeafPairs → LeafOffsetB × 10 (first measurement, bank B; abs for positive)
-    mlc_leaves_b = {}
-    for idx, vals in leaf_pairs.items():
-        off_b = vals.get("LeafOffsetB")
-        if off_b is not None:
-            mlc_leaves_b[idx] = round(abs(off_b) * 10, 2)
-
-    # MLCBacklashLeavesA: CollimationGroup/MLCBacklashGroup/MLCBacklashLeavesA/MLCBacklashLeafN [mm]
-    # Source: |LeafPairsEx.LeafOffsetA - LeafPairs.LeafOffsetA| × 10 (absolute diff × 10)
-    mlc_backlash_a = {}
-    # MLCBacklashLeavesB: CollimationGroup/MLCBacklashGroup/MLCBacklashLeavesB/MLCBacklashLeafN [mm]
-    # Source: |LeafPairs.LeafOffsetB - LeafPairsEx.LeafOffsetB| × 10 (absolute diff × 10)
-    mlc_backlash_b = {}
-    all_indices = set(leaf_pairs.keys()) | set(leaf_pairs_ex.keys())
     for idx in all_indices:
-        off_a_pairs = leaf_pairs.get(idx, {}).get("LeafOffsetA")
-        off_a_ex = leaf_pairs_ex.get(idx, {}).get("LeafOffsetA")
-        if off_a_pairs is not None and off_a_ex is not None:
-            diff = abs(off_a_ex - off_a_pairs)
-            mlc_backlash_a[idx] = round(diff * 10, 2)
+        lp, lpx = leaf_pairs.get(idx, {}), leaf_pairs_ex.get(idx, {})
+        off_a1, off_b1 = lp.get("LeafOffsetA"), lp.get("LeafOffsetB")
+        off_a2, off_b2 = lpx.get("LeafOffsetA"), lpx.get("LeafOffsetB")
+        if any(v is None for v in (off_a1, off_b1, off_a2, off_b2)):
+            continue
+        a1, b1, a2, b2 = off_a1 * 10, off_b1 * 10, off_a2 * 10, off_b2 * 10
+        ca = a1 if abs(a1) >= abs(a2) else a2
+        cb = b1 if abs(b1) >= abs(b2) else b2
+        ba, bb = abs(a1 - a2), abs(b1 - b2)
+        chosen_a.append(ca)
+        chosen_b.append(cb)
+        backlash_a.append(ba)
+        backlash_b.append(bb)
+        mlc_leaves_a[idx] = round(ca, 2)
+        mlc_leaves_b[idx] = round(-cb, 2)
+        mlc_backlash_a[idx] = round(ba, 2)
+        mlc_backlash_b[idx] = round(bb, 2)
 
-        off_b_pairs = leaf_pairs.get(idx, {}).get("LeafOffsetB")
-        off_b_ex = leaf_pairs_ex.get(idx, {}).get("LeafOffsetB")
-        if off_b_pairs is not None and off_b_ex is not None:
-            diff = abs(off_b_pairs - off_b_ex)
-            mlc_backlash_b[idx] = round(diff * 10, 2)
+    mlc_max_offset_a = round(max(abs(x) for x in chosen_a), 2) if chosen_a else None
+    mlc_max_offset_b = round(max(abs(x) for x in chosen_b), 2) if chosen_b else None
+    mlc_mean_offset_a = round(statistics.mean(chosen_a), 2) if chosen_a else None
+    mlc_mean_offset_b = round(statistics.mean(abs(x) for x in chosen_b), 2) if chosen_b else None
+    mlc_backlash_max_a = round(max(backlash_a), 2) if backlash_a else None
+    mlc_backlash_max_b = round(max(backlash_b), 2) if backlash_b else None
+    mlc_backlash_mean_a = round(statistics.mean(backlash_a), 2) if backlash_a else None
+    mlc_backlash_mean_b = round(statistics.mean(backlash_b), 2) if backlash_b else None
 
     # ========================================================================
-    # SUMMARY STATS - Derived from leaf dicts (not direct XML)
+    # IsoCenter, Gantry, EnhancedCouch (from mpc_parser formulas)
     # ========================================================================
-    # MLCMaxOffsetA/B, MLCMeanOffsetA/B: max/mean of MLCLeavesA/B values
-    # MLCBacklashMaxA/B, MLCBacklashMeanA/B: max/mean of MLCBacklashLeavesA/B values
-    def _max_or_none(d):
-        return round(max(abs(v) for v in d.values()), 2) if d else None
-
-    def _mean_or_none(d):
-        return round(sum(abs(v) for v in d.values()) / len(d), 2) if d else None
-
-    mlc_max_offset_a = _max_or_none(mlc_leaves_a)
-    mlc_max_offset_b = _max_or_none(mlc_leaves_b)
-    mlc_mean_offset_a = _mean_or_none(mlc_leaves_a)
-    mlc_mean_offset_b = _mean_or_none(mlc_leaves_b)
-    mlc_backlash_max_a = _max_or_none(mlc_backlash_a)
-    mlc_backlash_max_b = _max_or_none(mlc_backlash_b)
-    mlc_backlash_mean_a = _mean_or_none(mlc_backlash_a)
-    mlc_backlash_mean_b = _mean_or_none(mlc_backlash_b)
+    iso_size, iso_mv, iso_kv = _extract_iso_center(steps)
+    gantry_abs, gantry_rel = _extract_gantry(steps)
+    couch = _extract_enhanced_couch(steps)
 
     return {
-        # From XML
         "beam_output_change": beam_output_change,
         "beam_uniformity_change": beam_uniformity_change,
         "beam_center_shift": beam_center_shift,
@@ -362,13 +546,18 @@ def extract_geometry_values(folder_path):
         "mlc_backlash_max_b": mlc_backlash_max_b,
         "mlc_backlash_mean_a": mlc_backlash_mean_a,
         "mlc_backlash_mean_b": mlc_backlash_mean_b,
-        # --------------------------------------------------------------------
-        # NOT IN XML - These Results.csv fields have no XML source in geometry
-        # check; return N/A (IsoCenter, Jaws, Gantry, Couch, etc.)
-        # --------------------------------------------------------------------
-        "iso_center_size": NA,
-        "iso_center_mv_offset": NA,
-        "iso_center_kv_offset": NA,
+        "iso_center_size": iso_size,
+        "iso_center_mv_offset": iso_mv,
+        "iso_center_kv_offset": iso_kv,
+        "gantry_absolute": gantry_abs,
+        "gantry_relative": gantry_rel,
+        "couch_max_position_error": couch["couch_max_position_error"],
+        "couch_lat": couch["couch_lat"],
+        "couch_lng": couch["couch_lng"],
+        "couch_vrt": couch["couch_vrt"],
+        "couch_rtn_fine": couch["couch_rtn_fine"],
+        "couch_rtn_large": couch["couch_rtn_large"],
+        "rotation_induced_couch_shift_full_range": couch["rotation_induced_couch_shift_full_range"],
         "jaw_x1": NA,
         "jaw_x2": NA,
         "jaw_y1": NA,
@@ -378,15 +567,6 @@ def extract_geometry_values(folder_path):
         "jaw_parallelism_y1": NA,
         "jaw_parallelism_y2": NA,
         "collimation_rotation_offset": NA,
-        "gantry_absolute": NA,
-        "gantry_relative": NA,
-        "couch_max_position_error": NA,
-        "couch_lat": NA,
-        "couch_lng": NA,
-        "couch_vrt": NA,
-        "couch_rtn_fine": NA,
-        "couch_rtn_large": NA,
-        "rotation_induced_couch_shift_full_range": NA,
     }
 
 
@@ -451,7 +631,7 @@ if __name__ == "__main__":
         ("mlc_backlash_a", "MLCBacklashLeavesA", "MLCBacklashLeaf"),
         ("mlc_backlash_b", "MLCBacklashLeavesB", "MLCBacklashLeaf"),
     ]:
-        leaves = data[key]
+        leaves = data.get(key, {})
         if leaves:
             print(f"\n{label}: {len(leaves)} leaves")
             for idx, val in leaves.items():

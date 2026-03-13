@@ -14,28 +14,45 @@ Supported model types:
     - GeoModel    → all geometry/MLC fields extracted from XML
 """
 
-from scipy.optimize._lsq.common import print_header_nonlinear
 import os
 import sys
+from pathlib import Path
 
 try:
     # Package import (used when called from DataProcessor or any other module)
-    from src.data_manipulation.ETL.extractors.xml.ebeam_extractor import extract_ebeam_values
-    from src.data_manipulation.ETL.extractors.xml.xbeam_extractor import extract_xbeam_values
-    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values
+    from src.data_manipulation.ETL.extractors.xml.ebeam_extractor import extract_ebeam_values, is_ebeam_folder
+    from src.data_manipulation.ETL.extractors.xml.xbeam_extractor import extract_xbeam_values, is_xbeam_folder
+    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values, is_geometry_folder
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
 except ImportError:
     # Fallback for running the file directly as a script
-    from ebeam_extractor import extract_ebeam_values
-    from xbeam_extractor import extract_xbeam_values
-    from geometry_extractor import extract_geometry_values
+    from ebeam_extractor import extract_ebeam_values, is_ebeam_folder
+    from xbeam_extractor import extract_xbeam_values, is_xbeam_folder
+    from geometry_extractor import extract_geometry_values, is_geometry_folder
     import sys, os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
+
+
+def detect_beam_type(path: str) -> str:
+    """
+    Detect beam type from folder or file path.
+    Returns 'ebeam', 'xbeam', 'geometry', or 'unknown'.
+    """
+    folder_path, xml_path = _normalize_paths(path)
+    # Resolve folder for name check (path may be to Results.xml)
+    check_path = folder_path if os.path.isdir(folder_path) else os.path.dirname(xml_path)
+    if is_geometry_folder(check_path):
+        return "geometry"
+    if is_ebeam_folder(check_path):
+        return "ebeam"
+    if is_xbeam_folder(check_path):
+        return "xbeam"
+    return "unknown"
 
 
 def _normalize_paths(path: str):
@@ -48,10 +65,8 @@ def _normalize_paths(path: str):
 
     Handles relative paths by trying to resolve them relative to MPC-Plus directory.
     """
-    # Get MPC-Plus directory (common parent directory)
-    # Navigate up from current script: xml -> extractors -> ETL -> data_manipulation -> src -> backend
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    mpc_plus_dir = os.path.abspath(os.path.join(script_dir, '../../../..'))
+    # MPC-Plus workspace root (parent of MPC-Plus-Monorepo)
+    mpc_plus_dir = str(Path(__file__).resolve().parents[7])
 
     # Normalize path separators
     path = path.replace('\\', os.sep).replace('/', os.sep)
@@ -201,6 +216,38 @@ def extract_beam_values(path: str, model):
             model.set_MLCBacklashMeanA(data["mlc_backlash_mean_a"])
         if data.get("mlc_backlash_mean_b") is not None:
             model.set_MLCBacklashMeanB(data["mlc_backlash_mean_b"])
+
+        # --- IsoCenterGroup (from mpc_parser) ---
+        if data.get("iso_center_size") is not None:
+            model.set_IsoCenterSize(data["iso_center_size"])
+        if data.get("iso_center_mv_offset") is not None:
+            model.set_IsoCenterMVOffset(data["iso_center_mv_offset"])
+        if data.get("iso_center_kv_offset") is not None:
+            model.set_IsoCenterKVOffset(data["iso_center_kv_offset"])
+
+        # --- GantryGroup (from mpc_parser) ---
+        if data.get("gantry_absolute") is not None:
+            model.set_GantryAbsolute(data["gantry_absolute"])
+        if data.get("gantry_relative") is not None:
+            model.set_GantryRelative(data["gantry_relative"])
+
+        # --- EnhancedCouchGroup (from mpc_parser) ---
+        if data.get("couch_max_position_error") is not None:
+            model.set_CouchMaxPositionError(data["couch_max_position_error"])
+        if data.get("couch_lat") is not None:
+            model.set_CouchLat(data["couch_lat"])
+        if data.get("couch_lng") is not None:
+            model.set_CouchLng(data["couch_lng"])
+        if data.get("couch_vrt") is not None:
+            model.set_CouchVrt(data["couch_vrt"])
+        if data.get("couch_rtn_fine") is not None:
+            model.set_CouchRtnFine(data["couch_rtn_fine"])
+        if data.get("couch_rtn_large") is not None:
+            model.set_CouchRtnLarge(data["couch_rtn_large"])
+        if data.get("rotation_induced_couch_shift_full_range") is not None:
+            model.set_RotationInducedCouchShiftFullRange(
+                data["rotation_induced_couch_shift_full_range"]
+            )
 
         return model
 
