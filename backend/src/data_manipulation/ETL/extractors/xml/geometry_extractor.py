@@ -78,8 +78,33 @@ def _get_workspace_root():
     """
     Get MPC-Plus workspace root (parent of MPC-Plus-Monorepo).
     geometry_extractor is at: .../MPC-Plus-Monorepo/backend/.../extractors/xml/
+
+    Resolution strategy (in order):
+    1. Use MPC_PLUS_WORKSPACE_ROOT environment variable if set.
+    2. Walk up to find a directory named 'MPC-Plus-Monorepo' and return its parent.
+    3. Walk up to find a marker directory/file like '.git' or 'pyproject.toml'.
+    4. Fall back to the filesystem root.
     """
-    return Path(__file__).resolve().parents[7]
+    # 1. Environment variable override
+    env_root = os.getenv("MPC_PLUS_WORKSPACE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
+
+    current = Path(__file__).resolve()
+
+    # 2. Look for the MPC-Plus-Monorepo directory and return its parent
+    for parent in current.parents:
+        if parent.name == "MPC-Plus-Monorepo":
+            return parent.parent
+
+    # 3. Look for common repository markers
+    marker_names = (".git", "pyproject.toml")
+    for parent in current.parents:
+        if any((parent / marker).exists() for marker in marker_names):
+            return parent
+
+    # 4. Fallback: filesystem root (topmost parent)
+    return current.parents[-1]
 
 
 def is_geometry_folder(folder_path):
