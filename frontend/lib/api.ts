@@ -2,6 +2,7 @@
 // All data access goes through the REST backend via NEXT_PUBLIC_API_URL.
 
 import { UI_CONSTANTS } from '../constants';
+import { getAuthToken } from './auth';
 import type { Machine as MachineType } from '../models/Machine';
 import type { UpdateModel as UpdateModelType } from '../models/Update';
 import type { Beam as BeamType } from '../models/Beam';
@@ -61,6 +62,12 @@ export const getImageUrl = (imagePath: string): string => {
 const safeFetch = async (input: RequestInfo, init?: RequestInit) => {
   const headers = new Headers(init?.headers as HeadersInit);
 
+  // Add auth token if available
+  const token = getAuthToken();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   // Prevent aggressive caching of dashboard data
   const mergedInit: RequestInit = {
     cache: 'no-store',
@@ -70,6 +77,15 @@ const safeFetch = async (input: RequestInfo, init?: RequestInit) => {
 
   const res = await fetch(input, mergedInit);
   if (!res.ok) {
+    // Handle expired / invalid token — clear auth and redirect to signin
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/signin';
+      }
+      throw new Error('Session expired. Please sign in again.');
+    }
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
   }
@@ -124,12 +140,23 @@ export const fetchResults = async (month: number, year: number, machineId: strin
 };
 
 export const fetchUser = async (): Promise<{ id: string; name: string; role: string } | null> => {
-  // Pending real auth integration, return a mocked admin user for the UI
-  return {
-    id: 'mock-user-stephen',
-    name: 'Stephen',
-    role: 'Admin',
-  };
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/auth/me`;
+    const response = await safeFetch(url);
+    
+    if (!response) {
+      return null;
+    }
+
+    return {
+      id: response.id,
+      name: response.fullName || response.username || 'User',
+      role: response.role || 'User',
+    };
+  } catch (err) {
+    console.error('[fetchUser] Error:', err);
+    return null;
+  }
 };
 
 // Beams API
@@ -559,4 +586,90 @@ export const setTimezone = async (timezone: string): Promise<void> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ timezone }),
   });
+};
+
+// Admin API functions
+
+export interface UserDto {
+  id: string;
+  username: string;
+  email?: string;
+  fullName?: string;
+  role: string;
+  approvalStatus: string;
+}
+
+/**
+ * Fetch all users (Admin only)
+ */
+export const fetchAllUsers = async (): Promise<UserDto[]> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users`;
+    return await safeFetch(url);
+  } catch (err) {
+    console.error('[fetchAllUsers] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Fetch pending user approvals (Admin only)
+ */
+export const fetchPendingUsers = async (): Promise<UserDto[]> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/pending`;
+    return await safeFetch(url);
+  } catch (err) {
+    console.error('[fetchPendingUsers] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Approve a user (Admin only)
+ */
+export const approveUser = async (userId: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/approve`;
+    await safeFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+  } catch (err) {
+    console.error('[approveUser] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Deny a user (Admin only)
+ */
+export const denyUser = async (userId: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/deny`;
+    await safeFetch(url, {
+      method: 'POST',
+    });
+  } catch (err) {
+    console.error('[denyUser] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Update user role (Admin only)
+ */
+export const updateUserRole = async (userId: string, role: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/role`;
+    await safeFetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Role: role }),
+    });
+  } catch (err) {
+    console.error('[updateUserRole] Error:', err);
+    throw err;
+  }
 };

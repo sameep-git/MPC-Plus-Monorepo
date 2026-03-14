@@ -79,6 +79,16 @@ else
 // Register Data Access Layer (Npgsql + Dapper)
 builder.Services.AddDataAccess(builder.Configuration);
 
+// Load JWT secret from environment variable if not already set in config
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+if (!string.IsNullOrWhiteSpace(jwtSecret))
+{
+    builder.Configuration["Jwt:Secret"] = jwtSecret;
+}
+
+// Register Authentication Services
+builder.Services.AddAuthenticationServices(builder.Configuration);
+
 builder.Services.AddScoped<IReportService, ReportService>();
 
 // Add services to the container.
@@ -112,6 +122,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseStaticFiles(); // Enable static file serving for images
 

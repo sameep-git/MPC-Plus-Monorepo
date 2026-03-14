@@ -3,6 +3,7 @@
 import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { UI_CONSTANTS, USER_MENU_ACTIONS } from '../../constants';
+import { signOut } from '../../lib/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,11 @@ export function UserMenu({ user }: UserMenuProps) {
   const handleMenuAction = (action: string) => {
     if (action === USER_MENU_ACTIONS.SETTINGS) {
       router.push('/settings');
+      return;
+    }
+    if (action === USER_MENU_ACTIONS.LOGOUT) {
+      signOut();
+      router.push('/signin');
       return;
     }
     console.log(`User action: ${action}`);

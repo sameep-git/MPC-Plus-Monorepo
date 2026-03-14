@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchUser, handleApiError, fetchThresholds, saveThreshold, fetchMachines, fetchBeamVariantsWithIds, fetchTimezone, setTimezone as setTimezoneApi, type Threshold, type BeamVariantWithId } from '../../lib/api';
+import { fetchUser, handleApiError, fetchThresholds, saveThreshold, fetchMachines, fetchBeamVariantsWithIds, fetchTimezone, setTimezone as setTimezoneApi, type Threshold, type BeamVariantWithId, fetchAllUsers, fetchPendingUsers, approveUser, denyUser, updateUserRole, type UserDto } from '../../lib/api';
 import DocFactorSettings from '../../components/settings/DocFactorSettings';
 import MachineSettings from '../../components/settings/MachineSettings';
 import type { Machine } from '../../models/Machine';
@@ -111,6 +111,7 @@ const SETTINGS_SECTIONS = [
   // { id: 'baseline-settings', label: 'Baseline' },
   { id: 'doc-settings', label: 'Dose Output Correction' },
   { id: 'timezone-settings', label: 'Timezone' },
+  { id: 'user-management', label: 'User Management' },
 ] as const;
 
 export default function SettingsPage() {
@@ -138,6 +139,13 @@ export default function SettingsPage() {
   const [savingTimezone, setSavingTimezone] = useState(false);
   const [timezoneSuccess, setTimezoneSuccess] = useState<string | null>(null);
   const [timezoneFilter, setTimezoneFilter] = useState('');
+
+  // User Management State
+  const [allUsers, setAllUsers] = useState<UserDto[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<UserDto[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userActionLoading, setUserActionLoading] = useState<string | null>(null);
+  const [userManagementSuccess, setUserManagementSuccess] = useState<string | null>(null);
 
   // Geo-specific UI state
   const [geoInputMode, setGeoInputMode] = useState<'easy' | 'manual'>('easy');
@@ -182,8 +190,24 @@ export default function SettingsPage() {
       }
     };
 
+    const loadUserManagementData = async () => {
+      if (user?.role === 'Admin') {
+        try {
+          const [allUsersData, pendingUsersData] = await Promise.all([
+            fetchAllUsers(),
+            fetchPendingUsers()
+          ]);
+          setAllUsers(allUsersData);
+          setPendingUsers(pendingUsersData);
+        } catch (error) {
+          console.error('Error loading user management data:', error);
+        }
+      }
+    };
+
     loadUser();
     loadData();
+    loadUserManagementData();
 
     // Load timezone
     fetchTimezone().then((tz) => {
@@ -988,6 +1012,258 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+
+        {/* User Management - Admin Only */}
+        {user?.role === 'Admin' && (
+          <section
+            id="user-management"
+            className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 scroll-mt-24"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  User Management
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                  Approve new users, manage roles, and view all user accounts.
+                </p>
+              </div>
+              {userManagementSuccess && (
+                <span className="text-green-600 font-medium animate-pulse">{userManagementSuccess}</span>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              {/* Pending Approvals */}
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pending Approvals</h3>
+                  <Button
+                    onClick={async () => {
+                      setLoadingUsers(true);
+                      try {
+                        const users = await fetchPendingUsers();
+                        setPendingUsers(users);
+                      } catch (error) {
+                        setError(handleApiError(error));
+                      } finally {
+                        setLoadingUsers(false);
+                      }
+                    }}
+                    disabled={loadingUsers}
+                    size="sm"
+                  >
+                    {loadingUsers ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+
+                {pendingUsers.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">No pending approvals.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingUsers.map((pendingUser) => (
+                      <Card key={pendingUser.id} className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-medium text-gray-900 dark:text-white">{pendingUser.username}</h4>
+                                <span className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
+                                  Pending
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                                {pendingUser.email && <p>Email: {pendingUser.email}</p>}
+                                {pendingUser.fullName && <p>Name: {pendingUser.fullName}</p>}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={async () => {
+                                  setUserActionLoading(pendingUser.id);
+                                  try {
+                                    await approveUser(pendingUser.id);
+                                    setUserManagementSuccess('User approved successfully!');
+                                    // Refresh pending users
+                                    const users = await fetchPendingUsers();
+                                    setPendingUsers(users);
+                                    setTimeout(() => setUserManagementSuccess(null), 3000);
+                                  } catch (error) {
+                                    setError(handleApiError(error));
+                                  } finally {
+                                    setUserActionLoading(null);
+                                  }
+                                }}
+                                disabled={userActionLoading === pendingUser.id}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                {userActionLoading === pendingUser.id ? 'Approving...' : 'Approve'}
+                              </Button>
+                              <Button
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to deny this user?')) {
+                                    setUserActionLoading(pendingUser.id);
+                                    try {
+                                      await denyUser(pendingUser.id);
+                                      setUserManagementSuccess('User denied successfully!');
+                                      // Refresh pending users
+                                      const users = await fetchPendingUsers();
+                                      setPendingUsers(users);
+                                      setTimeout(() => setUserManagementSuccess(null), 3000);
+                                    } catch (error) {
+                                      setError(handleApiError(error));
+                                    } finally {
+                                      setUserActionLoading(null);
+                                    }
+                                  }
+                                }}
+                                disabled={userActionLoading === pendingUser.id}
+                                size="sm"
+                                variant="destructive"
+                              >
+                                {userActionLoading === pendingUser.id ? 'Denying...' : 'Deny'}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* All Users */}
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">All Users</h3>
+                  <Button
+                    onClick={async () => {
+                      setLoadingUsers(true);
+                      try {
+                        const users = await fetchAllUsers();
+                        setAllUsers(users);
+                      } catch (error) {
+                        setError(handleApiError(error));
+                      } finally {
+                        setLoadingUsers(false);
+                      }
+                    }}
+                    disabled={loadingUsers}
+                    size="sm"
+                  >
+                    {loadingUsers ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+
+                {allUsers.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">No users found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {allUsers.map((userItem) => (
+                      <Card key={userItem.id} className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-medium text-gray-900 dark:text-white">{userItem.username}</h4>
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  userItem.approvalStatus === 'APPROVED'
+                                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                    : userItem.approvalStatus === 'PENDING'
+                                    ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                }`}>
+                                  {userItem.approvalStatus}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  userItem.role === 'Admin'
+                                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
+                                    : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                                }`}>
+                                  {userItem.role}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                                {userItem.email && <p>Email: {userItem.email}</p>}
+                                {userItem.fullName && <p>Name: {userItem.fullName}</p>}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {userItem.id !== user?.id && userItem.approvalStatus === 'APPROVED' && (
+                                <>
+                                  <Select
+                                    value={userItem.role}
+                                    onValueChange={async (newRole) => {
+                                      setUserActionLoading(userItem.id);
+                                      try {
+                                        await updateUserRole(userItem.id, newRole);
+                                        setUserManagementSuccess('User role updated successfully!');
+                                        // Refresh all users
+                                        const users = await fetchAllUsers();
+                                        setAllUsers(users);
+                                        setTimeout(() => setUserManagementSuccess(null), 3000);
+                                      } catch (error) {
+                                        setError(handleApiError(error));
+                                      } finally {
+                                        setUserActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-24 h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="User">User</SelectItem>
+                                      <SelectItem value="Admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </>
+                              )}
+                              {userItem.id === user?.id && userItem.approvalStatus === 'APPROVED' && (
+                                <>
+                                  <Select
+                                    value={userItem.role}
+                                    onValueChange={async (newRole) => {
+                                      setUserActionLoading(userItem.id);
+                                      try {
+                                        await updateUserRole(userItem.id, newRole);
+                                        setUserManagementSuccess('Your role updated successfully!');
+                                        // Refresh user data
+                                        const userData = await fetchUser();
+                                        setUser(userData);
+                                        // Refresh all users
+                                        const users = await fetchAllUsers();
+                                        setAllUsers(users);
+                                        setTimeout(() => setUserManagementSuccess(null), 3000);
+                                      } catch (error) {
+                                        setError(handleApiError(error));
+                                      } finally {
+                                        setUserActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-24 h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="User">User</SelectItem>
+                                      <SelectItem value="Admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-end">
