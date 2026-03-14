@@ -116,7 +116,8 @@ public class AuthController : ControllerBase
                 Username = user.Username,
                 Email = user.Email,
                 FullName = user.FullName,
-                Role = user.Role
+                Role = user.Role,
+                ApprovalStatus = user.ApprovalStatus
             });
         }
         catch (Exception ex)

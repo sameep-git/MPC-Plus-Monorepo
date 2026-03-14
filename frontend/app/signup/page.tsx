@@ -51,10 +51,7 @@ export default function SignUpPage() {
     try {
       await signUp(username, password, email || undefined, fullName || undefined);
       setSuccess(true);
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push('/');
-      }, 1500);
+      // Don't redirect - show pending approval message
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign up');
     } finally {
@@ -85,11 +82,16 @@ export default function SignUpPage() {
             )}
 
             {success && (
-              <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Account created successfully! Redirecting...
-                </p>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Account created successfully!
+                  </p>
+                  <p className="text-blue-600 dark:text-blue-400 mt-1">
+                    Your account is pending approval by an administrator. You will be able to sign in once approved.
+                  </p>
+                </div>
               </div>
             )}
 

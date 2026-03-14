@@ -551,3 +551,89 @@ export const setTimezone = async (timezone: string): Promise<void> => {
     body: JSON.stringify({ timezone }),
   });
 };
+
+// Admin API functions
+
+export interface UserDto {
+  id: string;
+  username: string;
+  email?: string;
+  fullName?: string;
+  role: string;
+  approvalStatus: string;
+}
+
+/**
+ * Fetch all users (Admin only)
+ */
+export const fetchAllUsers = async (): Promise<UserDto[]> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users`;
+    return await safeFetch(url);
+  } catch (err) {
+    console.error('[fetchAllUsers] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Fetch pending user approvals (Admin only)
+ */
+export const fetchPendingUsers = async (): Promise<UserDto[]> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/pending`;
+    return await safeFetch(url);
+  } catch (err) {
+    console.error('[fetchPendingUsers] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Approve a user (Admin only)
+ */
+export const approveUser = async (userId: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/approve`;
+    await safeFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+  } catch (err) {
+    console.error('[approveUser] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Deny a user (Admin only)
+ */
+export const denyUser = async (userId: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/deny`;
+    await safeFetch(url, {
+      method: 'POST',
+    });
+  } catch (err) {
+    console.error('[denyUser] Error:', err);
+    throw err;
+  }
+};
+
+/**
+ * Update user role (Admin only)
+ */
+export const updateUserRole = async (userId: string, role: string): Promise<void> => {
+  try {
+    const url = `${API_BASE.replace(/\/$/, '')}/admin/users/${userId}/role`;
+    await safeFetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Role: role }),
+    });
+  } catch (err) {
+    console.error('[updateUserRole] Error:', err);
+    throw err;
+  }
+};

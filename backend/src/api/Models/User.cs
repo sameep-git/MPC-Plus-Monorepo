@@ -31,6 +31,9 @@ public class User
 
     /// <summary>When the user last logged in.</summary>
     public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>Approval status for new user accounts.</summary>
+    public string ApprovalStatus { get; set; } = "APPROVED";
 }
 
 /// <summary>
@@ -64,4 +67,7 @@ public class UserDto
 
     /// <summary>User role.</summary>
     public required string Role { get; set; }
+
+    /// <summary>Approval status.</summary>
+    public required string ApprovalStatus { get; set; }
 }

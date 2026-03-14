@@ -33,6 +33,18 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Invalid username or password");
         }
 
+        if (user.ApprovalStatus == "PENDING")
+        {
+            _logger.LogWarning($"Login failed: User '{username}' account is pending approval");
+            throw new InvalidOperationException("Your account is pending approval. Please contact an administrator.");
+        }
+
+        if (user.ApprovalStatus == "DENIED")
+        {
+            _logger.LogWarning($"Login failed: User '{username}' account was denied");
+            throw new InvalidOperationException("Your account registration was denied. Please contact an administrator.");
+        }
+
         try
         {
             var ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
@@ -85,17 +97,19 @@ public class AuthService : IAuthService
             FullName = fullName,
             PasswordHash = passwordHash,
             Role = "User",
-            IsActive = true
+            IsActive = true,
+            ApprovalStatus = "PENDING"
         };
 
         var createdUser = await _userRepository.CreateAsync(newUser, cancellationToken);
-        var token = _tokenService.GenerateToken(createdUser);
+        // Note: Don't generate token for pending users - they can't log in yet
+        // var token = _tokenService.GenerateToken(createdUser);
 
-        _logger.LogInformation($"User '{username}' registered successfully");
+        _logger.LogInformation($"User '{username}' registered successfully - pending approval");
 
         return new AuthResponse
         {
-            Token = token,
+            Token = "", // Empty token for pending users
             User = MapToUserDto(createdUser)
         };
     }
@@ -113,7 +127,8 @@ public class AuthService : IAuthService
             Username = user.Username,
             Email = user.Email,
             FullName = user.FullName,
-            Role = user.Role
+            Role = user.Role,
+            ApprovalStatus = user.ApprovalStatus
         };
     }
 }

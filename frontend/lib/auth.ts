@@ -9,6 +9,7 @@ export interface AuthResponse {
     email?: string;
     fullName?: string;
     role: string;
+    approvalStatus: string;
   };
 }
 
@@ -60,8 +61,8 @@ export const signUp = async (
 
   const data = await response.json();
   
-  // Store token in localStorage
-  if (typeof window !== 'undefined') {
+  // Store token in localStorage only if it's not empty (pending users don't get tokens)
+  if (typeof window !== 'undefined' && data.token) {
     localStorage.setItem('authToken', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
   }
