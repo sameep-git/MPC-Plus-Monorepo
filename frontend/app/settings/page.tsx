@@ -157,6 +157,20 @@ export default function SettingsPage() {
         setError(null);
         const userData = await fetchUser();
         setUser(userData);
+        
+        // Load user management data after user is fetched
+        if (userData?.role === 'Admin') {
+          try {
+            const [allUsersData, pendingUsersData] = await Promise.all([
+              fetchAllUsers(),
+              fetchPendingUsers()
+            ]);
+            setAllUsers(allUsersData);
+            setPendingUsers(pendingUsersData);
+          } catch (error) {
+            console.error('Error loading user management data:', error);
+          }
+        }
       } catch (error) {
         const errorMessage = handleApiError(error);
         setError(errorMessage);
@@ -190,24 +204,8 @@ export default function SettingsPage() {
       }
     };
 
-    const loadUserManagementData = async () => {
-      if (user?.role === 'Admin') {
-        try {
-          const [allUsersData, pendingUsersData] = await Promise.all([
-            fetchAllUsers(),
-            fetchPendingUsers()
-          ]);
-          setAllUsers(allUsersData);
-          setPendingUsers(pendingUsersData);
-        } catch (error) {
-          console.error('Error loading user management data:', error);
-        }
-      }
-    };
-
     loadUser();
     loadData();
-    loadUserManagementData();
 
     // Load timezone
     fetchTimezone().then((tz) => {

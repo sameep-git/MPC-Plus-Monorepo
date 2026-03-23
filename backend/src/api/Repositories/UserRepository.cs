@@ -1,5 +1,6 @@
 using Api.Models;
 using Api.Database;
+using System.Data;
 using Dapper;
 
 namespace Api.Repositories;
