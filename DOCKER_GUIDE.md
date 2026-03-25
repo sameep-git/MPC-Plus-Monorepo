@@ -65,6 +65,20 @@ docker-compose down
 docker-compose down -v
 ```
 
+## Service Roles
+
+-   **db**: PostgreSQL 16 database.
+-   **backend**: .NET 9 REST API.
+-   **frontend**: Next.js 16 Web Dashboard.
+-   **etl**: Python watchdog that processes files from the `iDrive` folder.
+
+## Volume Mounting (Important)
+
+By default, MPC-Plus is configured to watch the `./iDrive` directory in the project root for new machine output files. 
+
+-   To ingest data, simply copy your MPC output folders into the `iDrive/` directory.
+-   The `etl` service will automatically detect, analyze, and upload the results to the database.
+
 ## Useful Status Commands
 
 **Check what is currently running:**

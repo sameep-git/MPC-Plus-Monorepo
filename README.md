@@ -1,92 +1,90 @@
-# MPC-Plus
+# 🩺 MPC-Plus
 
-Medical Physics Check Plus — Quality Assurance for Varian TrueBeam systems.
+**Machine Performance Check Plus** — Professional Quality Assurance dashboard and reporting for **Varian TrueBeam** linear accelerators.
 
-This project is a unified monorepo containing both the .NET backend and the Next.js frontend.
+MPC-Plus is a unified, open-source monorepo designed to help medical physicists streamline the ingestion, analysis, and reporting of Machine Performance Check (MPC) data specifically from Varian TrueBeam systems. 
+
+---
+
+## 🏗 High-Level Architecture
+
+MPC-Plus is composed of four primary layers, designed for modularity and scalability:
+
+-   **Frontend**: A modern dashboard built with **Next.js 16 (App Router)** and **React 19**.
+-   **Backend API**: A high-performance RESTful API built with **.NET 9** and **Dapper (PostgreSQL)**.
+-   **ETL Watchdog**: An automated **Python** worker that monitors file shares (`iDrive`) and analyzes machine output images using `pylinac`.
+-   **Database**: **PostgreSQL 16** with a medical-physics-optimized schema.
+
+For a deeper dive, see [🏗 ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+
+---
 
 ## 🚀 Quick Start (Docker)
 
-The easiest way to run the full stack (Database + Backend + Frontend) is with Docker Compose.
+The recommended way to run MPC-Plus is with **Docker Compose**, which orchestrates all services and ensures environment consistency.
 
 ### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+-   [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
 
 ### 1. Configuration
-Create a `.env` file in the project root based on the example:
+Create a `.env` file in the project root based on the provided template:
 
 ```bash
-# Copy the example env to a real .env file
 cp .env.example .env
 ```
-*(The default values in `.env.example` work out-of-the-box for Docker)*
+*(The defaults in `.env.example` are pre-configured for seamless Docker operation)*
 
-### 2. Run the App
-From the project root:
+### 2. Launch the Stack
+From the project root, run:
 
 ```bash
-docker-compose up --build
+docker-compose up -d --build
 ```
 
 This will start:
-- **PostgreSQL 16** (Database)
-- **.NET 9 Backend** on `http://localhost:5000`
-- **Next.js Frontend** on `http://localhost:3000`
+-   **PostgreSQL 16** (Database) on port `5432`
+-   **.NET 9 Backend** on `http://localhost:5132`
+-   **Next.js Frontend** on `http://localhost:3000`
+-   **Python ETL** background watchdog for `iDrive` scanning
 
 ### 3. Access
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open your browser and navigate to **[http://localhost:3000](http://localhost:3000)**.
+
+For detailed Docker operations (logs, stopping, resets), refer to the [📦 DOCKER_GUIDE.md](./DOCKER_GUIDE.md).
 
 ---
 
-## 🔑 Environment Variables
+## 🔑 Key Features
 
-The application requires a `.env` file at the root. See `.env.example` for the full list of variables.
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `POSTGRES_USER` | Database username | `postgres` |
-| `POSTGRES_PASSWORD` | Database password | `your_password_here` |
-| `POSTGRES_DB` | Database name | `mpc_plus` |
-| `Database__ConnectionString` | Connection string for the .NET API | `Host=db;...` (Docker) |
-| `NEXT_PUBLIC_API_URL` | API URL for the Frontend | `http://localhost:5000` |
-
----
-
-## 🛠 Manual Setup (Local Dev)
-
-If you want to run services individually without Docker:
-
-### 1. Root Configuration
-Ensure you have a `.env` file in the root directory.
-
-### 2. Backend (.NET API)
-1. Ensure **PostgreSQL** is running locally (User: `postgres`, Pass: `your_password_here`, DB: `mpc_plus`).
-2. Run:
-   ```bash
-   cd backend/src/api
-   dotnet run
-   ```
-   API will be at `http://localhost:5132`.
-
-### 3. Frontend (Next.js)
-1. Install & Run:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   App will be at `http://localhost:3000`.
+-   **Automated Ingestion**: Monitors for new MPC output files (CSV/XML) and processes them in real-time.
+-   **Advanced Analysis**: Leverages `pylinac` for scientific analysis of `.xim` images (flatness, symmetry).
+-   **Professional Reporting**: Generates physics-grade PDF reports via **QuestPDF**.
+-   **Custom Thresholds**: Define passing/warning/failing limits per machine and energy variant.
+-   **Medical-First UX**: Responsive, accessible interface using **Radix UI** and **Tailwind CSS**.
 
 ---
 
 ## 📦 Project Structure
 
-- `backend/` — .NET 9 Backend services and Data Processing
-  - `src/api` — Main Web API
-  - `src/data_manipulation` — Python ETL and Monitoring scripts
-- `frontend/` — Next.js 16 App Router (React 19)
-- `docker-compose.yml` — Full stack orchestration
-- `backups/` — Database schemas and seed data
-- `scripts/` — Utility scripts for automation
-- `start_mpc.bat` — Windows shortcut to start the application
-## Docker Instructions
-Please refer to [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) for instructions on how to start, stop, and rebuild the application.
+```text
+├── backend/            # .NET 9 API and Python ETL processes
+│   ├── src/api/        # Main REST API project
+│   └── src/data_manip/ # Python scripts for file monitoring and analysis
+├── frontend/           # Next.js 16 Web Dashboard
+├── backups/            # Database schema exports and seed data
+├── docs/               # Detailed technical documentation
+├── iDrive/             # Default mount for machine output files
+└── docker-compose.yml  # Full stack orchestration
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! MPC-Plus is a senior design project developed by Computer Science students at **Texas Christian University (TCU)** in collaboration with clinical partners.
+
+---
+
+## ⚖️ License
+
+MPC-Plus is open-source software. Please refer to the LICENSE file for details.

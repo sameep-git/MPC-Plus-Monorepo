@@ -1,27 +1,64 @@
-# MPC Data Manipulation
+# 🚜 MPC-Plus ETL & Analysis Engine
 
-This section of the software is designed to monitor the iDrive for new data and recieve data from user inputs. 
+The **ETL (Extract, Transform, Load)** layer is a core component of MPC-Plus, responsible for the automated ingestion and scientific analysis of medical physics data.
 
+---
 
-# Happy Path
-1. The data's path information is passed to DataProcessor.py
-2. DataProcessor.py is create the model of the given beam and passes the model to Extractor.py and Uploader.py
-		2.1. Extractor.py reads the Results.csv file of the beam and 				   	sets the corrosponding vairables to the values given in the csv fiie.
-		2.2. Uploader.py established a connection with the Supabase database. It uploads the beam's data to the corrosponding table in the database. 
-	
+## 🛠 Functional Overview
 
+This layer performs several critical tasks in a continuous, automated loop:
 
-# File Structue
+1.  **File Watchdog**: Monitors a specified directory (e.g., `iDrive` mount) for incoming MPC output files.
+2.  **Format Agnostic Extraction**: Dynamically detects whether machine data is provided in legacy **CSV** or modern **XML** format.
+3.  **Scientific Analysis**: Uses **pylinac** to process `.xim` images, performing field analysis to calculate:
+    -   Flatness
+    -   Symmetry
+    -   Geometric offsets
+4.  **Flood-Field Correction**: Applies correction algorithms to raw images, leveraging historical flood data to ensure high-fidelity analysis.
+5.  **Database Synchronization**: Maps machine-generated results to the PostgreSQL schema and handles local-to-UTC timestamp normalization based on the facility's timezone settings.
 
-All files needed for the data manipulation of the MPC data are stored in the data_manipulation directory.
-This directory has 3 sub-directories
- 1. file_monitoring
- 2. ELT
- 3. models
+---
 
-**file_monitoring**
-This holds the system that moniors the iDrive. Once new data has been added to the iDrive, file_monitor.py will call DataProcessor.py will the path of the new data.
-**ELT**
-This folder holds the system that extracts data from the csv file and uploads them to the database.
-**models**
-The folder holds models for beams with the 'x' and 'e' suffux and the Geometry Check (6x) beam. Each model contains a getter and setter for beam type, date, and all vairables in the csv file. 
+## 📁 Project Structure
+
+-   `file_monitoring/`: Contains the logic for the watchdog system that triggers ingestion.
+-   `ETL/`: The core transformation engine.
+    -   `DataProcessor.py`: The primary dispatcher for all incoming data.
+    -   `image/`: Specialized logic for handling medical images via `pylinac`.
+    -   `extractors/`: Modular code for parsing various file formats (CSV, XML).
+-   `models/`: Python-side DTOs that mirror the medical data structure for each beam type (x-ray, electron, geometry).
+
+---
+
+## 🔬 Tech Stack
+
+-   **Python 3.13**
+-   **pylinac**: The industry standard for automated QA in medical physics.
+-   **NumPy / SciPy / Matplotlib**: Powering the scientific computation and data visualization.
+-   **PostgreSQL**: (via `psycopg2` or `SQLAlchemy`) for data persistence.
+
+---
+
+## 🚀 Running the ETL Layer
+
+This service is designed to run as a background worker. In a Docker environment, it runs in its own dedicated container. 
+
+To run it standalone:
+1.  Ensure Python 3.13 is installed.
+2.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Configure environment variables in a root `.env` file.
+4.  Launch the watchdog:
+    ```bash
+    # (Example entry point)
+    python src/data_manipulation/main.py 
+    ```
+
+---
+
+## ⚠️ Important Considerations
+
+-   **Timezone Calibration**: Ensure the timezone is set correctly in the MPC-Plus web dashboard before ingesting data. This is crucial for accurate QA reporting.
+-   **Storage Mounts**: The `iDrive` directory must be correctly mounted for the watchdog to detect and process incoming data.
