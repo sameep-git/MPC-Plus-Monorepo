@@ -4,7 +4,7 @@ The backend API for **MPC Plus**, a comprehensive Machine Performance Check syst
 
 ## Overview
 
-This API serves as the central logic layer for the MPC Plus platform, handling data persistence, business logic, and report generation. It acts as a bridge between the frontend application and the database (accessed via PostgREST or Supabase).
+This API serves as the central logic layer for the MPC Plus platform, handling data persistence, business logic, and report generation. It acts as a bridge between the frontend application and the PostgreSQL database.
 
 ## 🚀 Key Features
 
@@ -17,7 +17,7 @@ This API serves as the central logic layer for the MPC Plus platform, handling d
 ## 🛠️ Technology Stack
 
 *   **Framework**: [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) (ASP.NET Core Web API)
-*   **Database Integration**: [Supabase C# SDK](https://github.com/supabase-community/supabase-csharp) / PostgREST
+*   **Database Integration**: [Npgsql](https://www.npgsql.org/) / Dapper
 *   **PDF Generation**: [QuestPDF](https://www.questpdf.com/)
 *   **Documentation**: Swagger / OpenAPI
 
@@ -32,7 +32,7 @@ For full local deployment instructions (including database setup), please refer 
 ### Prerequisites
 
 *   [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-*   A running Postgres + PostgREST instance (or Supabase project)
+*   A running PostgreSQL instance
 
 ### Configuration
 

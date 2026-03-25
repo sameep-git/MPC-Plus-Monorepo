@@ -90,10 +90,6 @@ packages/
 # Other
 Thumbs.db
 
-# Explicitly ignore local Supabase secrets file
-# (relative to repo root)
-backend/src/api/Constants/SupabaseSecrets.Local.cs
-
 # Beam check images (served locally from wwwroot)
 backend/src/api/wwwroot/images/
 

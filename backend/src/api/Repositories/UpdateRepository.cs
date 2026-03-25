@@ -36,11 +36,6 @@ public class UpdateRepository : IUpdateRepository
     {
         using var connection = _connectionFactory.CreateConnection();
         
-        // Supabase implementation throws InvalidOperationException on unique constraint violation.
-        // We can replicate this or just let it throw PostgresException.
-        // Let's use INSERT ... ON CONFLICT DO NOTHING RETURNING * to detect duplication
-        // Or simply INSERT and catch exception. 
-        // The Supabase repo catches PostgrestException.
         // We'll use simple INSERT for now, assuming ID is unique (guid or string).
         
         var sql = @"
