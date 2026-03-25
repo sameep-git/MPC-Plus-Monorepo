@@ -1,46 +1,46 @@
-# MPC Plus - Backend API
+# 🧱 MPC-Plus Backend Services
 
-The backend API for **MPC Plus**, a comprehensive Machine Performance Check system for radiation therapy quality assurance. This project is an open-source initiative by **TCU Computer Science** students in collaboration with **The Center for Cancer and Blood Disorders**.
+The backend for **MPC-Plus** is split into two primary components: the **.NET 9 REST API** and the **Python ETL Watchdog**. This project is an open-source initiative by **TCU Computer Science** students in collaboration with clinical partners.
 
-## Overview
+## 🏗 Architectural Overview
 
-This API serves as the central logic layer for the MPC Plus platform, handling data persistence, business logic, and report generation. It acts as a bridge between the frontend application and the PostgreSQL database.
+-   **API Layer (`src/api`)**: Built with **.NET 9**, this serves as the central business logic layer. It uses the **Repository Pattern** and **Dapper** (Micro-ORM) for high-performance communication with PostgreSQL.
+-   **Data Ingestion (`src/data_manipulation`)**: A Python-based watchdog that uses `pylinac` to automatically analyze Machine Performance Check (MPC) data from Varian TrueBeam linear accelerators.
 
-## 🚀 Key Features
+For detailed documentation on the ETL Watchdog, see [src/data_manipulation/README.md](src/data_manipulation/README.md).
+
+## 🚀 API Key Features
 
 *   **Machine Management**: Track linear accelerators (linacs), their locations, and configurations.
-*   **Performance Analysis**: Process and analyze beam data, including determining Pass/Fail status based on configurable thresholds.
-*   **Report Generation**: Generate detailed PDF reports of machine performance using **QuestPDF**.
-*   **Threshold Configuration**: Dynamic threshold management for various beam parameters (Uniformity, Output, Center Shift).
+*   **Performance Analysis**: Determine Pass/Fail status based on dynamically configurable thresholds.
+*   **Report Generation**: Generate professional, high-fidelity PDF reports of machine performance using **QuestPDF**.
+*   **Threshold Configuration**: Granular threshold management for various beam parameters (Uniformity, Output, Center Shift).
 *   **DocFactors**: Manage Dose Output Correction factors.
 
-## 🛠️ Technology Stack
+## 🛠️ API Technology Stack
 
 *   **Framework**: [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) (ASP.NET Core Web API)
 *   **Database Integration**: [Npgsql](https://www.npgsql.org/) / Dapper
+*   **JSON Handling**: Custom Type Handlers to map PostgreSQL JSONB columns to C# DTOs.
 *   **PDF Generation**: [QuestPDF](https://www.questpdf.com/)
-*   **Documentation**: Swagger / OpenAPI
+*   **Documentation**: Swashbuckle / OpenAPI
 
 ## 📄 Database Schema
 
-For detailed database schema documentation, see [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
+For detailed database schema documentation, see [DATABASE_SCHEMA.md](../guides/DATABASE_SCHEMA.md) or refer to the exported backups in the root `/backups` directory.
 
-## 📦 Getting Started
+## 📦 Getting Started (Local Development)
 
-For full local deployment instructions (including database setup), please refer to the [DEPLOYMENT.md](../../DEPLOYMENT.md) guide in the root directory.
+We recommend using **Docker Compose** from the project root to run the entire stack. However, to run the API independently:
 
 ### Prerequisites
 
 *   [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-*   A running PostgreSQL instance
+*   A running PostgreSQL 16+ instance
 
 ### Configuration
 
-Copy `.env.local.example` to `.env` and configure your database connection:
-
-```bash
-cp .env.local.example .env
-```
+Ensure you have a `.env` file in the project root configured with your database credentials (see `.env.example`).
 
 ### Running Locally
 
@@ -50,8 +50,8 @@ dotnet restore
 dotnet run
 ```
 
-The API will be available at `http://localhost:5000` (by default).
-Swagger UI is available at `http://localhost:5000/swagger`.
+The API will be available at `http://localhost:5132`.
+Swagger UI is available at `http://localhost:5132/swagger`.
 
 ## 👥 Contributors
 
@@ -67,4 +67,4 @@ Swagger UI is available at `http://localhost:5000/swagger`.
 
 ## 📄 License
 
-This project is open source.
+This project is open-source software. Please refer to the LICENSE file in the project root for details.

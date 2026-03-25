@@ -19,7 +19,7 @@ The system is composed of four primary layers, orchestrated via Docker Compose:
 - **Framework**: Next.js 16 (App Router) with React 19.
 - **Styling**: Tailwind CSS 4.0 for utility-first responsive design.
 - **UI Components**: Radix UI primitives for accessible, high-quality interaction patterns.
-- **Data Fetching**: A custom `api-client.ts` layer that abstracts `fetch` calls and handles the impedance mismatch between PostgreSQL snake_case and Frontend camelCase.
+- **Data Fetching**: A custom `lib/api.ts` layer that abstracts `fetch` calls and handles the impedance mismatch between PostgreSQL snake_case and Frontend camelCase.
 - **State Management**: Uses React Context for application-wide settings (like Timezone and Theme).
 
 ### 2. Backend API Layer (`/backend/src/api`)

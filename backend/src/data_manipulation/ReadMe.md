@@ -50,10 +50,10 @@ To run it standalone:
     pip install -r requirements.txt
     ```
 3.  Configure environment variables in a root `.env` file.
-4.  Launch the watchdog:
+4.  Navigate to the backend directory and launch the watchdog:
     ```bash
-    # (Example entry point)
-    python src/data_manipulation/main.py 
+    cd backend
+    python src/data_manipulation/file_monitoring/main.py 
     ```
 
 ---
