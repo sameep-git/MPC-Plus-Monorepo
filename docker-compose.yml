@@ -14,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Ensure your backup file is here!
-      - ./backups/mpc_plus_backup_20260226_152849.sql:/docker-entrypoint-initdb.d/backup.sql
+      - ./backups/mpc_plus_backup_20260310.sql:/docker-entrypoint-initdb.d/backup.sql
 
   # ── Backend (.NET API) ────────────────────────────────────
   backend:
@@ -27,6 +27,7 @@ services:
     environment:
       - ConnectionStrings__Database=Host=db;Port=5432;Database=${POSTGRES_DB:-mpc_plus};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-your_password_here}
       - CORS_ORIGINS=http://localhost:3000
+      - JWT_SECRET=${JWT_SECRET:-mpc-plus-dev-jwt-secret-change-in-production-32chars!}
     depends_on:
       - db
     volumes:
