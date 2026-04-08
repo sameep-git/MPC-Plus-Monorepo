@@ -1,69 +1,74 @@
-# MPC Plus - Frontend
+# 🎨 MPC-Plus Frontend Dashboard
 
-The web interface for **MPC Plus**, a Machine Performance Check system designed for radiation therapy quality assurance. This project is an open-source initiative by **TCU Computer Science** students in collaboration with **The Center for Cancer and Blood Disorders**.
+The user-facing dashboard for **MPC-Plus**, providing medical physicists with a modern, intuitive interface for monitoring machine performance and generating compliance reports.
 
-## Overview
-
-MPC Plus provides a modern, intuitive dashboard for medical physicists to monitor the performance of linear accelerators. It visualizes daily check results, highlights anomalies, and generates compliance reports.
+---
 
 ## 🚀 Key Features
 
-*   **Dashboard**: At-a-glance view of machine status and latest updates.
-*   **Visual Analytics**: Interactive graphs and charts (powered by **Recharts**) to track performance trends over time.
-*   **Machine Management**: Configure machine details and settings.
-*   **Detailed Results**: Drill down into specific beam metrics (Output, Uniformity, Symmetry).
-*   **Report Generation**: Request and download PDF compliance reports.
+-   **Real-Time Monitoring**: At-a-glance status of all linear accelerators in the facility.
+-   **Visual Analytics**: Interactive trend analysis powered by **Recharts**, allowing physicists to spot drift before it exceeds clinical thresholds.
+-   **Threshold Management**: Granular control over passing, warning, and failing limits for every energy variant.
+-   **Professional Reporting**: Integrated PDF export workflow for monthly and annual QA reviews.
+-   **Machine Administration**: Easy configuration of machine properties, energy variants, and facility-wide settings (like Timezone).
 
-## 🛠️ Technology Stack
+---
 
-*   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-*   **Language**: TypeScript
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-*   **UI Components**: [Radix UI](https://www.radix-ui.com/) / [Lucide React](https://lucide.dev/)
-*   **Charts**: [Recharts](https://recharts.org/)
+## 🛠 Tech Stack & Patterns
 
-## � Database Schema
+### 1. Modern Foundation
+-   **Framework**: **Next.js 16** (utilizing the latest **App Router** features).
+-   **Library**: **React 19** (concurrent rendering, server components).
+-   **Language**: **TypeScript** for end-to-end type safety.
 
-For detailed database schema documentation, see the [Backend Schema](../../backend/MPC-Plus/DATABASE_SCHEMA.md).
+### 2. Design System
+-   **Styling**: **Tailwind CSS 4.0** for a high-performance, utility-first UI.
+-   **Primitives**: **Radix UI** for accessible, headless components (Dialogs, Selects, Popovers).
+-   **Icons**: **Lucide React** for a clean, consistent medical aesthetic.
 
-## �📦 Getting Started
+### 3. Data Integration
+-   **API Client**: A centralized `lib/api.ts` handles all communication with the .NET backend.
+-   **Normalization**: The frontend implements a transformation layer to handle the mapping between PostgreSQL's `snake_case` and the frontend's `camelCase` conventions.
+-   **Optimization**: Implements aggressive caching strategies and "no-store" fetches where real-time accuracy is paramount.
 
-For full local deployment instructions, please refer to the [DEPLOYMENT.md](../../DEPLOYMENT.md) guide in the root directory.
+---
+
+## 🚀 Getting Started (Development)
+
+While we recommend running the full stack via **Docker Compose** from the root directory, you can also run the frontend independently for development.
 
 ### Prerequisites
+-   [Node.js 20+](https://nodejs.org/)
+-   `npm` or `yarn`
 
-*   Node.js 18+
-*   npm / yarn / pnpm
+### Installation
+1.  Navigate to the frontend directory:
+    ```bash
+    cd frontend
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Configure your environment variables in a `.env` file (see the root `.env.example`).
+4.  Launch the development server:
+    ```bash
+    npm run dev
+    ```
+The dashboard will be available at `http://localhost:3000`.
 
-### Configuration
+---
 
-Copy `.env.local.example` to `.env.local`:
+## 📁 Directory Structure
 
-```bash
-cp .env.local.example .env.local
-```
+-   `app/`: Next.js App Router pages and layouts.
+-   `components/`: Reusable UI components (buttons, cards, charts).
+-   `lib/`: Core utilities, API clients, and data transformers.
+-   `models/`: TypeScript interfaces mirroring the backend data structures.
+-   `constants/`: Global application constants and configuration values.
 
-### Running Locally
+---
 
-```bash
-npm install
-npm run dev
-```
+## ⚖️ License
 
-Open [http://localhost:3000](http://localhost:3000) with your browser.
-
-## 👥 Contributors
-
-**Frontend / Full Stack Team:**
-*   **Sameep Shah**
-*   **Alex Morales**
-
-**Backend Team:**
-*   **Brae Ogle**
-*   **Alex Lee**
-*   **Madhavam Shahi**
-*   **Tristan Gonzales**
-
-## 📄 License
-
-This project is open source.
+MPC-Plus is open-source software. Please refer to the LICENSE file in the project root for details.

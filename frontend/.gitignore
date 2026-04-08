@@ -81,10 +81,6 @@ packages/
 # Other
 Thumbs.db
 
-# Explicitly ignore local Supabase secrets file
-# (relative to repo root)
-src/api/Constants/SupabaseSecrets.Local.cs
-
 # --- Python ignores ---
 # Byte-compiled / optimized / DLL files
 __pycache__/
