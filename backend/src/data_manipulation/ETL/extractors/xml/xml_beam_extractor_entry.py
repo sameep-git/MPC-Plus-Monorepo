@@ -14,7 +14,6 @@ Supported model types:
     - GeoModel    → all geometry/MLC fields extracted from XML
 """
 
-from scipy.optimize._lsq.common import print_header_nonlinear
 import os
 import sys
 
@@ -239,31 +238,28 @@ def extract_beam_values(path: str, model):
 
 
 if __name__ == "__main__":
-    # Command-line interface for quick testing
-    if len(sys.argv) < 2:
-        print("Usage: xml_beam_extractor_entry.py <folder_or_results_xml_path>")
+    if len(sys.argv) < 3:
+        print("Usage: xml_beam_extractor_entry.py <ebeam|xbeam|geo> <folder_or_results_xml_path>")
         sys.exit(1)
 
-    input_path = sys.argv[1]
-    beam_type = detect_beam_type(input_path)
-    print(f"Beam type (from folder): {beam_type}")
+    beam_arg = sys.argv[1].lower()
+    input_path = sys.argv[2]
 
-    if beam_type == "ebeam":
+    if beam_arg == "ebeam":
         test_model = EBeamModel()
-    elif beam_type == "xbeam":
+    elif beam_arg == "xbeam":
         test_model = XBeamModel()
-    elif beam_type == "geometry":
+    elif beam_arg == "geo":
         test_model = GeoModel()
     else:
-        print("Unknown beam type — cannot create model.")
+        print(f"Unknown beam type: {beam_arg}. Use ebeam, xbeam, or geo.")
         sys.exit(1)
 
     result = extract_beam_values(input_path, test_model)
     if not result:
-        print("Failed to detect beam type or extract values.")
+        print("Failed to extract values.")
         sys.exit(1)
 
-    # Print values via getters
     print(f"Relative Output    : {result.get_relative_output()}")
     print(f"Relative Uniformity: {result.get_relative_uniformity()}")
     if hasattr(result, "get_center_shift"):
