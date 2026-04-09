@@ -202,6 +202,36 @@ def extract_beam_values(path: str, model):
         if data.get("mlc_backlash_mean_b") is not None:
             model.set_MLCBacklashMeanB(data["mlc_backlash_mean_b"])
 
+        # --- IsoCenter ---
+        if data.get("iso_center_size") is not None:
+            model.set_IsoCenterSize(Decimal(str(data["iso_center_size"])))
+        if data.get("iso_center_mv_offset") is not None:
+            model.set_IsoCenterMVOffset(Decimal(str(data["iso_center_mv_offset"])))
+        if data.get("iso_center_kv_offset") is not None:
+            model.set_IsoCenterKVOffset(Decimal(str(data["iso_center_kv_offset"])))
+
+        # --- Gantry ---
+        if data.get("gantry_absolute") is not None:
+            model.set_GantryAbsolute(Decimal(str(data["gantry_absolute"])))
+        if data.get("gantry_relative") is not None:
+            model.set_GantryRelative(Decimal(str(data["gantry_relative"])))
+
+        # --- Couch ---
+        if data.get("couch_lat") is not None:
+            model.set_CouchLat(Decimal(str(data["couch_lat"])))
+        if data.get("couch_lng") is not None:
+            model.set_CouchLng(Decimal(str(data["couch_lng"])))
+        if data.get("couch_vrt") is not None:
+            model.set_CouchVrt(Decimal(str(data["couch_vrt"])))
+        if data.get("couch_max_position_error") is not None:
+            model.set_CouchMaxPositionError(Decimal(str(data["couch_max_position_error"])))
+        if data.get("couch_rtn_fine") is not None:
+            model.set_CouchRtnFine(Decimal(str(data["couch_rtn_fine"])))
+        if data.get("couch_rtn_large") is not None:
+            model.set_CouchRtnLarge(Decimal(str(data["couch_rtn_large"])))
+        if data.get("rotation_induced_couch_shift_full_range") is not None:
+            model.set_RotationInducedCouchShiftFullRange(Decimal(str(data["rotation_induced_couch_shift_full_range"])))
+
         return model
 
     # Unknown / unsupported beam type
