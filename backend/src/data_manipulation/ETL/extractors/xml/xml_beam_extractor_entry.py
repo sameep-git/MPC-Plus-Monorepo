@@ -18,23 +18,39 @@ import os
 import sys
 
 try:
-    # Package import (used when called from DataProcessor or any other module)
     from src.data_manipulation.ETL.extractors.xml.ebeam_extractor import extract_ebeam_values
     from src.data_manipulation.ETL.extractors.xml.xbeam_extractor import extract_xbeam_values
-    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values
+    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values, is_geometry_folder
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
 except ImportError:
-    # Fallback for running the file directly as a script
     from ebeam_extractor import extract_ebeam_values
     from xbeam_extractor import extract_xbeam_values
-    from geometry_extractor import extract_geometry_values
+    from geometry_extractor import extract_geometry_values, is_geometry_folder
     import sys, os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
+
+
+def detect_beam_type(path: str) -> str:
+    """
+    Detect beam type from folder or file path.
+    Returns 'ebeam', 'xbeam', 'geometry', or 'unknown'.
+    """
+    folder_path, _ = _normalize_paths(path)
+    check_path = folder_path if os.path.isdir(folder_path) else os.path.dirname(folder_path)
+    if is_geometry_folder(check_path):
+        return "geometry"
+    folder_name = os.path.basename(check_path)
+    if "BeamCheckTemplate" in folder_name:
+        for indicator in ("6e", "9e", "12e", "16e", "20e"):
+            if indicator in folder_name:
+                return "ebeam"
+        return "xbeam"
+    return "unknown"
 
 
 def _normalize_paths(path: str):
@@ -47,28 +63,21 @@ def _normalize_paths(path: str):
 
     Handles relative paths by trying to resolve them relative to MPC-Plus directory.
     """
-    # Get MPC-Plus directory (common parent directory)
-    # Navigate up from current script: xml -> extractors -> ETL -> data_manipulation -> src -> backend
     script_dir = os.path.dirname(os.path.abspath(__file__))
     mpc_plus_dir = os.path.abspath(os.path.join(script_dir, '../../../..'))
 
-    # Normalize path separators
     path = path.replace('\\', os.sep).replace('/', os.sep)
 
-    # Try to resolve the path
     resolved_path = None
 
-    # First, try as-is (if it's already absolute and exists)
     if os.path.isabs(path) and os.path.exists(path):
         resolved_path = path
-    # If relative path, try multiple possible locations relative to MPC-Plus
     elif not os.path.isabs(path):
         possible_paths = [
-            os.path.join(mpc_plus_dir, path),  # Relative to MPC-Plus root
-            os.path.join(os.getcwd(), path),    # Relative to current working directory
+            os.path.join(mpc_plus_dir, path),
+            os.path.join(os.getcwd(), path),
         ]
 
-        # Also try if path starts with 'data/' - resolve relative to MPC-Plus
         if path.startswith('data' + os.sep) or path.startswith('data/'):
             possible_paths.insert(0, os.path.join(mpc_plus_dir, path))
 
@@ -77,14 +86,11 @@ def _normalize_paths(path: str):
                 resolved_path = os.path.abspath(alt_path)
                 break
 
-        # If still not found, try resolving as absolute from current directory
         if not resolved_path:
             resolved_path = os.path.abspath(path)
     else:
-        # Absolute path that doesn't exist - use as-is (will fail later)
         resolved_path = path
 
-    # Determine if resolved_path is a directory or file
     if os.path.isdir(resolved_path):
         folder_path = resolved_path
         xml_path = os.path.join(folder_path, "Results.xml")
@@ -109,7 +115,6 @@ def extract_beam_values(path: str, model):
     """
     model_type = type(model).__name__.lower()
     folder_path, xml_path = _normalize_paths(path)
-    #print(model_type)
 
     # -------------------------------------------------------------------------
     # E-beam: relative output + relative uniformity

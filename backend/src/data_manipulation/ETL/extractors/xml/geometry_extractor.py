@@ -209,7 +209,7 @@ if __name__ == "__main__":
         ("mlc_backlash_a", "MLCBacklashLeavesA", "MLCBacklashLeaf"),
         ("mlc_backlash_b", "MLCBacklashLeavesB", "MLCBacklashLeaf"),
     ]:
-        leaves = data[key]
+        leaves = data.get(key, {})
         if leaves:
             print(f"\n{label}: {len(leaves)} leaves")
             for idx, val in leaves.items():
