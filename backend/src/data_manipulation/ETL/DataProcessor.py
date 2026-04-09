@@ -311,6 +311,12 @@ class DataProcessor:
             return
 
         beam_token = self.extract_beam_type(self.data_path)
+        
+        # Treat geo naming variants as equivalent
+        if beam_token == "6xMVkVEnhancedCouch" and "6x" in beam_map:
+            beam_token = "6x"
+        elif beam_token == "6x" and "6xMVkVEnhancedCouch" in beam_map:
+            beam_token = "6xMVkVEnhancedCouch"
 
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
