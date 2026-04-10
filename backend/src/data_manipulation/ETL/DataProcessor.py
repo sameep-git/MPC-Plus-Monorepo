@@ -311,6 +311,12 @@ class DataProcessor:
             return
 
         beam_token = self.extract_beam_type(self.data_path)
+        
+        # Treat geo naming variants as equivalent
+        if beam_token == "6xMVkVEnhancedCouch" and "6x" in beam_map:
+            beam_token = "6x"
+        elif beam_token == "6x" and "6xMVkVEnhancedCouch" in beam_map:
+            beam_token = "6xMVkVEnhancedCouch"
 
         for key, (model_class, beam_type, typeID) in beam_map.items():
             if beam_token == key:
@@ -344,17 +350,42 @@ class DataProcessor:
                         logger.error("XML extractor returned no data for: %s", self.folder_path)
                         return
 
-                    logger.info(
-                        "XML extraction complete — output: %s, uniformity: %s",
-                        round(beam.get_relative_output(), 4),
-                        round(beam.get_relative_uniformity(), 4),
-                    )
-                    if beam_type == "6x":
-                        logger.info(
-                            "XML Geo Model — Gantry: %s, Couch: %s (Show Null)",
-                            beam.get_GantryAbsolute(),
-                            beam.get_RotationInducedCouchShiftFullRange(),
-                        )
+                    if isinstance(beam, EBeamModel):
+                        logger.info("--- E-Beam XML Extraction Results ---")
+                        logger.info("  Output: %s", round(beam.get_relative_output(), 4))
+                        logger.info("  Uniformity: %s", round(beam.get_relative_uniformity(), 4))
+
+                    elif isinstance(beam, XBeamModel):
+                        logger.info("--- X-Beam XML Extraction Results ---")
+                        logger.info("  Output: %s", round(beam.get_relative_output(), 4))
+                        logger.info("  Uniformity: %s", round(beam.get_relative_uniformity(), 4))
+                        logger.info("  Center Shift: %s mm", beam.get_center_shift())
+
+                    elif isinstance(beam, GeoModel):
+                        logger.info("--- Geo XML Extraction Results ---")
+                        logger.info("  Output: %s", round(beam.get_relative_output(), 4))
+                        logger.info("  Uniformity: %s", round(beam.get_relative_uniformity(), 4))
+                        logger.info("  Center Shift: %s mm", beam.get_center_shift())
+                        logger.info("  IsoCenter Size: %s mm", beam.get_IsoCenterSize())
+                        logger.info("  IsoCenter MV Offset: %s mm", beam.get_IsoCenterMVOffset())
+                        logger.info("  IsoCenter KV Offset: %s mm", beam.get_IsoCenterKVOffset())
+                        logger.info("  Gantry Absolute: %s deg", beam.get_GantryAbsolute())
+                        logger.info("  Gantry Relative: %s deg", beam.get_GantryRelative())
+                        logger.info("  Couch Lat: %s mm", beam.get_CouchLat())
+                        logger.info("  Couch Lng: %s mm", beam.get_CouchLng())
+                        logger.info("  Couch Vrt: %s mm", beam.get_CouchVrt())
+                        logger.info("  Couch Max Position Error: %s mm", beam.get_CouchMaxPositionError())
+                        logger.info("  Couch Rtn Fine: %s deg", beam.get_CouchRtnFine())
+                        logger.info("  Couch Rtn Large: %s deg", beam.get_CouchRtnLarge())
+                        logger.info("  Rotation Induced Couch Shift: %s mm", beam.get_RotationInducedCouchShiftFullRange())
+                        logger.info("  MLC Max Offset A: %s mm", beam.get_MaxOffsetA())
+                        logger.info("  MLC Max Offset B: %s mm", beam.get_MaxOffsetB())
+                        logger.info("  MLC Mean Offset A: %s mm", beam.get_MeanOffsetA())
+                        logger.info("  MLC Mean Offset B: %s mm", beam.get_MeanOffsetB())
+                        logger.info("  MLC Backlash Max A: %s mm", beam.get_MLCBacklashMaxA())
+                        logger.info("  MLC Backlash Max B: %s mm", beam.get_MLCBacklashMaxB())
+                        logger.info("  MLC Backlash Mean A: %s mm", beam.get_MLCBacklashMeanA())
+                        logger.info("  MLC Backlash Mean B: %s mm", beam.get_MLCBacklashMeanB())
 
                 # -----------------------------------------------------------------
                 # Upload (skipped during test runs)

@@ -14,28 +14,43 @@ Supported model types:
     - GeoModel    → all geometry/MLC fields extracted from XML
 """
 
-from scipy.optimize._lsq.common import print_header_nonlinear
 import os
 import sys
 
 try:
-    # Package import (used when called from DataProcessor or any other module)
     from src.data_manipulation.ETL.extractors.xml.ebeam_extractor import extract_ebeam_values
     from src.data_manipulation.ETL.extractors.xml.xbeam_extractor import extract_xbeam_values
-    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values
+    from src.data_manipulation.ETL.extractors.xml.geometry_extractor import extract_geometry_values, is_geometry_folder
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
 except ImportError:
-    # Fallback for running the file directly as a script
     from ebeam_extractor import extract_ebeam_values
     from xbeam_extractor import extract_xbeam_values
-    from geometry_extractor import extract_geometry_values
+    from geometry_extractor import extract_geometry_values, is_geometry_folder
     import sys, os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
     from src.data_manipulation.models.EBeamModel import EBeamModel
     from src.data_manipulation.models.XBeamModel import XBeamModel
     from src.data_manipulation.models.GeoModel import GeoModel
+
+
+def detect_beam_type(path: str) -> str:
+    """
+    Detect beam type from folder or file path.
+    Returns 'ebeam', 'xbeam', 'geometry', or 'unknown'.
+    """
+    folder_path, _ = _normalize_paths(path)
+    check_path = folder_path if os.path.isdir(folder_path) else os.path.dirname(folder_path)
+    if is_geometry_folder(check_path):
+        return "geometry"
+    folder_name = os.path.basename(check_path)
+    if "BeamCheckTemplate" in folder_name:
+        for indicator in ("6e", "9e", "12e", "16e", "20e"):
+            if indicator in folder_name:
+                return "ebeam"
+        return "xbeam"
+    return "unknown"
 
 
 def _normalize_paths(path: str):
@@ -48,28 +63,21 @@ def _normalize_paths(path: str):
 
     Handles relative paths by trying to resolve them relative to MPC-Plus directory.
     """
-    # Get MPC-Plus directory (common parent directory)
-    # Navigate up from current script: xml -> extractors -> ETL -> data_manipulation -> src -> backend
     script_dir = os.path.dirname(os.path.abspath(__file__))
     mpc_plus_dir = os.path.abspath(os.path.join(script_dir, '../../../..'))
 
-    # Normalize path separators
     path = path.replace('\\', os.sep).replace('/', os.sep)
 
-    # Try to resolve the path
     resolved_path = None
 
-    # First, try as-is (if it's already absolute and exists)
     if os.path.isabs(path) and os.path.exists(path):
         resolved_path = path
-    # If relative path, try multiple possible locations relative to MPC-Plus
     elif not os.path.isabs(path):
         possible_paths = [
-            os.path.join(mpc_plus_dir, path),  # Relative to MPC-Plus root
-            os.path.join(os.getcwd(), path),    # Relative to current working directory
+            os.path.join(mpc_plus_dir, path),
+            os.path.join(os.getcwd(), path),
         ]
 
-        # Also try if path starts with 'data/' - resolve relative to MPC-Plus
         if path.startswith('data' + os.sep) or path.startswith('data/'):
             possible_paths.insert(0, os.path.join(mpc_plus_dir, path))
 
@@ -78,14 +86,11 @@ def _normalize_paths(path: str):
                 resolved_path = os.path.abspath(alt_path)
                 break
 
-        # If still not found, try resolving as absolute from current directory
         if not resolved_path:
             resolved_path = os.path.abspath(path)
     else:
-        # Absolute path that doesn't exist - use as-is (will fail later)
         resolved_path = path
 
-    # Determine if resolved_path is a directory or file
     if os.path.isdir(resolved_path):
         folder_path = resolved_path
         xml_path = os.path.join(folder_path, "Results.xml")
@@ -110,7 +115,6 @@ def extract_beam_values(path: str, model):
     """
     model_type = type(model).__name__.lower()
     folder_path, xml_path = _normalize_paths(path)
-    #print(model_type)
 
     # -------------------------------------------------------------------------
     # E-beam: relative output + relative uniformity
@@ -202,6 +206,36 @@ def extract_beam_values(path: str, model):
         if data.get("mlc_backlash_mean_b") is not None:
             model.set_MLCBacklashMeanB(data["mlc_backlash_mean_b"])
 
+        # --- IsoCenter ---
+        if data.get("iso_center_size") is not None:
+            model.set_IsoCenterSize(Decimal(str(data["iso_center_size"])))
+        if data.get("iso_center_mv_offset") is not None:
+            model.set_IsoCenterMVOffset(Decimal(str(data["iso_center_mv_offset"])))
+        if data.get("iso_center_kv_offset") is not None:
+            model.set_IsoCenterKVOffset(Decimal(str(data["iso_center_kv_offset"])))
+
+        # --- Gantry ---
+        if data.get("gantry_absolute") is not None:
+            model.set_GantryAbsolute(Decimal(str(data["gantry_absolute"])))
+        if data.get("gantry_relative") is not None:
+            model.set_GantryRelative(Decimal(str(data["gantry_relative"])))
+
+        # --- Couch ---
+        if data.get("couch_lat") is not None:
+            model.set_CouchLat(Decimal(str(data["couch_lat"])))
+        if data.get("couch_lng") is not None:
+            model.set_CouchLng(Decimal(str(data["couch_lng"])))
+        if data.get("couch_vrt") is not None:
+            model.set_CouchVrt(Decimal(str(data["couch_vrt"])))
+        if data.get("couch_max_position_error") is not None:
+            model.set_CouchMaxPositionError(Decimal(str(data["couch_max_position_error"])))
+        if data.get("couch_rtn_fine") is not None:
+            model.set_CouchRtnFine(Decimal(str(data["couch_rtn_fine"])))
+        if data.get("couch_rtn_large") is not None:
+            model.set_CouchRtnLarge(Decimal(str(data["couch_rtn_large"])))
+        if data.get("rotation_induced_couch_shift_full_range") is not None:
+            model.set_RotationInducedCouchShiftFullRange(Decimal(str(data["rotation_induced_couch_shift_full_range"])))
+
         return model
 
     # Unknown / unsupported beam type
@@ -209,31 +243,28 @@ def extract_beam_values(path: str, model):
 
 
 if __name__ == "__main__":
-    # Command-line interface for quick testing
-    if len(sys.argv) < 2:
-        print("Usage: xml_beam_extractor_entry.py <folder_or_results_xml_path>")
+    if len(sys.argv) < 3:
+        print("Usage: xml_beam_extractor_entry.py <ebeam|xbeam|geo> <folder_or_results_xml_path>")
         sys.exit(1)
 
-    input_path = sys.argv[1]
-    beam_type = detect_beam_type(input_path)
-    print(f"Beam type (from folder): {beam_type}")
+    beam_arg = sys.argv[1].lower()
+    input_path = sys.argv[2]
 
-    if beam_type == "ebeam":
+    if beam_arg == "ebeam":
         test_model = EBeamModel()
-    elif beam_type == "xbeam":
+    elif beam_arg == "xbeam":
         test_model = XBeamModel()
-    elif beam_type == "geometry":
+    elif beam_arg == "geo":
         test_model = GeoModel()
     else:
-        print("Unknown beam type — cannot create model.")
+        print(f"Unknown beam type: {beam_arg}. Use ebeam, xbeam, or geo.")
         sys.exit(1)
 
     result = extract_beam_values(input_path, test_model)
     if not result:
-        print("Failed to detect beam type or extract values.")
+        print("Failed to extract values.")
         sys.exit(1)
 
-    # Print values via getters
     print(f"Relative Output    : {result.get_relative_output()}")
     print(f"Relative Uniformity: {result.get_relative_uniformity()}")
     if hasattr(result, "get_center_shift"):
